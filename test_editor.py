@@ -10,7 +10,6 @@ import argparse
 import sys
 from tkinter.tix import Tk
 # import codecs
-
 from pandas.tests.indexes.datetimes.test_setops import END
 from pip._internal.utils import encoding
 
