@@ -1,0 +1,11 @@
+INFO:src.test_editor:first mesg
+INFO:src.test_editor:you   have python 3 version
+2023-04-23 17:24:21,047 src.test_editor INFO:first mesg
+2023-04-23 17:24:21,071 src.test_editor INFO:you   have python 3 version
+2023-04-23 17:30:05,196 src.test_editor INFO:first mesg
+2023-04-23 17:30:05,245 src.test_editor INFO:you   have python 3 version
+2023-04-23 17:30:56,748 src.test_editor INFO:first mesg
+2023-04-23 17:31:18,435 src.test_editor INFO:first mesg
+2023-04-23 17:32:01,647 src.test_editor INFO:first mesg
+2023-04-23 17:32:01,647 src.test_editor INFO:python version detected by app: 3
+2023-04-23 17:32:01,647 src.test_editor INFO:you   have python 3 version

@@ -1,1 +1,1 @@
-import src.test_editor
+import src.test_editor as te

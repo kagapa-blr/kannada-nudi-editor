@@ -4,40 +4,40 @@
 # -*- coding: cp1252 -*-
 # encoding=utf8
 from __future__ import print_function
-from threading import Thread
-import locale
-import argparse
-import sys
-from tkinter.tix import Tk
-# import codecs
-from pandas.tests.indexes.datetimes.test_setops import END
-from pip._internal.utils import encoding
 
-#import proto.stt_pb2_grpc as stt_pb2_grpc
-#import proto.stt_pb2 as stt_pb2
-import time
-import wave
-from configparser import ConfigParser
-import os
 import locale
+import os
+import sys
+# import proto.stt_pb2_grpc as stt_pb2_grpc
+# import proto.stt_pb2 as stt_pb2
+from configparser import ConfigParser
+
+# import codecs
 
 PYTHONIOENCODING = "UTF-8"
 os_encoding = locale.getpreferredencoding()
 from PIL import ImageTk, Image
 import queue as Queue
-from threading import Thread
-import wave
-from tkinter import ttk, DISABLED
 import tkinter
 from tkinter import BOTH
 import tkinter.messagebox
 from tkinter.scrolledtext import ScrolledText
 import tkinter.font
-from tkinter import font
-if sys.version_info.major is 3:
-    import tkinter as tk, tkinter.font as tkFont
+import logging
+logging.basicConfig(level=logging.DEBUG, filename='logs/nudi.logs', format='%(asctime)s %(name)s %(levelname)s:%(message)s')
+logger = logging.getLogger(__name__)
+
+logger.info("first mesg")
+print(sys.version_info.major)
+logger.info("python version detected by app: %s",sys.version_info.major)
+
+if sys.version_info.major!=3:
+    logger.info("you  don't have python 3 version")
 else:
-    import Tkinter as tk, tkFont
+    logger.info("you   have python 3 version")
+    pass
+
+
 import sys
 import time
 from PyQt5.QtGui import *
@@ -85,7 +85,7 @@ def refresh():
 
 import pyaudio
 absolute_path = os.path.dirname(__file__)
-relative_path = "icon/microphone.png"
+relative_path = "static/icon/microphone.png"
 #full_path = 
 class RecAUD:
 
@@ -96,7 +96,7 @@ class RecAUD:
         # self.main.call('encoding', 'system', 'utf-8')  # unicode tkinter
         microphone = os.path.join(absolute_path, relative_path)
         self.rec_img = ImageTk.PhotoImage(Image.open(microphone))
-        mic = os.path.join(absolute_path,"icon/mic.ico")
+        mic = os.path.join(absolute_path,"static/icon/mic.ico")
         self.stp_img = ImageTk.PhotoImage(Image.open(microphone))
 
         self.main.geometry("300x300+210+280")
