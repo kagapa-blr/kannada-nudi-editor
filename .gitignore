@@ -1,1 +1,3 @@
 /v_editor.exe
+venv/
+/__pycache__/
