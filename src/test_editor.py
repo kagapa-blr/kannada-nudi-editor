@@ -6,8 +6,6 @@
 from __future__ import print_function
 
 import locale
-import os
-import sys
 # import proto.stt_pb2_grpc as stt_pb2_grpc
 # import proto.stt_pb2 as stt_pb2
 from configparser import ConfigParser
@@ -23,20 +21,6 @@ from tkinter import BOTH
 import tkinter.messagebox
 from tkinter.scrolledtext import ScrolledText
 import tkinter.font
-import logging
-logging.basicConfig(level=logging.DEBUG, filename='logs/nudi.logs', format='%(asctime)s %(name)s %(levelname)s:%(message)s')
-logger = logging.getLogger(__name__)
-
-logger.info("first mesg")
-print(sys.version_info.major)
-logger.info("python version detected by app: %s",sys.version_info.major)
-
-if sys.version_info.major!=3:
-    logger.info("you  don't have python 3 version")
-else:
-    logger.info("you   have python 3 version")
-    pass
-
 
 import sys
 import time
@@ -45,6 +29,22 @@ from PyQt5.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
+
+import os
+import logging
+
+logging.basicConfig(level=logging.DEBUG, filename='logs/nudi.logs',format='%(asctime)s %(name)s %(levelname)s:%(message)s')
+logger = logging.getLogger(__name__)
+logger.info("--------------------Application started--------------")
+logger.info("python version detected by app: %s", sys.version_info.major)
+
+if sys.version_info.major != 3:
+    logger.info("you  don't have python 3 version")
+else:
+    logger.info("you   have python 3 version")
+    pass
+
+
 
 # Reading from config file
 parser = ConfigParser()
@@ -70,33 +70,28 @@ tf = True
 ts = True
 
 
-
-
-
-
-
-
-
-
 def refresh():
     from pywin.framework import window
     window.destroy()
     os.startfile(".\\client_ka.exe")
 
+
 import pyaudio
+
 absolute_path = os.path.dirname(__file__)
 relative_path = "media\icon\microphone.png"
-#full_path = 
+
+
+# full_path =
 class RecAUD:
 
     def __init__(self, chunk=1024, frmat=pyaudio.paInt16, channels=1, rate=16000, py=pyaudio.PyAudio()):
         # Start Tkinter and set Title
-
         self.main = tkinter.Tk()
         # self.main.call('encoding', 'system', 'utf-8')  # unicode tkinter
-        microphone = "media/icon/microphone.png"#os.path.join(absolute_path, relative_path)
+        microphone = "media/icon/microphone.png"  # os.path.join(absolute_path, relative_path)
         self.rec_img = ImageTk.PhotoImage(Image.open(microphone))
-        mic = "media/icon/mic.ico"#os.path.join(absolute_path,"media/icon/mic.ico")
+        mic = "media/icon/mic.ico"  # os.path.join(absolute_path,"media/icon/mic.ico")
         self.stp_img = ImageTk.PhotoImage(Image.open(microphone))
 
         self.main.geometry("300x300+210+280")
@@ -138,7 +133,7 @@ class RecAUD:
         self.tex = tkinter.Text()
         self.tex = ScrolledText(self.main)
         # f.decode('utf-8') self.tex.insert('1.0', f.encode('UTF-8'))
-        #self.tex.tk.call('font', 'configure', 'TkDefaultFont', '-size', '28')
+        # self.tex.tk.call('font', 'configure', 'TkDefaultFont', '-size', '28')
         self.tex.config(state=tkinter.NORMAL, font=('Calibri', 16), fg="blue", bg="yellow")
         self.tex.pack(side=tkinter.RIGHT)
 
@@ -169,10 +164,10 @@ class RecAUD:
         while self.st == 1:
             data = stream.read(self.CHUNK)
             audioQueue["abcd"].put(data)
-            print("* recording")
+            print("* recording started ")
             self.main.update()
         audioQueue["abcd"].put('EOS')
-        print("* done")
+        print("* done! recording stopped")
         stream.stop_stream()
         stream.close()
 
@@ -190,12 +185,12 @@ class RecAUD:
     def my_file(self):
         # self.tex.DELAY = 100
         time.sleep(1)
-        f = open("output.txt", "r+", encoding ='utf8')
+        f = open("output.txt", "r+", encoding='utf8')
 
         self.tex.insert(tkinter.END, f.read())  # read the text from text file ...
 
         if f:
-            f = open('output.txt', 'w', encoding ='utf8')
+            f = open('output.txt', 'w', encoding='utf8')
             f.close()
 
         # self.tex.delete("1.0", "end") #delete the text in text area ( box )
@@ -203,6 +198,7 @@ class RecAUD:
 
 
 guiAUD = RecAUD()
+
 
 class Find(QDialog):
     def __init__(self, parent=None):
@@ -823,6 +819,7 @@ def main():
     app = QApplication(sys.argv)
     main = Main()
     main.show()
+    main.initUI()
 
     sys.exit(app.exec_())
 
