@@ -85,7 +85,7 @@ def refresh():
 
 import pyaudio
 absolute_path = os.path.dirname(__file__)
-relative_path = "static/icon/microphone.png"
+relative_path = "media\icon\microphone.png"
 #full_path = 
 class RecAUD:
 
@@ -94,16 +94,16 @@ class RecAUD:
 
         self.main = tkinter.Tk()
         # self.main.call('encoding', 'system', 'utf-8')  # unicode tkinter
-        microphone = os.path.join(absolute_path, relative_path)
+        microphone = "media/icon/microphone.png"#os.path.join(absolute_path, relative_path)
         self.rec_img = ImageTk.PhotoImage(Image.open(microphone))
-        mic = os.path.join(absolute_path,"static/icon/mic.ico")
+        mic = "media/icon/mic.ico"#os.path.join(absolute_path,"media/icon/mic.ico")
         self.stp_img = ImageTk.PhotoImage(Image.open(microphone))
 
         self.main.geometry("300x300+210+280")
         # self.main.t = tkinter.Text(self.main)
         self.main.title("wm min/max")  # hide the title bar button
         self.main.resizable(0, 0)
-        self.main.iconbitmap('mic.ico')
+        self.main.iconbitmap('media/icon/mic.ico')
         # self.label = tkinter.Label(self.main, image=self.stp_img, bg='red')
         # self.main.overrideredirect(True) # disable the header button in frame
         self.collections = []
