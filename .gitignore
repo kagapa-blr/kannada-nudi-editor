@@ -3,4 +3,4 @@ venv/
 src/__pycache__/
 .idea/
 *.wav
-
+requirements.txt
