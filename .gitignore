@@ -1,6 +1,7 @@
 /v_editor.exe
-venv/
+/venv/
 src/__pycache__/
 .idea/
 *.wav
-requirements.txt
+/newvenv/
+/.pytest_cache/
