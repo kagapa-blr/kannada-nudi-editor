@@ -4,6 +4,7 @@ from tkinter import END, messagebox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from src.audio.audio import start,stop
+from src.kannada_voice_to_text import convert_voice_to_text
 
 
 def open_file():
@@ -56,7 +57,8 @@ btn_save.grid(row=0, column=3, sticky="ew", padx=5)
 
 fr_buttons.grid(row=0, column=0, sticky="ns")
 txt_edit.grid(row=0, column=1, sticky="nsew")
-txt_edit.insert(END, "default text")
+
+txt_edit.insert(END,convert_voice_to_text())
 
 
 window.mainloop()

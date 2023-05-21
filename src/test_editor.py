@@ -4,16 +4,9 @@
 # -*- coding: cp1252 -*-
 # encoding=utf8
 from __future__ import print_function
-
 import locale
-# import proto.stt_pb2_grpc as stt_pb2_grpc
-# import proto.stt_pb2 as stt_pb2
-from configparser import ConfigParser
 
-# import codecs
-
-PYTHONIOENCODING = "UTF-8"
-os_encoding = locale.getpreferredencoding()
+import pyaudio
 from PIL import ImageTk, Image
 import queue as Queue
 import tkinter
@@ -32,6 +25,16 @@ from PyQt5.QtCore import Qt
 
 import os
 import logging
+
+# import proto.stt_pb2_grpc as stt_pb2_grpc
+# import proto.stt_pb2 as stt_pb2
+from configparser import ConfigParser
+
+os_encoding = locale.getpreferredencoding()
+# import codecs
+
+PYTHONIOENCODING = "UTF-8"
+
 
 logging.basicConfig(level=logging.DEBUG, filename='logs/nudi.logs',format='%(asctime)s %(name)s %(levelname)s:%(message)s')
 logger = logging.getLogger(__name__)
@@ -76,7 +79,7 @@ def refresh():
     os.startfile(".\\client_ka.exe")
 
 
-import pyaudio
+
 
 absolute_path = os.path.dirname(__file__)
 relative_path = "media\icon\microphone.png"
@@ -118,8 +121,6 @@ class RecAUD:
         # self.main.attributes("-alpha", 0.9)  #transparent the baground
         self.st = 1  # self.main.attributes("-transparentcolor", "white") #disable movement of frame
         # self.main.wm_attributes("-disabled", True) #disable all activity of the header of window
-        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True,
-                                  frames_per_buffer=self.CHUNK)
 
         # Set Frames
         self.buttons = tkinter.Frame(self.main, padx=30, pady=10)
@@ -305,7 +306,6 @@ class Date(QDialog):
 
     def Cancel(self):
         self.close()
-
 
 class Main(QMainWindow):
 
