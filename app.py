@@ -1,14 +1,14 @@
-import re
 import sys
-import docx
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QMenu, QToolBar, QLabel, \
-    QMessageBox, QInputDialog, QLineEdit
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFont, QFontDatabase
-from PyQt5.QtCore import Qt
 
-from bloom_filter import bloom_lookup, start_bloom
-from corpus_clean import get_clean_words_for_dictionary
+import docx
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFont, QFontDatabase
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
+    QInputDialog, QLineEdit
+
 import file_path as fp
+from bloom_filter import bloom_lookup, start_bloom, reload_bloom_filter
+from corpus_clean import get_clean_words_for_dictionary
 from symspell_suggestions import suggestionReturner
 
 
@@ -31,6 +31,7 @@ class TextEditor(QMainWindow):
         self.font = QFont(self.family)
         # Apply the font to the text edit
         self.text_edit.setFont(self.font)
+        #self.text_edit.setFontPointSize(12)
 
 
 
@@ -91,6 +92,7 @@ class TextEditor(QMainWindow):
         decrease_font_size_action.triggered.connect(self.decreaseFontSize)
         font_size_menu.addAction(decrease_font_size_action)
         # Add more font actions as needed
+
 #----------------------------------------------------------------tool bar----------------------------------------------------------------
         toolbar = QToolBar()
         self.addToolBar(toolbar)
@@ -242,8 +244,6 @@ class TextEditor(QMainWindow):
     def replace_word(self, word_to_replace):
         new_word, ok = QInputDialog.getText(self, 'Replace Word', f'Enter new word to replace {word_to_replace}',
                                             QLineEdit.Normal)
-
-        # If the user pressed OK and entered a new word, replace occurrences in the text_edit
         if ok and new_word:
             cursor = self.text_edit.textCursor()  # Get the current cursor position
             current_text = self.text_edit.toPlainText()
@@ -270,27 +270,19 @@ class TextEditor(QMainWindow):
         self.text_edit.setFont(new_font)
 
     def refresh_recheck(self):
-        # Get the cursor position before refreshing
+        reload_bloom_filter()
         cursor_position = self.text_edit.textCursor()
-
-        # Get the text content from the editor
-        text_content = self.text_edit.toPlainText()
-
-        # Implement your recheck logic here
-        # For example, you can use the same logic as in the 'openFile' function
-        # to recheck the content and highlight incorrect words
-        content_for_bloom = [get_clean_words_for_dictionary(word) for word in text_content.split() if word if
+        text_content = self.text_edit.toHtml()
+        plain_text = self.text_edit.toPlainText()
+        content_for_bloom = [get_clean_words_for_dictionary(word) for word in plain_text.split() if word if
                              len(word) > 1]
         wrong_words = start_bloom(content_for_bloom)
-
         # Highlight incorrect words in the editor
         highlighted_content = text_content
         for word in wrong_words:
             highlighted_content = highlighted_content.replace(word, f'<span style="color:red">{word}</span>')
-
         # Update the editor with the highlighted content
         self.text_edit.setHtml(highlighted_content)
-
         # Restore the cursor position
         self.text_edit.setTextCursor(cursor_position)
 
