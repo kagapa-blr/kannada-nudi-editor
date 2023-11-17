@@ -151,7 +151,12 @@ class TextEditor(QMainWindow):
                 content = content.replace(word, f'<span style="color:red">{word}</span>')
             print("time taken to hilight words : ",time.time()-start_time)
             self.setWindowTitle('Kannada Spellchecker - ' + file_name)
-
+            current_font = self.text_edit.currentFont()
+            new_font_size = 12
+            new_font = current_font
+            new_font.setPointSize(new_font_size)
+            new_font.setFamily(self.family)
+            self.text_edit.setFont(new_font)
             self.text_edit.setHtml(content)
 
 
