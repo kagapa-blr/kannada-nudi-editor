@@ -1,4 +1,4 @@
 1) install below library if not installed
     pip install pyinstaller
 2) Execute below command for Building the distribution
-    pyinstaller --onefile kannada-spellchecker.py
+    pyinstaller --onefile app.py
