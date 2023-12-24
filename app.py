@@ -1,8 +1,9 @@
+import re
 import sys
 
 import docx
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFont, QFontDatabase
+from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
     QInputDialog, QLineEdit
 
@@ -24,17 +25,17 @@ class TextEditor(QMainWindow):
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.showContextMenu)
         # Create a QFont with the "Noto Sans Kannada" font family
-        font_url = "static/Nudi_fonts/NudiParijatha_Bold.ttf"
+        font_url = "static/Nudi_fonts/NudiUni01e.ttf"
         self.font_id = QFontDatabase.addApplicationFont(font_url)
         self.family = QFontDatabase.applicationFontFamilies(self.font_id)[0]
-        # Create a QFont object with the loaded font family
-        self.font = QFont(self.family)
-        # Apply the font to the text edit
-        self.text_edit.setFont(self.font)
-        #self.text_edit.setFontPointSize(12)
+        self.text_edit.installEventFilter(self)
 
-
-
+        current_font = self.text_edit.currentFont()
+        new_font_size = 15
+        new_font = current_font
+        new_font.setPointSize(new_font_size)
+        new_font.setFamily(self.family)
+        self.text_edit.setFont(new_font)
         # ----------------------------------------------------------------file Menu Bar start----------------------------------------------------------------
         menubar = self.menuBar()
 
@@ -273,6 +274,27 @@ class TextEditor(QMainWindow):
         new_font.setPointSize(new_font_size)
         new_font.setFamily(self.family)
         self.text_edit.setFont(new_font)
+    def changeFontSize(self, delta):
+        current_font = self.text_edit.currentFont()
+        new_font_size = max(current_font.pointSize() + delta, 2)
+        new_font = current_font
+        new_font.setPointSize(new_font_size)
+        self.text_edit.setFont(new_font)
+    def enlargeText(self):
+        self.changeFontSize(2)
+
+    def shrinkText(self):
+        self.changeFontSize(-2)
+
+    def wheelEvent(self, event):
+        # Check if Ctrl key is pressed
+        if QApplication.keyboardModifiers() == Qt.ControlModifier:
+            # Determine whether the scroll is up or down
+            delta = event.angleDelta().y()
+            if delta > 0:
+                self.enlargeText()
+            elif delta < 0:
+                self.shrinkText()
 
     def refresh_recheck(self):
         reload_bloom_filter()
@@ -290,10 +312,35 @@ class TextEditor(QMainWindow):
         self.text_edit.setHtml(highlighted_content)
         # Restore the cursor position
         self.text_edit.setTextCursor(cursor_position)
+    def eventFilter(self, obj, event):
+        if obj == self.text_edit and event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Space:
+                self.spacebarClicked()
+                return True  # Event handled
+
+        return super().eventFilter(obj, event)
+
+    def spacebarClicked(self):
+        cursor = self.text_edit.textCursor()
+        cursor.insertText(" ")
+        # Move the cursor to the left of the current position
+        cursor.movePosition(QTextCursor.WordLeft)
+        # Retrieve the entire word to the left of the cursor using a regular expression
+        cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
+        word_left_of_cursor = cursor.selectedText()
+
+        if (has_letters_or_digits(word_left_of_cursor)):
+            print("correct word")
+        else:
+            wrong_word = f'<span style="color:red">{word_left_of_cursor}</span>'
+            self.text_edit.setHtml(wrong_word)
 
 
-
-
+def has_letters_or_digits(word):
+    # Define a regular expression pattern
+    pattern = re.compile(r'[a-zA-Z\d]')
+    # Use re.search to check if the pattern is present in the word
+    return bool(re.search(pattern, word))
 def main():
     app = QApplication(sys.argv)
     editor = TextEditor()
