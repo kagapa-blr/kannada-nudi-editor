@@ -317,23 +317,51 @@ class TextEditor(QMainWindow):
             if event.key() == Qt.Key_Space:
                 self.spacebarClicked()
                 return True  # Event handled
-
         return super().eventFilter(obj, event)
 
     def spacebarClicked(self):
         cursor = self.text_edit.textCursor()
+        cursor_position = self.text_edit.textCursor()
+        # Save the current position of the cursor
+        original_position = cursor.position()
+        # Insert a space
         cursor.insertText(" ")
         # Move the cursor to the left of the current position
         cursor.movePosition(QTextCursor.WordLeft)
         # Retrieve the entire word to the left of the cursor using a regular expression
         cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
         word_left_of_cursor = cursor.selectedText()
-
-        if (has_letters_or_digits(word_left_of_cursor)):
+        # Restore the cursor to the original position
+        #cursor.setPosition(original_position)
+        if has_letters_or_digits(word_left_of_cursor):
             print("correct word")
-        else:
-            wrong_word = f'<span style="color:red">{word_left_of_cursor}</span>'
-            self.text_edit.setHtml(wrong_word)
+        elif not bloom_lookup(word_left_of_cursor):
+            wrong_word = f'<span style="color:red">{word_left_of_cursor.strip()}</span> '
+            #self.text_edit.setHtml(self.text_edit.toHtml().replace(word_left_of_cursor, wrong_word))
+           # self.text_edit.setTextCursor(cursor_position)
+           # cursor.setPosition(original_position)
+            #self.text_edit.setHtml(wrong_word)
+            html_content = self.text_edit.toHtml()
+            new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
+            # Set the new HTML content
+            self.text_edit.setHtml(new_html_content)
+            # Move the cursor to the right of the replaced word
+            cursor.movePosition(QTextCursor.Right)
+            self.text_edit.setTextCursor(cursor)
+
+
+    def getWordLeftOfCursor(self):
+        cursor = self.text_edit.textCursor()
+        # Save the current position of the cursor
+        original_position = cursor.position()
+        # Move the cursor to the left of the current position
+        cursor.movePosition(QTextCursor.WordLeft)
+        # Retrieve the entire word to the left of the cursor using a regular expression
+        cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
+        word_left_of_cursor = cursor.selectedText()
+        # Restore the cursor to the original position
+        cursor.setPosition(original_position)
+        return word_left_of_cursor.strip()
 
 
 def has_letters_or_digits(word):
