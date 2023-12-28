@@ -1,7 +1,7 @@
+import os
 import shutil
 import subprocess
-import os
-import tarfile
+import zipfile
 
 
 def remove(path):
@@ -54,14 +54,19 @@ for directory in directories_to_copy:
     except Exception as e:
         print("Error copying directory {}: {}".format(directory, str(e)))
 
+# Create a compressed zip file
+archive_filename = os.path.join(project_dir, output_dir, 'spellcheckApp.zip')
 
-
-# Create a compressed tar (gzipped) file
-archive_filename = os.path.join(project_dir, output_dir, 'spellcheckApp.tar.gz')
-
-with tarfile.open(archive_filename, 'w:gz') as tar:
+with zipfile.ZipFile(archive_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
     for directory in directories_to_copy:
-        tar.add(os.path.join(output_dir, directory), arcname=directory)
-    tar.add(os.path.join(output_dir, os.path.splitext(app_script)[0] + '.exe'), arcname=os.path.splitext(app_script)[0] + '.exe')
+        source_path = os.path.join(project_dir, output_dir, directory)
+        for root, dirs, files in os.walk(source_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, os.path.join(project_dir, output_dir))
+                zipf.write(file_path, arcname=arcname)
+
+    app_executable = os.path.join(output_dir, os.path.splitext(app_script)[0] + '.exe')
+    zipf.write(app_executable, arcname=os.path.basename(app_executable))
 
 print("Compressed archive created: {}".format(archive_filename))
