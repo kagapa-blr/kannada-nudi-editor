@@ -193,8 +193,9 @@ class TextEditor(QMainWindow):
     def showContextMenu(self, pos):
         cursor = self.text_edit.cursorForPosition(pos)
         cursor.select(QTextCursor.WordUnderCursor)
-
         selected_word = cursor.selectedText()
+        if  bloom_lookup(selected_word):
+            return
         suggestions = suggestionReturner(selected_word)
         if selected_word:
             menu = QMenu(self)
@@ -228,6 +229,7 @@ class TextEditor(QMainWindow):
                 dict_file.write(word + '\n')
                 with open(fp.symspell_word_freq_data, 'a', encoding='utf-8') as file:
                         file.write(f"{word} {1}\n")
+                        print(word,"successfully Added to Dictionary")
                 cursor = self.text_edit.textCursor()
                 cursor.beginEditBlock()  # Begin editing block to improve performance
                 format = QTextCharFormat()

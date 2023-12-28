@@ -1,3 +1,9 @@
+git:
+add : git add .
+remove cache: git rm --cached -r .
+
+
+
 1) install below library if not installed
     pip install pyinstaller
 2) Execute below command for Building the distribution
