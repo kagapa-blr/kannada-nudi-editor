@@ -3,13 +3,13 @@ from PyQt5.QtWidgets import QTextEdit
 
 class KannadaTextEdit(QTextEdit):
     def keyPressEvent(self, event):
-        if event.text():
+        if event.key() == Qt.Key_Backspace:
+            self.textCursor().deletePreviousChar()
+        elif event.text():
             english_char = event.text()
             if event.modifiers() & Qt.ShiftModifier:
-                #print(f"Shift + {english_char} detected")
                 kannada_char = self.convert_to_kannada(english_char.upper())
             else:
-                #print(f"{english_char} detected")
                 kannada_char = self.convert_to_kannada(english_char.lower())
             cursor = self.textCursor()
             cursor.insertText(kannada_char)
@@ -32,10 +32,5 @@ class KannadaTextEdit(QTextEdit):
             'O': 'ಓ', 'P': 'ಫ', 'Q': 'ಠ', 'R': 'ಋ', 'S': 'ಶ',
             'T': 'ಥ', 'U': 'ಊ', 'V': 'ವ', 'W': 'ಢ', 'X': 'ಕ್ಷ',
             'Y': 'ಐ', 'Z': 'ಜ್ಞ'
-
-
-
-
         }
         return kannada_letters.get(english_char, english_char)
-

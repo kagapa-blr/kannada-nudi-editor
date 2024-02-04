@@ -20,7 +20,7 @@ def remove(path):
 
 # Define your application script and other parameters
 app_script = "app.py"
-output_dir = "dist/spellcheckApp"
+output_dir = "dist/kannadaNudi"
 
 # Get the path to the project directory
 project_dir = os.path.dirname(os.path.abspath(__file__))
@@ -29,17 +29,11 @@ remove(os.path.join(project_dir, "build"))
 remove(os.path.join(project_dir, "app.spec"))
 
 # Create a list of options for PyInstaller
-options = [
-    "pyinstaller",
-    "--onefile",
-    "--name={}".format(os.path.splitext(app_script)[0]),
-    # "--debug=all",  # Set debug to "all" for detailed information
-]
+options = ["pyinstaller", "--onefile", "--name={}".format(os.path.splitext(app_script)[0]),
+           os.path.join(project_dir, app_script), "--distpath={}".format(os.path.join(project_dir, output_dir))]
 
 # Add the application script
-options.append(os.path.join(project_dir, app_script))
 # Set the output directory
-options.append("--distpath={}".format(os.path.join(project_dir, output_dir)))
 # Run PyInstaller
 subprocess.run(options)
 # Copy additional directories to output_dir
@@ -55,7 +49,7 @@ for directory in directories_to_copy:
         print("Error copying directory {}: {}".format(directory, str(e)))
 
 # Create a compressed zip file
-archive_filename = os.path.join(project_dir, output_dir, 'spellcheckApp.zip')
+archive_filename = os.path.join(project_dir, output_dir, 'kannadaNudi.zip')
 
 with zipfile.ZipFile(archive_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
     for directory in directories_to_copy:

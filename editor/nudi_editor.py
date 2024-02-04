@@ -2,7 +2,7 @@ import docx
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
-    QInputDialog, QLineEdit
+    QInputDialog, QLineEdit, QTextEdit
 
 from config import file_path as fp
 from spellcheck.bloom_filter import bloom_lookup, start_bloom, reload_bloom_filter
@@ -20,6 +20,7 @@ class TextEditor(QMainWindow):
 
     def initUI(self):
         self.text_edit = KannadaTextEdit()
+        #self.text_edit = QTextEdit(self)
         self.setCentralWidget(self.text_edit)
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.showContextMenu)
