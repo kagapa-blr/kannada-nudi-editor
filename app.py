@@ -10,8 +10,30 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit, QAction, QFile
 import file_path as fp
 from bloom_filter import bloom_lookup, start_bloom, reload_bloom_filter
 from corpus_clean import get_clean_words_for_dictionary
+from keyboard.create_kannada_keyboard import KannadaTextEdit
 from symspell_suggestions import suggestionReturner
 
+# class KannadaTextEdit(QTextEdit):
+#     def keyPressEvent(self, event):
+#         if event.text():
+#             english_char = event.text()
+#             kannada_char = self.convert_to_kannada(english_char.lower())
+#             cursor = self.textCursor()
+#             cursor.insertText(kannada_char)
+#         else:
+#             super().keyPressEvent(event)
+#
+#     def convert_to_kannada(self, english_char):
+#         # Mapping of English letters to Kannada letters
+#         kannada_letters = {
+#             'a': 'ಅ', 'b': 'ಬ', 'c': 'ಚ', 'd': 'ದ', 'e': 'ಎ',
+#             'f': 'ಫ', 'g': 'ಗ', 'h': 'ಹ', 'i': 'ಇ', 'j': 'ಜ',
+#             'k': 'ಕ', 'l': 'ಳ', 'm': 'ಮ', 'n': 'ನ', 'o': 'ಒ',
+#             'p': 'ಪ', 'q': 'ಸ', 'r': 'ರ', 's': 'ಸ', 't': 'ಟ',
+#             'u': 'ಉ', 'v': 'ವ', 'w': 'ವ', 'x': 'ಕ್ಷ', 'y': 'ಯ',
+#             'z': 'ಜ್ಞ'
+#         }
+#         return kannada_letters.get(english_char, english_char)
 
 class TextEditor(QMainWindow):
     def __init__(self):
@@ -20,7 +42,7 @@ class TextEditor(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.text_edit = QTextEdit(self)
+        self.text_edit = KannadaTextEdit()
         self.setCentralWidget(self.text_edit)
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.showContextMenu)
@@ -339,6 +361,7 @@ class TextEditor(QMainWindow):
             print("correct word")
         elif not bloom_lookup(word_left_of_cursor):
             wrong_word = f'<span style="color:red">{word_left_of_cursor.strip()}</span> '
+
             #self.text_edit.setHtml(self.text_edit.toHtml().replace(word_left_of_cursor, wrong_word))
            # self.text_edit.setTextCursor(cursor_position)
            # cursor.setPosition(original_position)
