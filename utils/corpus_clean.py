@@ -2,7 +2,6 @@ import os
 from collections import Counter
 
 import docx
-import file_path as fp
 
 
 def cleanWords(word_):

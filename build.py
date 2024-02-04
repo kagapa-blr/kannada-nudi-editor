@@ -43,7 +43,7 @@ options.append("--distpath={}".format(os.path.join(project_dir, output_dir)))
 # Run PyInstaller
 subprocess.run(options)
 # Copy additional directories to output_dir
-directories_to_copy = ['datasets', 'images', 'static']
+directories_to_copy = ['datasets', 'resources']
 for directory in directories_to_copy:
     source_path = os.path.join(project_dir, directory)
     destination_path = os.path.join(project_dir, output_dir, directory)

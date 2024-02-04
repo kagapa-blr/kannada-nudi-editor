@@ -1,6 +1,6 @@
 from pybloom_live import ScalableBloomFilter
-import file_path as fp
-from corpus_clean import get_clean_dictionary
+from config import file_path as fp
+from utils.corpus_clean import get_clean_dictionary
 
 word_list_file = fp.bloomfilter_data
 

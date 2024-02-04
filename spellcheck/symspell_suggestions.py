@@ -1,7 +1,7 @@
-import file_path as fp
+from config import file_path as fp
 from symspellpy import SymSpell, Verbosity
 
-from corpus_clean import get_clean_words_for_dictionary
+from utils.corpus_clean import get_clean_words_for_dictionary
 
 symspell_model = SymSpell(max_dictionary_edit_distance=2)
 symspell_model.load_dictionary(fp.symspell_word_freq_data, encoding='utf-8', term_index=0, count_index=1)
