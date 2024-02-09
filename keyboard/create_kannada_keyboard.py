@@ -17,20 +17,32 @@ class KannadaTextEdit(QTextEdit):
             super().keyPressEvent(event)
 
     def convert_to_kannada(self, english_char):
-        # Mapping of English letters to Kannada letters
+        # Mapping of English letters to Kannada letters and combinations
         kannada_letters = {
             'a': 'ಅ', 'b': 'ಬ', 'c': 'ಚ', 'd': 'ದ', 'e': 'ಎ',
             'f': 'ಫ', 'g': 'ಗ', 'h': 'ಹ', 'i': 'ಇ', 'j': 'ಜ',
             'k': 'ಕ', 'l': 'ಲ', 'm': 'ಮ', 'n': 'ನ', 'o': 'ಒ',
-            'p': 'ಪ', 'q': 'ಟ', 'r': 'ರ', 's': 'ಸ', 't': 'ಟ',
+            'p': 'ಪ', 'q': 'ಟ', 'r': 'ರ', 's': 'ಸ', 't': 'ತ',
             'u': 'ಉ', 'v': 'ವ', 'w': 'ಡ', 'x': 'ಷ', 'y': 'ಯ',
             'z': 'ಞ',
 
-            'A': 'ಆ', 'B': 'ಭ', 'C': 'ಛ', 'D': 'ಢ',
-            'E': 'ಏ', 'F': '್', 'G': 'ಘ', 'H': 'ಃ', 'I': 'ಇ',
+            'A': 'ಆ', 'B': 'ಭ', 'C': 'ಛ', 'D': 'ಡ',
+            'E': 'ೇ', 'F': '್', 'G': 'ಘ', 'H': 'ಃ', 'I': 'ಈ',
             'J': 'ಝ', 'K': 'ಖ', 'L': 'ಳ', 'M': 'ಂ', 'N': 'ಣ',
             'O': 'ಓ', 'P': 'ಫ', 'Q': 'ಠ', 'R': 'ಋ', 'S': 'ಶ',
             'T': 'ಥ', 'U': 'ಊ', 'V': 'ವ', 'W': 'ಢ', 'X': 'ಕ್ಷ',
             'Y': 'ಐ', 'Z': 'ಜ್ಞ'
         }
-        return kannada_letters.get(english_char, english_char)
+
+        # Convert English character to Kannada
+        kannada_char = kannada_letters.get(english_char.lower(), english_char)
+
+
+        if english_char.lower() == 'i' and self.previous_char.lower() in kannada_letters:
+            kannada_char = 'ಿ'  # Add diacritic for 'ಿ' when combined with Kannada consonants
+
+        # Update previous character
+        if english_char.isalpha():
+            self.previous_char = english_char
+
+        return kannada_char

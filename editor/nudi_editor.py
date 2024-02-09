@@ -1,14 +1,14 @@
 import docx
-from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtCore import Qt, QEvent, QFile, QTextStream
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
-    QInputDialog, QLineEdit, QTextEdit
+    QInputDialog, QLineEdit
 
 from config import file_path as fp
-from spellcheck.bloom_filter import bloom_lookup, start_bloom, reload_bloom_filter
-from utils.corpus_clean import get_clean_words_for_dictionary
 from keyboard.create_kannada_keyboard import KannadaTextEdit
+from spellcheck.bloom_filter import bloom_lookup, start_bloom, reload_bloom_filter
 from spellcheck.symspell_suggestions import suggestionReturner
+from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.util import has_letters_or_digits
 
 
@@ -29,6 +29,10 @@ class TextEditor(QMainWindow):
         self.font_id = QFontDatabase.addApplicationFont(font_url)
         self.family = QFontDatabase.applicationFontFamilies(self.font_id)[0]
         self.text_edit.installEventFilter(self)
+        self.loadStyleSheet('resources/static/css/styles.css')
+
+        self.css_style = 'color: black; text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 2px;'
+
 
         current_font = self.text_edit.currentFont()
         new_font_size = 15
@@ -126,7 +130,12 @@ class TextEditor(QMainWindow):
 
 
 
-
+    def loadStyleSheet(self, file_path):
+        style_sheet = QFile(file_path)
+        if not style_sheet.open(QFile.ReadOnly | QFile.Text):
+            return
+        style_stream = QTextStream(style_sheet)
+        self.setStyleSheet(style_stream.readAll())
     def openFile(self):
         format = QTextCharFormat()
         format.setForeground(Qt.red)  # You can set the color to any color you want
@@ -149,7 +158,8 @@ class TextEditor(QMainWindow):
             print("time taken to find wrong words: ", time.time() - start_time)
             start_time = time.time()
             for word in wrong_words:
-                content = content.replace(word, f'<span style="color:red">{word}</span>')
+                content = content.replace(word, f'<span style="{self.css_style}">{word}</span>')
+
             print("time taken to hilight words : ",time.time()-start_time)
             self.setWindowTitle('Kannada Spellchecker - ' + file_name)
             current_font = self.text_edit.currentFont()
@@ -221,33 +231,40 @@ class TextEditor(QMainWindow):
 
             menu.exec_(self.text_edit.mapToGlobal(pos))
 
+    from PyQt5.QtGui import QTextCharFormat
+
     def addToDictionary(self, word):
         with open(fp.bloomfilter_data, 'a', encoding='utf-8') as dict_file:
-
             word = get_clean_words_for_dictionary(word)
             if not bloom_lookup(word):
                 dict_file.write(word + '\n')
                 with open(fp.symspell_word_freq_data, 'a', encoding='utf-8') as file:
-                        file.write(f"{word} {1}\n")
-                        print(word,"successfully Added to Dictionary")
+                    file.write(f"{word} {1}\n")
+                    print(word, "successfully Added to Dictionary")
+
+                # Remove underline from the word
                 cursor = self.text_edit.textCursor()
                 cursor.beginEditBlock()  # Begin editing block to improve performance
                 format = QTextCharFormat()
                 format.setForeground(self.text_edit.palette().color(self.text_edit.foregroundRole()))
+                format.setUnderlineStyle(QTextCharFormat.NoUnderline)  # Clear underline
                 cursor.mergeCharFormat(format)
                 cursor.endEditBlock()
             else:
                 print("word already present in Dictionary file")
 
-
-    def ignore_word(self,word):
+    def ignore_word(self, word):
         cursor = self.text_edit.textCursor()
         cursor.beginEditBlock()  # Begin editing block to improve performance
+
         format = QTextCharFormat()
         format.setForeground(self.text_edit.palette().color(self.text_edit.foregroundRole()))
+
+        # Clear underline
+        format.setUnderlineStyle(QTextCharFormat.NoUnderline)
+
         cursor.mergeCharFormat(format)
         cursor.endEditBlock()
-
 
     def replace_word(self, word_to_replace):
         new_word, ok = QInputDialog.getText(self, 'Replace Word', f'Enter new word to replace {word_to_replace}',
@@ -309,7 +326,7 @@ class TextEditor(QMainWindow):
         # Highlight incorrect words in the editor
         highlighted_content = text_content
         for word in wrong_words:
-            highlighted_content = highlighted_content.replace(word, f'<span style="color:red">{word}</span>')
+            highlighted_content = highlighted_content.replace(word, f'<span style="{self.css_style}">{word}</span>')
         # Update the editor with the highlighted content
         self.text_edit.setHtml(highlighted_content)
         # Restore the cursor position
@@ -338,12 +355,8 @@ class TextEditor(QMainWindow):
         if has_letters_or_digits(word_left_of_cursor):
             print("correct word")
         elif not bloom_lookup(word_left_of_cursor):
-            wrong_word = f'<span style="color:red">{word_left_of_cursor.strip()}</span> '
+            wrong_word = f'<span style="{self.css_style}">{word_left_of_cursor.strip()}</span> '
 
-            #self.text_edit.setHtml(self.text_edit.toHtml().replace(word_left_of_cursor, wrong_word))
-           # self.text_edit.setTextCursor(cursor_position)
-           # cursor.setPosition(original_position)
-            #self.text_edit.setHtml(wrong_word)
             html_content = self.text_edit.toHtml()
             new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
             # Set the new HTML content
