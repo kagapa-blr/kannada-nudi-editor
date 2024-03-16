@@ -1,6 +1,6 @@
 import docx
 from PyQt5.QtCore import Qt, QEvent, QFile, QTextStream
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase, QTextListFormat
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
     QInputDialog, QLineEdit
 
@@ -25,7 +25,7 @@ class TextEditor(QMainWindow):
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.showContextMenu)
         # Create a QFont with the "Noto Sans Kannada" font family
-        font_url = "resources/static/Nudi_fonts/NudiUni01e.ttf"
+        font_url = "resources/static/Nudi_fonts/NudiParijatha.ttf"
         self.font_id = QFontDatabase.addApplicationFont(font_url)
         self.family = QFontDatabase.applicationFontFamilies(self.font_id)[0]
         self.text_edit.installEventFilter(self)
@@ -45,7 +45,6 @@ class TextEditor(QMainWindow):
 
         # File menu
         file_menu = menubar.addMenu('File')
-
         open_action = QAction(QIcon('resources/images/stock_open-16.png'), 'Open', self)
         open_action.triggered.connect(self.openFile)
         file_menu.addAction(open_action)
@@ -65,25 +64,32 @@ class TextEditor(QMainWindow):
         # Edit menu
         edit_menu = menubar.addMenu('Edit')
         cut_action = QAction(QIcon('resources/images/stock_cut.png'), 'Cut', self)
+        cut_action.setShortcut('Ctrl+x')
         cut_action.triggered.connect(self.text_edit.cut)
         edit_menu.addAction(cut_action)
 
         copy_action = QAction(QIcon('resources/images/stock_copy.png'), 'Copy', self)
+        copy_action.setShortcut('Ctrl+C')
         copy_action.triggered.connect(self.text_edit.copy)
         edit_menu.addAction(copy_action)
 
         paste_action = QAction(QIcon('resources/images/stock_paste.png'), 'Paste', self)
+        paste_action.setShortcut('Ctrl+V')
         paste_action.triggered.connect(self.text_edit.paste)
         edit_menu.addAction(paste_action)
 
         edit_undo_action =QAction(QIcon('resources/images/undo.png'), 'Undo', self)
+        edit_undo_action.setShortcut('Ctrl+Z')
         edit_undo_action.triggered.connect(self.text_edit.undo)
         edit_menu.addAction(edit_undo_action)
 
         edit_redo_action =QAction(QIcon('resources/images/redo.png'), 'Redo', self)
+        edit_redo_action.setShortcut('Ctrl+Y')
         edit_redo_action.triggered.connect(self.text_edit.redo)
         edit_menu.addAction(edit_redo_action)
 
+
+##----------------------------------------------------------------Menu--------------------------------------------------------
         # Font size menu
         font_size_menu = menubar.addMenu('Font')
 
@@ -122,7 +128,66 @@ class TextEditor(QMainWindow):
         redo_action.triggered.connect(self.text_edit.redo)
         toolbar.addAction(redo_action)
 
-#----------------------------------------------------------------Editor Size Settings----------------------------------------------------------------
+
+
+
+        bold_action = QAction(QIcon('resources/images/bold.png'), 'Bold', self)
+        bold_action.setShortcut('Ctrl+B')
+        bold_action.triggered.connect(self.toggleBold)
+        toolbar.addAction(bold_action)
+
+
+        italic_action = QAction(QIcon('resources/images/italic.png'), 'Italic', self)
+        italic_action.setShortcut('Ctrl+I')
+        italic_action.triggered.connect(self.toggleItalic)
+        toolbar.addAction(italic_action)
+
+        underline_action = QAction(QIcon('resources/images/underline.png'), 'Underline', self)
+        underline_action.setShortcut('Ctrl+U')
+        underline_action.triggered.connect(self.toggleUnderline)
+        toolbar.addAction(underline_action)
+
+
+
+#-alinment
+        align_left_action = QAction(QIcon("resources/images/align-left.png"), "Align Left", self)
+        align_left_action.triggered.connect(lambda: self.alignText("left"))
+        toolbar.addAction(align_left_action)
+
+        align_center_action = QAction(QIcon("resources/images/align-center.png"), "Align Center", self)
+        align_center_action.triggered.connect(lambda: self.alignText("center"))
+        toolbar.addAction(align_center_action)
+
+        align_right_action = QAction(QIcon("resources/images/align-right.png"), "Align Right", self)
+        align_right_action.triggered.connect(lambda: self.alignText("right"))
+        toolbar.addAction(align_right_action)
+
+        align_justify_action = QAction(QIcon("resources/images/align-justify.png"), "Align justify", self)
+        align_justify_action.triggered.connect(lambda: self.alignText("justify"))
+        toolbar.addAction(align_justify_action)
+#list
+
+        bullet_list_action = QAction(QIcon("resources/images/bullet-list.png"), "Bullet List", self)
+        bullet_list_action.triggered.connect(self.insertBulletList)
+        toolbar.addAction(bullet_list_action)
+
+        number_list_action = QAction(QIcon("resources/images/number-list.png"), "Number List", self)
+        number_list_action.triggered.connect(self.insertNumberList)
+        toolbar.addAction(number_list_action)
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #----------------------------------------------------------------Editor Size Settings----------------------------------------------------------------
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle('Kannada Spellchecker')
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
@@ -293,6 +358,8 @@ class TextEditor(QMainWindow):
         new_font.setPointSize(new_font_size)
         new_font.setFamily(self.family)
         self.text_edit.setFont(new_font)
+
+
     def changeFontSize(self, delta):
         current_font = self.text_edit.currentFont()
         new_font_size = max(current_font.pointSize() + delta, 2)
@@ -379,4 +446,48 @@ class TextEditor(QMainWindow):
         cursor.setPosition(original_position)
         return word_left_of_cursor.strip()
 
+
+    def toggleBold(self):
+        font = self.text_edit.currentFont()
+        font.setBold(not font.bold())
+        self.text_edit.setCurrentFont(font)
+    def toggleItalic(self):
+        font = self.text_edit.currentFont()
+        font.setItalic(not font.italic())
+        self.text_edit.setCurrentFont(font)
+
+    def toggleUnderline(self):
+        font = self.text_edit.currentFont()
+        font.setUnderline(not font.underline())
+        self.text_edit.setCurrentFont(font)
+
+    def alignText(self, alignment):
+        cursor = self.text_edit.textCursor()
+        cursor.setPosition(0)
+        cursor.movePosition(cursor.End, cursor.KeepAnchor)
+
+        # Retrieve the current QTextBlockFormat
+        block_format = cursor.blockFormat()
+
+        # Set alignment on the block format
+        if alignment == "left":
+            block_format.setAlignment(Qt.AlignLeft)
+        elif alignment == "center":
+            block_format.setAlignment(Qt.AlignCenter)
+        elif alignment == "right":
+            block_format.setAlignment(Qt.AlignRight)
+        elif alignment == "justify":
+            block_format.setAlignment(Qt.AlignJustify)
+
+        # Apply the modified format back to the text block
+        cursor.mergeBlockFormat(block_format)
+        self.text_edit.setTextCursor(cursor)
+
+    def insertBulletList(self):
+        cursor = self.text_edit.textCursor()
+        cursor.insertList(QTextListFormat.ListDisc)
+
+    def insertNumberList(self):
+        cursor = self.text_edit.textCursor()
+        cursor.insertList(QTextListFormat.ListDecimal)
 

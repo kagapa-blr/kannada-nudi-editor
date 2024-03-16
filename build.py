@@ -29,8 +29,14 @@ remove(os.path.join(project_dir, "build"))
 remove(os.path.join(project_dir, "app.spec"))
 
 # Create a list of options for PyInstaller
+# options = ["pyinstaller", "--onefile", "--name={}".format(os.path.splitext(app_script)[0]),
+#            os.path.join(project_dir, app_script), "--distpath={}".format(os.path.join(project_dir, output_dir))]
+
 options = ["pyinstaller", "--onefile", "--name={}".format(os.path.splitext(app_script)[0]),
+           "--noconsole",  # Add this line
            os.path.join(project_dir, app_script), "--distpath={}".format(os.path.join(project_dir, output_dir))]
+
+
 
 # Add the application script
 # Set the output directory
