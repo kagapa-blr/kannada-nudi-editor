@@ -41,7 +41,7 @@ class KannadaTextEdit(QTextEdit):
             't': 'ತ', 'T': 'ಥ', 'd': 'ದ', 'D': 'ಧ', 'n': 'ನ',
             'p': 'ಪ', 'P': 'ಫ', 'b': 'ಬ', 'B': 'ಭ', 'm': 'ಮ',
             'y': 'ಯ', 'r': 'ರ', 'l': 'ಲ', 'v': 'ವ',
-            'S': 'ಶ', 'X': 'ಷ', 's': 'ಸ', 'h': 'ಹ', 'L': 'ಳ',
+            'S': 'ಶ', 'x': 'ಷ', 's': 'ಸ', 'h': 'ಹ', 'L': 'ಳ',
             'f': '್'
         }
 
@@ -61,7 +61,10 @@ class KannadaTextEdit(QTextEdit):
             'V': 'ೌ',
             'M': 'ಂ',
             'H': 'ಃ',
-            'f': '್'
+            'f': '್',
+            'X':'಼'
+
+
         }
         numbers = {
             '0': '೦',
@@ -82,11 +85,14 @@ class KannadaTextEdit(QTextEdit):
         all_letters.update(vowels)
         all_letters.update(consonants)
 
-        if english_char == ' ':
-            # If the character is a space, return it without any conversion
-            return ' '
 
         kannada_char = all_letters.get(english_char, english_char)
+
+
+        if self.previous_char in vowels and english_char =='f':
+            return None
+        if self.previous_char ==" "  and english_char =='f':
+            return None
 
         if self.previous_char == ' ' and english_char in diacritics_dict and english_char in vowels:
             # If the previous character is a space and the current character is a diacritic, do nothing
