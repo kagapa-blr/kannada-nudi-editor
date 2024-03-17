@@ -425,6 +425,7 @@ class TextEditor(QMainWindow):
     def eventFilter(self, obj, event):
         if obj == self.text_edit and event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Space:
+                self.text_edit.is_space(True)
                 self.spacebarClicked()
                 return True  # Event handled
         return super().eventFilter(obj, event)
