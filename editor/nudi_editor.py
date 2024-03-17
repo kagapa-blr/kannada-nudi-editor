@@ -1,8 +1,9 @@
 import docx
 from PyQt5.QtCore import Qt, QEvent, QFile, QTextStream
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase, QTextListFormat
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase, QTextListFormat, QTextBlockFormat, \
+    QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
-    QInputDialog, QLineEdit
+    QInputDialog, QLineEdit, QColorDialog
 
 from config import file_path as fp
 from keyboard.create_kannada_keyboard import KannadaTextEdit
@@ -130,7 +131,6 @@ class TextEditor(QMainWindow):
 
 
 
-
         bold_action = QAction(QIcon('resources/images/bold.png'), 'Bold', self)
         bold_action.setShortcut('Ctrl+B')
         bold_action.triggered.connect(self.toggleBold)
@@ -168,16 +168,40 @@ class TextEditor(QMainWindow):
 #list
 
         bullet_list_action = QAction(QIcon("resources/images/bullet-list.png"), "Bullet List", self)
-        bullet_list_action.triggered.connect(self.insertBulletList)
+        bullet_list_action.setCheckable(True)  # Make the action checkable
+        bullet_list_action.triggered.connect(self.toggleBulletList)  # Connect to toggle method
         toolbar.addAction(bullet_list_action)
+        self.bullet_list_active = False  # Keep track of bullet list status
+
 
         number_list_action = QAction(QIcon("resources/images/number-list.png"), "Number List", self)
-        number_list_action.triggered.connect(self.insertNumberList)
+        number_list_action.setCheckable(True)  # Make the action checkable
+        number_list_action.triggered.connect(self.toggleNumberList)  # Connect to toggle method
         toolbar.addAction(number_list_action)
+        self.number_list_active = False  # Keep track of number list status
+
+        font_color_action = QAction(QIcon("resources/images/font-color.png"), "Choose Font Color", self)
+        font_color_action.triggered.connect(self.chooseFontColor)
+        toolbar.addAction(font_color_action)
 
 
 
 
+
+        copy_action = QAction(QIcon("resources/images/stock_copy.png"), "Copy", self)
+        copy_action.setShortcut(QKeySequence.Copy)  # Set shortcut (Ctrl+C) for copy action
+        copy_action.triggered.connect(self.text_edit.copy)  # Connect to QTextEdit's copy method
+        toolbar.addAction(copy_action)
+
+        cut_action = QAction(QIcon("resources/images/stock_cut.png"), "Cut", self)
+        cut_action.setShortcut(QKeySequence.Cut)  # Set shortcut (Ctrl+X) for cut action
+        cut_action.triggered.connect(self.text_edit.cut)  # Connect to QTextEdit's cut method
+        toolbar.addAction(cut_action)
+
+        paste_action = QAction(QIcon("resources/images/stock_paste.png"), "Paste", self)
+        paste_action.setShortcut(QKeySequence.Paste)  # Set shortcut (Ctrl+V) for paste action
+        paste_action.triggered.connect(self.text_edit.paste)  # Connect to QTextEdit's paste method
+        toolbar.addAction(paste_action)
 
 
 
@@ -483,11 +507,42 @@ class TextEditor(QMainWindow):
         cursor.mergeBlockFormat(block_format)
         self.text_edit.setTextCursor(cursor)
 
+    def toggleBulletList(self, checked):
+        if checked:  # If the action is checked
+            self.insertBulletList()  # Insert bullet list
+        else:
+            self.clearBulletList()  # Clear bullet list
+
     def insertBulletList(self):
         cursor = self.text_edit.textCursor()
         cursor.insertList(QTextListFormat.ListDisc)
+        self.bullet_list_active = True  # Update status
+
+    def clearBulletList(self):
+        cursor = self.text_edit.textCursor()
+        cursor.clearSelection()
+        cursor.select(QTextCursor.BlockUnderCursor)
+        cursor.setBlockFormat(QTextBlockFormat())
+        self.bullet_list_active = False  # Update status
+
+    def toggleNumberList(self, checked):
+        if checked:  # If the action is checked
+            self.insertNumberList()  # Insert number list
+        else:
+            self.clearNumberList()  # Clear number list
 
     def insertNumberList(self):
         cursor = self.text_edit.textCursor()
         cursor.insertList(QTextListFormat.ListDecimal)
+        self.number_list_active = True  # Update status
 
+    def clearNumberList(self):
+        cursor = self.text_edit.textCursor()
+        cursor.clearSelection()
+        cursor.select(QTextCursor.BlockUnderCursor)
+        cursor.setBlockFormat(QTextBlockFormat())
+        self.number_list_active = False  # Update status
+    def chooseFontColor(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.text_edit.setTextColor(color)
