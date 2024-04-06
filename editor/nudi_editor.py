@@ -20,12 +20,14 @@ logger = setup_logger(filename)
 
 
 def start_background_exe():
-    exe_path = r"keyboard\testing.exe"  # Path to your executable relative to the current directory
-
+    exe_path = r"resources\keyboardDriver\kannadaKeyboard.exe"  # Path to your executable relative to the current directory
+    #exe_path = r"resources\keyboardDriver\testing.exe"
     try:
         # Use subprocess.Popen to start the executable in the background
         subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          start_new_session=True)
+
+
     except Exception as e:
         print(f"Error starting background exe: {e}")
 
@@ -427,7 +429,7 @@ class TextEditor(QMainWindow):
     def eventFilter(self, obj, event):
         if obj == self.text_edit and event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Space:
-                self.text_edit.is_space(True)
+                #self.text_edit.is_space(True)
                 self.spacebarClicked()
                 return True  # Event handled
         return super().eventFilter(obj, event)
