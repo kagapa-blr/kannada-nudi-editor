@@ -6,7 +6,8 @@ from editor.nudi_editor import TextEditor
 
 def editor():
     app = QApplication(sys.argv)
-    TextEditor()
+    editor = TextEditor()
+    editor.show()
     sys.exit(app.exec_())
 
 

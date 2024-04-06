@@ -3,14 +3,31 @@ from PyQt5.QtCore import Qt, QEvent, QFile, QTextStream
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase, QTextListFormat, QTextBlockFormat, \
     QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
-    QInputDialog, QLineEdit, QColorDialog
-
+    QInputDialog, QLineEdit, QColorDialog, QTextEdit
+from logger import setup_logger
+import subprocess
+import os
 from config import file_path as fp
-from keyboard.create_kannada_keyboard import KannadaTextEdit
 from spellcheck.bloom_filter import bloom_lookup, start_bloom, reload_bloom_filter
 from spellcheck.symspell_suggestions import suggestionReturner
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.util import has_letters_or_digits
+
+filename = os.path.splitext(os.path.basename(__file__))[0]
+
+# Set up logger
+logger = setup_logger(filename)
+
+
+def start_background_exe():
+    exe_path = r"keyboard\testing.exe"  # Path to your executable relative to the current directory
+
+    try:
+        # Use subprocess.Popen to start the executable in the background
+        subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         start_new_session=True)
+    except Exception as e:
+        print(f"Error starting background exe: {e}")
 
 
 class TextEditor(QMainWindow):
@@ -18,10 +35,13 @@ class TextEditor(QMainWindow):
         super().__init__()
 
         self.initUI()
+        start_background_exe()
 
     def initUI(self):
-        self.text_edit = KannadaTextEdit()
-        #self.text_edit = QTextEdit(self)
+
+        #self.text_edit = KannadaTextEdit()
+        self.text_edit = QTextEdit(self)
+
         self.setCentralWidget(self.text_edit)
         self.text_edit.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_edit.customContextMenuRequested.connect(self.showContextMenu)
@@ -33,7 +53,6 @@ class TextEditor(QMainWindow):
         self.loadStyleSheet('resources/static/css/styles.css')
 
         self.css_style = 'color: black; text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 2px;'
-
 
         current_font = self.text_edit.currentFont()
         new_font_size = 15
@@ -79,18 +98,17 @@ class TextEditor(QMainWindow):
         paste_action.triggered.connect(self.text_edit.paste)
         edit_menu.addAction(paste_action)
 
-        edit_undo_action =QAction(QIcon('resources/images/undo.png'), 'Undo', self)
+        edit_undo_action = QAction(QIcon('resources/images/undo.png'), 'Undo', self)
         edit_undo_action.setShortcut('Ctrl+Z')
         edit_undo_action.triggered.connect(self.text_edit.undo)
         edit_menu.addAction(edit_undo_action)
 
-        edit_redo_action =QAction(QIcon('resources/images/redo.png'), 'Redo', self)
+        edit_redo_action = QAction(QIcon('resources/images/redo.png'), 'Redo', self)
         edit_redo_action.setShortcut('Ctrl+Y')
         edit_redo_action.triggered.connect(self.text_edit.redo)
         edit_menu.addAction(edit_redo_action)
 
-
-##----------------------------------------------------------------Menu--------------------------------------------------------
+        ##----------------------------------------------------------------Menu--------------------------------------------------------
         # Font size menu
         font_size_menu = menubar.addMenu('Font')
 
@@ -105,7 +123,7 @@ class TextEditor(QMainWindow):
         font_size_menu.addAction(decrease_font_size_action)
         # Add more font actions as needed
 
-#----------------------------------------------------------------tool bar----------------------------------------------------------------
+        #----------------------------------------------------------------tool bar----------------------------------------------------------------
         toolbar = QToolBar()
         self.addToolBar(toolbar)
         # Add actions with icons to the toolbar
@@ -121,21 +139,18 @@ class TextEditor(QMainWindow):
         refresh_action.triggered.connect(self.refresh_recheck)
         toolbar.addAction(refresh_action)
 
-        undo_action =QAction(QIcon('resources/images/undo.png'), 'Undo', self)
+        undo_action = QAction(QIcon('resources/images/undo.png'), 'Undo', self)
         undo_action.triggered.connect(self.text_edit.undo)
         toolbar.addAction(undo_action)
 
-        redo_action =QAction(QIcon('resources/images/redo.png'), 'Redo', self)
+        redo_action = QAction(QIcon('resources/images/redo.png'), 'Redo', self)
         redo_action.triggered.connect(self.text_edit.redo)
         toolbar.addAction(redo_action)
-
-
 
         bold_action = QAction(QIcon('resources/images/bold.png'), 'Bold', self)
         bold_action.setShortcut('Ctrl+B')
         bold_action.triggered.connect(self.toggleBold)
         toolbar.addAction(bold_action)
-
 
         italic_action = QAction(QIcon('resources/images/italic.png'), 'Italic', self)
         italic_action.setShortcut('Ctrl+I')
@@ -147,9 +162,7 @@ class TextEditor(QMainWindow):
         underline_action.triggered.connect(self.toggleUnderline)
         toolbar.addAction(underline_action)
 
-
-
-#-alinment
+        #-alinment
         align_left_action = QAction(QIcon("resources/images/align-left.png"), "Align Left", self)
         align_left_action.triggered.connect(lambda: self.alignText("left"))
         toolbar.addAction(align_left_action)
@@ -165,14 +178,13 @@ class TextEditor(QMainWindow):
         align_justify_action = QAction(QIcon("resources/images/align-justify.png"), "Align justify", self)
         align_justify_action.triggered.connect(lambda: self.alignText("justify"))
         toolbar.addAction(align_justify_action)
-#list
+        #list
 
         bullet_list_action = QAction(QIcon("resources/images/bullet-list.png"), "Bullet List", self)
         bullet_list_action.setCheckable(True)  # Make the action checkable
         bullet_list_action.triggered.connect(self.toggleBulletList)  # Connect to toggle method
         toolbar.addAction(bullet_list_action)
         self.bullet_list_active = False  # Keep track of bullet list status
-
 
         number_list_action = QAction(QIcon("resources/images/number-list.png"), "Number List", self)
         number_list_action.setCheckable(True)  # Make the action checkable
@@ -183,10 +195,6 @@ class TextEditor(QMainWindow):
         font_color_action = QAction(QIcon("resources/images/font-color.png"), "Choose Font Color", self)
         font_color_action.triggered.connect(self.chooseFontColor)
         toolbar.addAction(font_color_action)
-
-
-
-
 
         copy_action = QAction(QIcon("resources/images/stock_copy.png"), "Copy", self)
         copy_action.setShortcut(QKeySequence.Copy)  # Set shortcut (Ctrl+C) for copy action
@@ -203,21 +211,11 @@ class TextEditor(QMainWindow):
         paste_action.triggered.connect(self.text_edit.paste)  # Connect to QTextEdit's paste method
         toolbar.addAction(paste_action)
 
-
-
-
-
-
-
-
-
         #----------------------------------------------------------------Editor Size Settings----------------------------------------------------------------
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle('Kannada Spellchecker')
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
         self.show()
-
-
 
     def loadStyleSheet(self, file_path):
         style_sheet = QFile(file_path)
@@ -225,11 +223,14 @@ class TextEditor(QMainWindow):
             return
         style_stream = QTextStream(style_sheet)
         self.setStyleSheet(style_stream.readAll())
+
     def openFile(self):
         format = QTextCharFormat()
         format.setForeground(Qt.red)  # You can set the color to any color you want
         options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '','All Files (*);;Word Documents (*.docx);Text Files (*.txt);', options=options)
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Open File', '',
+                                                   'All Files (*);;Word Documents (*.docx);Text Files (*.txt);',
+                                                   options=options)
         if file_name:
             if file_name.endswith('.docx'):
                 doc = docx.Document(file_name)
@@ -240,7 +241,8 @@ class TextEditor(QMainWindow):
                     content = file.read()
             import time
             start_time = time.time()
-            content_for_bloom = [get_clean_words_for_dictionary(word) for word in content.split() if word if len(word) > 1]
+            content_for_bloom = [get_clean_words_for_dictionary(word) for word in content.split() if word if
+                                 len(word) > 1]
             print("clean_up time: ", time.time() - start_time)
             start_time = time.time()
             wrong_words = start_bloom(content_for_bloom)
@@ -249,7 +251,7 @@ class TextEditor(QMainWindow):
             for word in wrong_words:
                 content = content.replace(word, f'<span style="{self.css_style}">{word}</span>')
 
-            print("time taken to hilight words : ",time.time()-start_time)
+            print("time taken to hilight words : ", time.time() - start_time)
             self.setWindowTitle('Kannada Spellchecker - ' + file_name)
             current_font = self.text_edit.currentFont()
             new_font_size = 12
@@ -259,11 +261,10 @@ class TextEditor(QMainWindow):
             self.text_edit.setFont(new_font)
             self.text_edit.setHtml(content)
 
-
     def saveFile(self):
         if hasattr(self, 'current_file'):
             with open(self.current_file, 'w', encoding='utf-8') as file:
-                if(len(self.text_edit.toPlainText())==0):
+                if (len(self.text_edit.toPlainText()) == 0):
                     print("No content")
                 file.write(self.text_edit.toPlainText())
         else:
@@ -275,7 +276,8 @@ class TextEditor(QMainWindow):
             QMessageBox.warning(self, 'Warning', 'No content to save.')
             return
         options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'Text Files (*.txt);;All Files (*)', options=options)
+        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'Text Files (*.txt);;All Files (*)',
+                                                   options=options)
         if file_name:
             with open(file_name, 'w', encoding='utf-8') as file:
                 file.write(self.text_edit.toPlainText())
@@ -283,7 +285,8 @@ class TextEditor(QMainWindow):
 
     def saveFileAsDocx(self):
         options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getSaveFileName(self, 'Save As .docx', '', 'Word Documents (*.docx);;All Files (*)', options=options)
+        file_name, _ = QFileDialog.getSaveFileName(self, 'Save As .docx', '', 'Word Documents (*.docx);;All Files (*)',
+                                                   options=options)
         if file_name:
             doc = docx.Document()
             doc.add_paragraph(self.text_edit.toPlainText())
@@ -293,7 +296,7 @@ class TextEditor(QMainWindow):
         cursor = self.text_edit.cursorForPosition(pos)
         cursor.select(QTextCursor.WordUnderCursor)
         selected_word = cursor.selectedText()
-        if  bloom_lookup(selected_word):
+        if bloom_lookup(selected_word):
             return
         suggestions = suggestionReturner(selected_word)
         if selected_word:
@@ -315,12 +318,10 @@ class TextEditor(QMainWindow):
 
             # Connect actions to corresponding functions
             add_to_dict_action.triggered.connect(lambda: self.addToDictionary(selected_word))
-            ignore_action.triggered.connect(lambda : self.ignore_word(selected_word))
-            replace_action.triggered.connect(lambda : self.replace_word(selected_word))
+            ignore_action.triggered.connect(lambda: self.ignore_word(selected_word))
+            replace_action.triggered.connect(lambda: self.replace_word(selected_word))
 
             menu.exec_(self.text_edit.mapToGlobal(pos))
-
-    from PyQt5.QtGui import QTextCharFormat
 
     def addToDictionary(self, word):
         with open(fp.bloomfilter_data, 'a', encoding='utf-8') as dict_file:
@@ -383,13 +384,13 @@ class TextEditor(QMainWindow):
         new_font.setFamily(self.family)
         self.text_edit.setFont(new_font)
 
-
     def changeFontSize(self, delta):
         current_font = self.text_edit.currentFont()
         new_font_size = max(current_font.pointSize() + delta, 2)
         new_font = current_font
         new_font.setPointSize(new_font_size)
         self.text_edit.setFont(new_font)
+
     def enlargeText(self):
         self.changeFontSize(2)
 
@@ -422,6 +423,7 @@ class TextEditor(QMainWindow):
         self.text_edit.setHtml(highlighted_content)
         # Restore the cursor position
         self.text_edit.setTextCursor(cursor_position)
+
     def eventFilter(self, obj, event):
         if obj == self.text_edit and event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Space:
@@ -457,7 +459,6 @@ class TextEditor(QMainWindow):
             cursor.movePosition(QTextCursor.Right)
             self.text_edit.setTextCursor(cursor)
 
-
     def getWordLeftOfCursor(self):
         cursor = self.text_edit.textCursor()
         # Save the current position of the cursor
@@ -471,11 +472,11 @@ class TextEditor(QMainWindow):
         cursor.setPosition(original_position)
         return word_left_of_cursor.strip()
 
-
     def toggleBold(self):
         font = self.text_edit.currentFont()
         font.setBold(not font.bold())
         self.text_edit.setCurrentFont(font)
+
     def toggleItalic(self):
         font = self.text_edit.currentFont()
         font.setItalic(not font.italic())
@@ -543,6 +544,7 @@ class TextEditor(QMainWindow):
         cursor.select(QTextCursor.BlockUnderCursor)
         cursor.setBlockFormat(QTextBlockFormat())
         self.number_list_active = False  # Update status
+
     def chooseFontColor(self):
         color = QColorDialog.getColor()
         if color.isValid():
