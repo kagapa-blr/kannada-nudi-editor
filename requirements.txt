@@ -1,5 +1,4 @@
 docx
-Flask
 python-docx
 textract
 symspellpy

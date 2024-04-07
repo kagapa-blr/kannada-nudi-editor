@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt, QEvent, QFile, QTextStream
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase, QTextListFormat, QTextBlockFormat, \
     QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
-    QInputDialog, QLineEdit, QColorDialog, QTextEdit
+    QInputDialog, QLineEdit, QColorDialog, QTextEdit, QTableWidget, QTableWidgetItem
 from logger import setup_logger
 import subprocess
 import os
@@ -26,7 +26,6 @@ def start_background_exe():
         # Use subprocess.Popen to start the executable in the background
         subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          start_new_session=True)
-
 
     except Exception as e:
         print(f"Error starting background exe: {e}")
@@ -213,11 +212,20 @@ class TextEditor(QMainWindow):
         paste_action.triggered.connect(self.text_edit.paste)  # Connect to QTextEdit's paste method
         toolbar.addAction(paste_action)
 
+
+        # Add Insert Table action button to the toolbar
+        insert_table_action = QAction(QIcon('resources/images/insert-table.png'), 'Insert Table', self)
+        insert_table_action.triggered.connect(self.insertTable)
+        toolbar.addAction(insert_table_action)
+
+
         #----------------------------------------------------------------Editor Size Settings----------------------------------------------------------------
         self.setGeometry(100, 100, 800, 600)
         self.setWindowTitle('Kannada Spellchecker')
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
         self.show()
+
+
 
     def loadStyleSheet(self, file_path):
         style_sheet = QFile(file_path)
@@ -551,3 +559,20 @@ class TextEditor(QMainWindow):
         color = QColorDialog.getColor()
         if color.isValid():
             self.text_edit.setTextColor(color)
+
+
+    def insertTable(self):
+        rows, ok1 = QInputDialog.getInt(self, "Table", "Rows:", 3, 1, 50, 1)
+        cols, ok2 = QInputDialog.getInt(self, "Table", "Columns:", 3, 1, 50, 1)
+
+        if ok1 and ok2:
+            table = QTableWidget(rows, cols, self)
+            for row in range(rows):
+                for col in range(cols):
+                    item = QTableWidgetItem()
+                    table.setItem(row, col, item)
+
+            cursor = self.text_edit.textCursor()
+            cursor.clearSelection()
+            cursor.movePosition(QTextCursor.End)
+            cursor.insertTable(rows, cols)
