@@ -63,15 +63,13 @@
 #         return self.modified_image
 
 
-
 from PyQt5.QtCore import Qt, QSize, QRect, QRectF
-from PyQt5.QtGui import QIcon, QPixmap, QImage, QTransform, QPainter, QPen
-from PyQt5.QtWidgets import (QAction, QToolBar, QDialog, QVBoxLayout, QLabel, QPushButton,
-                             QHBoxLayout, QSpinBox, QSlider, QMessageBox)
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QPushButton,
-                             QSlider, QToolBar, QAction, QMessageBox, QLineEdit)
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QIcon, QFont
-from PyQt5.QtCore import Qt, QSize, QRect, QPoint
+from PyQt5.QtGui import QTransform
+from PyQt5.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QPushButton,
+    QSlider, QToolBar, QAction, QMessageBox, QLineEdit
+)
 
 
 class ImageEditDialog(QDialog):
@@ -164,13 +162,13 @@ class ImageEditDialog(QDialog):
             painter = QPainter(temp_image)
             painter.setPen(QPen(Qt.black))  # Set text color
             painter.setFont(QFont("Arial", 20))  # Set font and size
-            painter.drawText(QRectF(50, 50, temp_image.width(), temp_image.height()), Qt.AlignLeft | Qt.AlignTop,
-                             text)  # Draw text at position (50, 50)
+            painter.drawText(QRectF(50, 50, temp_image.width(), temp_image.height()), Qt.AlignLeft | Qt.AlignTop, text)  # Draw text at position (50, 50)
             painter.end()
             self.addToHistory(temp_image)
             self.current_image = temp_image
-            self.modified_image = temp_image  # Update modified_image to reflect the most recent state
+            self.modified_image = temp_image  # Update modified_image to reflect the most recent state including text
             self.updatePreview()
+
     def resizeImage(self):
         new_width = self.resize_spinbox.value()
         new_image = self.original_image.scaledToWidth(new_width)
@@ -219,25 +217,18 @@ class ImageEditDialog(QDialog):
         self.history.append(image)
         self.history_index = len(self.history) - 1
 
-        # Update modified_image to reflect the most recent state
-        self.modified_image = image
-
     def updatePreview(self):
+        temp_image = self.current_image.copy()  # Start with a copy of the current image
         if self.crop_rect is not None:
-            temp_image = self.current_image.copy()
             painter = QPainter(temp_image)
             painter.setPen(QPen(Qt.red, 2, Qt.SolidLine))
             painter.drawRect(self.crop_rect)
             painter.end()
-            self.image_label.setPixmap(
-                QPixmap.fromImage(temp_image)
-                .scaled(QSize(400, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            )
-        else:
-            self.image_label.setPixmap(
-                QPixmap.fromImage(self.current_image)
-                .scaled(QSize(400, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            )
+
+        self.image_label.setPixmap(
+            QPixmap.fromImage(temp_image)
+            .scaled(QSize(400, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
 
     def undo(self):
         if self.history_index > 0:
