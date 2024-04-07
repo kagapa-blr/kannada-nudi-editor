@@ -1,13 +1,16 @@
+import os
+import subprocess
+
 import docx
 from PyQt5.QtCore import Qt, QEvent, QFile, QTextStream
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QIcon, QFontDatabase, QTextListFormat, QTextBlockFormat, \
     QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMenu, QToolBar, QMessageBox, \
     QInputDialog, QLineEdit, QColorDialog, QTextEdit, QTableWidget, QTableWidgetItem
-from logger import setup_logger
-import subprocess
-import os
+
 from config import file_path as fp
+from editor.components.customize_image import ImageEditDialog
+from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, start_bloom, reload_bloom_filter
 from spellcheck.symspell_suggestions import suggestionReturner
 from utils.corpus_clean import get_clean_words_for_dictionary
@@ -217,6 +220,12 @@ class TextEditor(QMainWindow):
         insert_table_action = QAction(QIcon('resources/images/insert-table.png'), 'Insert Table', self)
         insert_table_action.triggered.connect(self.insertTable)
         toolbar.addAction(insert_table_action)
+
+
+        # Add Insert Picture action button to the toolbar
+        insert_picture_action = QAction(QIcon('resources/images/add-image.png'), 'Insert Picture', self)
+        insert_picture_action.triggered.connect(self.choose_image)
+        toolbar.addAction(insert_picture_action)
 
 
         #----------------------------------------------------------------Editor Size Settings----------------------------------------------------------------
@@ -576,3 +585,18 @@ class TextEditor(QMainWindow):
             cursor.clearSelection()
             cursor.movePosition(QTextCursor.End)
             cursor.insertTable(rows, cols)
+
+    def choose_image(self):
+        file_dialog = QFileDialog(self)
+        file_dialog.setNameFilter("Images (*.png *.jpg *.bmp)")
+        if file_dialog.exec_():
+            file_path = file_dialog.selectedFiles()[0]
+            self.editAndInsertImage(file_path)
+
+    def editAndInsertImage(self, image_path):
+        image_dialog = ImageEditDialog(image_path, self)
+        if image_dialog.exec_():
+            modified_image = image_dialog.getModifiedImage()
+            if not modified_image.isNull():
+                cursor = self.text_edit.textCursor()
+                cursor.insertImage(modified_image)
