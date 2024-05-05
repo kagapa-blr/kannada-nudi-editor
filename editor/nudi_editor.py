@@ -9,14 +9,15 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit
+from docx import Document
 
+from config import file_path as fp
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
 from spellcheck.symspell_suggestions import suggestionReturner
 from utils import find, datetime, table, wordcount
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.util import has_letters_or_digits
-from config import file_path as fp
 
 filename = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -40,9 +41,10 @@ def start_background_exe():
 class TextEditor(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
+        super().__init__()
         QtWidgets.QMainWindow.__init__(self, parent)
 
-        self.filename = ""
+        self.filename = None
 
         self.changesSaved = True
 
@@ -50,12 +52,12 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def initToolbar(self):
 
-        self.newAction = QtWidgets.QAction(QtGui.QIcon("resources/images/new-file.png"), "New", self)
+        self.newAction = QtWidgets.QAction(QtGui.QIcon("resources/images/new-file.png"), "ಹೊಸ ಕಡತ", self)
         self.newAction.setShortcut("Ctrl+N")
         self.newAction.setStatusTip("Create a new document from scratch.")
         self.newAction.triggered.connect(self.new)
 
-        self.openAction = QtWidgets.QAction(QtGui.QIcon("resources/images/open-file.png"), "Open file", self)
+        self.openAction = QtWidgets.QAction(QtGui.QIcon("resources/images/open-file.png"), "ಕಡತ ತೆರೆಯಿರಿ", self)
         self.openAction.setStatusTip("Open existing document")
         self.openAction.setShortcut("Ctrl+O")
         self.openAction.triggered.connect(self.open)
@@ -64,6 +66,11 @@ class TextEditor(QtWidgets.QMainWindow):
         self.saveAction.setStatusTip("Save document")
         self.saveAction.setShortcut("Ctrl+S")
         self.saveAction.triggered.connect(self.save)
+
+        self.saveAsAction = QtWidgets.QAction(QtGui.QIcon("resources/images/stock_save.png"), "Save As...", self)
+        self.saveAsAction.setStatusTip("Save document with a new name")
+        self.saveAsAction.setShortcut("Ctrl+Shift+S")
+        self.saveAsAction.triggered.connect(self.save_as)
 
         self.printAction = QtWidgets.QAction(QtGui.QIcon("resources/images/print.png"), "Print document", self)
         self.printAction.setStatusTip("Print document")
@@ -132,33 +139,22 @@ class TextEditor(QtWidgets.QMainWindow):
         bulletAction.setShortcut("Ctrl+Shift+B")
         bulletAction.triggered.connect(self.bulletList)
 
-
-
-
-
-
-
-
-
         numberedAction = QtWidgets.QAction(QtGui.QIcon("resources/images/number-list.png"), "Insert numbered List",
                                            self)
         numberedAction.setStatusTip("Insert numbered list")
         numberedAction.setShortcut("Ctrl+Shift+L")
         numberedAction.triggered.connect(self.numberList)
 
-
         refresh_action = QtWidgets.QAction(QtGui.QIcon('resources/images/refresh.png'), 'Refresh and Recheck', self)
         refresh_action.setStatusTip("Refresh and Recheck")
         refresh_action.triggered.connect(self.refresh_recheck)
         #refresh_action.addAction(refresh_action)
 
-
-
-
         self.toolbar = self.addToolBar("Options")
         self.toolbar.addAction(self.newAction)
         self.toolbar.addAction(self.openAction)
         self.toolbar.addAction(self.saveAction)
+        self.toolbar.addAction(self.saveAsAction)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.printAction)
         self.toolbar.addAction(self.previewAction)
@@ -283,6 +279,7 @@ class TextEditor(QtWidgets.QMainWindow):
         file.addAction(self.newAction)
         file.addAction(self.openAction)
         file.addAction(self.saveAction)
+        file.addAction(self.saveAsAction)
         file.addAction(self.printAction)
         file.addAction(self.previewAction)
 
@@ -337,7 +334,8 @@ class TextEditor(QtWidgets.QMainWindow):
         self.text.installEventFilter(self)
 
         self.setGeometry(100, 100, 1030, 800)
-        self.setWindowTitle("ಕನ್ನಡ ನುಡಿ")
+
+        self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
         #self.setWindowIcon(QtGui.QIcon("resources/images/icon.jpg"))
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
 
@@ -355,12 +353,11 @@ class TextEditor(QtWidgets.QMainWindow):
         else:
 
             popup = QtWidgets.QMessageBox(self)
-
             popup.setIcon(QtWidgets.QMessageBox.Warning)
+            popup.setWindowTitle("ಕನ್ನಡ ನುಡಿ")  # Set the title here
+            popup.setText("ಡಾಕ್ಯುಮೆಂಟ್ ಅನ್ನು ಮಾರ್ಪಡಿಸಲಾಗಿದೆ")
 
-            popup.setText("The document has been modified")
-
-            popup.setInformativeText("Do you want to save your changes?")
+            popup.setInformativeText("ನಿಮ್ಮ ಬದಲಾವಣೆಗಳನ್ನು ಉಳಿಸಲು ನೀವು ಬಯಸುವಿರಾ?")
 
             popup.setStandardButtons(QtWidgets.QMessageBox.Save |
                                      QtWidgets.QMessageBox.Cancel |
@@ -596,51 +593,65 @@ class TextEditor(QtWidgets.QMainWindow):
         filter = "Text Files (*.txt);;Word Documents (*.docx);;Rich Text Files (*.rtf)"
         # Get filename using QFileDialog
         self.filename, _ = QFileDialog.getOpenFileName(self, 'Open File', ".", filter)
+        print("filename: ", self.filename)
 
         if self.filename:
             # Open and read the selected file based on its extension
             try:
-                if self.filename.endswith('.txt') or self.filename.endswith('.rtf'):
+                if self.filename.endswith('.txt'):
                     with open(self.filename, 'r', encoding='utf-8') as file:
                         self.text.setText(file.read())
+                elif self.filename.endswith('.rtf'):
+                    with open(self.filename, 'r') as file:
+                        rtf_text = file.read()
+                        document = QTextDocument()
+                        document.setHtml(rtf_text)
+                        self.text.setDocument(document)
                 elif self.filename.endswith('.docx'):
-                    # Handle opening .docx files using appropriate libraries (e.g., python-docx)
-                    pass
+                    document = Document(self.filename)
+                    text = []
+                    for paragraph in document.paragraphs:
+                        text.append(paragraph.text)
+                    self.text.setText('\n'.join(text))
                 else:
                     QMessageBox.critical(self, 'Error', 'Unsupported file format')
             except Exception as e:
                 QMessageBox.critical(self, 'Error', f'Error opening file: {str(e)}')
+
+        self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
 
     def save(self):
         try:
             if not self.filename:
                 # If no filename is set, prompt the user to choose a file location for saving
                 self.filename, _ = QFileDialog.getSaveFileName(self, 'Save File', '',
-                                                               filter="All Files (*);;RTF Files (*.rtf);;DOCX Files (*.docx);;PDF Files (*.pdf)")
+                                                               filter="All Files (*);;RTF Files (*.rtf);;DOCX Files (*.docx);;PDF Files (*.pdf);;Text Files (*.txt)")
 
                 if not self.filename:  # User cancelled the dialog
                     return
 
                 # Determine the file extension and set the appropriate filter
                 file_info = QFileInfo(self.filename)
-                if file_info.suffix().lower() not in ['rtf', 'docx', 'pdf']:
+                file_suffix = file_info.suffix().lower()
+                if file_suffix not in ['rtf', 'docx', 'pdf', 'txt']:
                     QMessageBox.critical(self, 'Error', 'Unsupported file format.')
                     return
 
             # Create a QTextDocument and set the HTML content from QTextEdit
             document = QTextDocument()
             document.setHtml(self.text.toHtml())
-            print(document)
 
             if self.filename.endswith(".rtf"):
                 # Save as RTF using QTextDocumentWriter
                 writer = QTextDocumentWriter(self.filename)
                 success = writer.write(document)
             elif self.filename.endswith(".docx"):
-                # Save as DOCX using QTextDocumentWriter
-                writer = QTextDocumentWriter(self.filename)
-                writer.setFormat("docx")
-                success = writer.write(document)
+                # Save as DOCX using python-docx
+                document = Document()
+                for line in self.text.toPlainText().split('\n'):
+                    document.add_paragraph(line)
+                document.save(self.filename)  # Use self.filename instead of filename
+                success = True
             elif self.filename.endswith(".pdf"):
                 # Save as PDF using QPrinter and QPainter
                 printer = QPrinter(QPrinter.HighResolution)
@@ -650,6 +661,11 @@ class TextEditor(QtWidgets.QMainWindow):
                 document.drawContents(painter)
                 painter.end()
                 success = True
+            elif self.filename.endswith(".txt"):
+                # Save as TXT
+                with open(self.filename, "w", encoding="utf-8") as txt_file:
+                    txt_file.write(self.text.toPlainText())
+                success = True
             else:
                 QMessageBox.critical(self, 'Error', 'Unsupported file format.')
                 return
@@ -658,6 +674,123 @@ class TextEditor(QtWidgets.QMainWindow):
                 QMessageBox.information(self, 'Success', f'File saved successfully: {self.filename}')
             else:
                 QMessageBox.critical(self, 'Error', f'Error saving file: {self.filename}')
+
+        except Exception as e:
+            print(str(e))
+            QMessageBox.critical(self, 'Error', f'Error saving file: {str(e)}')
+
+        self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
+
+    # def save_as(self):
+    #     try:
+    #         # Prompt the user to choose a file location for saving
+    #         filename, _ = QFileDialog.getSaveFileName(self, 'Save File As', '',
+    #                                                   filter="All Files (*);;RTF Files (*.rtf);;DOCX Files (*.docx);;PDF Files (*.pdf);;Text Files (*.txt)")
+    #
+    #         if not filename:  # User cancelled the dialog
+    #             return
+    #
+    #         # Determine the file extension and set the appropriate filter
+    #         file_info = QFileInfo(filename)
+    #         file_suffix = file_info.suffix().lower()
+    #         if file_suffix not in ['rtf', 'docx', 'pdf', 'txt']:
+    #             QMessageBox.critical(self, 'Error', 'Unsupported file format.')
+    #             return
+    #
+    #         # Create a QTextDocument and set the HTML content from QTextEdit
+    #         document = QTextDocument()
+    #         document.setHtml(self.text.toHtml())
+    #
+    #         if filename.endswith(".rtf"):
+    #             # Save as RTF using QTextDocumentWriter
+    #             writer = QTextDocumentWriter(filename)
+    #             success = writer.write(document)
+    #         if filename.endswith(".docx"):
+    #             # Save as DOCX using QTextDocumentWriter
+    #             writer = QTextDocumentWriter(filename)
+    #             writer.setFormat(QByteArray(b"docx"))  # Convert the string to bytes and then to QByteArray
+    #             success = writer.write(document)
+    #         elif filename.endswith(".pdf"):
+    #             # Save as PDF using QPrinter and QPainter
+    #             printer = QPrinter(QPrinter.HighResolution)
+    #             printer.setOutputFormat(QPrinter.PdfFormat)
+    #             printer.setOutputFileName(filename)
+    #             painter = QPainter(printer)
+    #             document.drawContents(painter)
+    #             painter.end()
+    #             success = True
+    #         elif filename.endswith(".txt"):
+    #             # Save as TXT with UTF-8 encoding
+    #             with open(filename, "w", encoding="utf-8") as txt_file:
+    #                 txt_file.write(self.text.toPlainText())
+    #             success = True
+    #         else:
+    #             QMessageBox.critical(self, 'Error', 'Unsupported file format.')
+    #             return
+    #
+    #         if success:
+    #             QMessageBox.information(self, 'Success', f'File saved successfully: {filename}')
+    #         else:
+    #             QMessageBox.critical(self, 'Error', f'Error saving file: {filename}')
+    #
+    #     except Exception as e:
+    #         print(str(e))
+    #         QMessageBox.critical(self, 'Error', f'Error saving file: {str(e)}')
+    #
+
+    def save_as(self):
+        try:
+            # Prompt the user to choose a file location for saving
+            filename, _ = QFileDialog.getSaveFileName(self, 'Save File As', '',
+                                                      filter="All Files (*);;RTF Files (*.rtf);;DOCX Files (*.docx);;PDF Files (*.pdf);;Text Files (*.txt)")
+
+            if not filename:  # User cancelled the dialog
+                return
+
+            # Determine the file extension and set the appropriate filter
+            file_info = QFileInfo(filename)
+            file_suffix = file_info.suffix().lower()
+            if file_suffix not in ['rtf', 'docx', 'pdf', 'txt']:
+                QMessageBox.critical(self, 'Error', 'Unsupported file format.')
+                return
+
+            if filename.endswith(".rtf"):
+                # Save as RTF using QTextDocumentWriter
+                document = QTextDocument()
+                document.setHtml(self.text.toHtml())
+                writer = QTextDocumentWriter(filename)
+                success = writer.write(document)
+            elif filename.endswith(".docx"):
+                # Save as DOCX using python-docx
+                document = Document()
+                for line in self.text.toPlainText().split('\n'):
+                    document.add_paragraph(line)
+                document.save(filename)
+                success = True
+            elif filename.endswith(".pdf"):
+                # Save as PDF using QPrinter and QPainter
+                printer = QPrinter(QPrinter.HighResolution)
+                printer.setOutputFormat(QPrinter.PdfFormat)
+                printer.setOutputFileName(filename)
+                painter = QPainter(printer)
+                document = QTextDocument()
+                document.setHtml(self.text.toHtml())
+                document.drawContents(painter)
+                painter.end()
+                success = True
+            elif filename.endswith(".txt"):
+                # Save as TXT with UTF-8 encoding
+                with open(filename, "w", encoding="utf-8") as txt_file:
+                    txt_file.write(self.text.toPlainText())
+                success = True
+            else:
+                QMessageBox.critical(self, 'Error', 'Unsupported file format.')
+                return
+
+            if success:
+                QMessageBox.information(self, 'Success', f'File saved successfully: {filename}')
+            else:
+                QMessageBox.critical(self, 'Error', f'Error saving file: {filename}')
 
         except Exception as e:
             print(str(e))
@@ -950,9 +1083,7 @@ class TextEditor(QtWidgets.QMainWindow):
         elif not bloom_lookup(word_left_of_cursor):
             # Trim the selected word
             wrong_word = f'<span style="text-decoration: underline;">{word_left_of_cursor.strip()}</span>'
-
-            print("word left of cursor: ", wrong_word)
-
+            #print("word left of cursor: ", wrong_word)
             html_content = self.text.toHtml()
             new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
             # Set the new HTML content
@@ -1023,3 +1154,6 @@ class TextEditor(QtWidgets.QMainWindow):
         self.text.setHtml(highlighted_content)
         # Restore the cursor position
         self.text.setTextCursor(cursor_position)
+
+    def access_filename(self):
+        return self.filename if self.filename is not None else "Untitled"
