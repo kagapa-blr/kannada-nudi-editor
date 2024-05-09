@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLine
 from docx import Document
 
 from config import file_path as fp
+from editor.components.customize_image import ImageEditDialog
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
 from spellcheck.symspell_suggestions import suggestionReturner
@@ -132,7 +133,7 @@ class TextEditor(QtWidgets.QMainWindow):
         imageAction = QtWidgets.QAction(QtGui.QIcon("resources/images/add-image.png"), "Insert image", self)
         imageAction.setStatusTip("Insert image")
         imageAction.setShortcut("Ctrl+Shift+I")
-        imageAction.triggered.connect(self.insertImage)
+        imageAction.triggered.connect(self.choose_image)
 
         bulletAction = QtWidgets.QAction(QtGui.QIcon("resources/images/bullet-list.png"), "Insert bullet List", self)
         bulletAction.setStatusTip("Insert bullet list")
@@ -181,6 +182,10 @@ class TextEditor(QtWidgets.QMainWindow):
 
         fontBox = QtWidgets.QFontComboBox(self)
         fontBox.currentFontChanged.connect(lambda font: self.text.setCurrentFont(font))
+
+        # Set default font to "Nudist Parijath"
+        default_font = QtGui.QFont("nudiParijatha")
+        fontBox.setCurrentFont(default_font)
 
         fontSize = QtWidgets.QSpinBox(self)
 
@@ -1157,3 +1162,18 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def access_filename(self):
         return self.filename if self.filename is not None else "Untitled"
+
+    def choose_image(self):
+        file_dialog = QFileDialog(self)
+        file_dialog.setNameFilter("Images (*.png *.jpg *.bmp)")
+        if file_dialog.exec_():
+            file_path = file_dialog.selectedFiles()[0]
+            self.editAndInsertImage(file_path)
+
+    def editAndInsertImage(self, image_path):
+        image_dialog = ImageEditDialog(image_path, self)
+        if image_dialog.exec_():
+            modified_image = image_dialog.getModifiedImage()
+            if not modified_image.isNull():
+                cursor = self.text.textCursor()
+                cursor.insertImage(modified_image)
