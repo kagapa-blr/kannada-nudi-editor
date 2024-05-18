@@ -91,28 +91,28 @@ class TextEditor(QtWidgets.QMainWindow):
         self.cutAction = QtWidgets.QAction(QtGui.QIcon("resources/images/stock_cut.png"), "Cut to clipboard", self)
         self.cutAction.setStatusTip("Delete and copy text to clipboard")
         self.cutAction.setShortcut("Ctrl+X")
-        self.cutAction.triggered.connect(self.text.cut)
+        self.cutAction.triggered.connect(self.editor.cut)
 
         self.copyAction = QtWidgets.QAction(QtGui.QIcon("resources/images/stock_copy.png"), "Copy to clipboard", self)
         self.copyAction.setStatusTip("Copy text to clipboard")
         self.copyAction.setShortcut("Ctrl+C")
-        self.copyAction.triggered.connect(self.text.copy)
+        self.copyAction.triggered.connect(self.editor.copy)
 
         self.pasteAction = QtWidgets.QAction(QtGui.QIcon("resources/images/stock_paste.png"), "Paste from clipboard",
                                              self)
         self.pasteAction.setStatusTip("Paste text from clipboard")
         self.pasteAction.setShortcut("Ctrl+V")
-        self.pasteAction.triggered.connect(self.text.paste)
+        self.pasteAction.triggered.connect(self.editor.paste)
 
         self.undoAction = QtWidgets.QAction(QtGui.QIcon("resources/images/undo.png"), "Undo last action", self)
         self.undoAction.setStatusTip("Undo last action")
         self.undoAction.setShortcut("Ctrl+Z")
-        self.undoAction.triggered.connect(self.text.undo)
+        self.undoAction.triggered.connect(self.editor.undo)
 
         self.redoAction = QtWidgets.QAction(QtGui.QIcon("resources/images/redo.png"), "Redo last undone thing", self)
         self.redoAction.setStatusTip("Redo last undone thing")
         self.redoAction.setShortcut("Ctrl+Y")
-        self.redoAction.triggered.connect(self.text.redo)
+        self.redoAction.triggered.connect(self.editor.redo)
 
         dateTimeAction = QtWidgets.QAction(QtGui.QIcon("resources/images/calender.png"), "Insert current date/time",
                                            self)
@@ -181,7 +181,7 @@ class TextEditor(QtWidgets.QMainWindow):
     def initFormatbar(self):
 
         fontBox = QtWidgets.QFontComboBox(self)
-        fontBox.currentFontChanged.connect(lambda font: self.text.setCurrentFont(font))
+        fontBox.currentFontChanged.connect(lambda font: self.editor.setCurrentFont(font))
 
         # Set default font to "Nudist Parijath"
         default_font = QtGui.QFont("nudiParijatha")
@@ -192,7 +192,7 @@ class TextEditor(QtWidgets.QMainWindow):
         # Will display " pt" after each value
         fontSize.setSuffix(" pt")
 
-        fontSize.valueChanged.connect(lambda size: self.text.setFontPointSize(size))
+        fontSize.valueChanged.connect(lambda size: self.editor.setFontPointSize(size))
 
         fontSize.setValue(14)
 
@@ -311,32 +311,32 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def initUI(self):
 
-        self.text = QtWidgets.QTextEdit(self)
+        self.editor = QtWidgets.QTextEdit(self)
         start_background_exe()
 
         # Set the tab stop width to around 33 pixels which is
         # more or less 8 spaces
-        self.text.setTabStopWidth(33)
+        self.editor.setTabStopWidth(33)
 
         self.initToolbar()
         self.initFormatbar()
         self.initMenubar()
 
-        self.setCentralWidget(self.text)
+        self.setCentralWidget(self.editor)
 
         # Initialize a statusbar for the window
         self.statusbar = self.statusBar()
 
         # If the cursor position changes, call the function that displays
         # the line and column number
-        self.text.cursorPositionChanged.connect(self.cursorPosition)
+        self.editor.cursorPositionChanged.connect(self.cursorPosition)
 
         # We need our own context menu for tables
-        self.text.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.text.customContextMenuRequested.connect(self.context)
+        self.editor.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.editor.customContextMenuRequested.connect(self.context)
 
-        self.text.textChanged.connect(self.changed)
-        self.text.installEventFilter(self)
+        self.editor.textChanged.connect(self.changed)
+        self.editor.installEventFilter(self)
 
         self.setGeometry(100, 100, 1030, 800)
 
@@ -384,7 +384,7 @@ class TextEditor(QtWidgets.QMainWindow):
     def context(self, pos):
 
         # Grab the cursor
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Grab the current table, if there is one
         table = cursor.currentTable()
@@ -471,7 +471,7 @@ class TextEditor(QtWidgets.QMainWindow):
             menu.show()
 
         if cursor.hasSelection():
-            cursor = self.text.cursorForPosition(pos)
+            cursor = self.editor.cursorForPosition(pos)
             cursor.select(QTextCursor.WordUnderCursor)
             selected_word = cursor.selectedText()
             if bloom_lookup(selected_word):
@@ -499,17 +499,17 @@ class TextEditor(QtWidgets.QMainWindow):
                 ignore_action.triggered.connect(lambda: self.ignore_word(selected_word))
                 replace_action.triggered.connect(lambda: self.replace_word(selected_word))
 
-                menu.exec_(self.text.mapToGlobal(pos))
+                menu.exec_(self.editor.mapToGlobal(pos))
         else:
 
             event = QtGui.QContextMenuEvent(QtGui.QContextMenuEvent.Mouse, QtCore.QPoint())
 
-            self.text.contextMenuEvent(event)
+            self.editor.contextMenuEvent(event)
 
     def removeRow(self):
 
         # Grab the cursor
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Grab the current table (we assume there is one, since
         # this is checked before calling)
@@ -524,7 +524,7 @@ class TextEditor(QtWidgets.QMainWindow):
     def removeCol(self):
 
         # Grab the cursor
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Grab the current table (we assume there is one, since
         # this is checked before calling)
@@ -539,7 +539,7 @@ class TextEditor(QtWidgets.QMainWindow):
     def insertRow(self):
 
         # Grab the cursor
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Grab the current table (we assume there is one, since
         # this is checked before calling)
@@ -554,7 +554,7 @@ class TextEditor(QtWidgets.QMainWindow):
     def insertCol(self):
 
         # Grab the cursor
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Grab the current table (we assume there is one, since
         # this is checked before calling)
@@ -605,19 +605,19 @@ class TextEditor(QtWidgets.QMainWindow):
             try:
                 if self.filename.endswith('.txt'):
                     with open(self.filename, 'r', encoding='utf-8') as file:
-                        self.text.setText(file.read())
+                        self.editor.setText(file.read())
                 elif self.filename.endswith('.rtf'):
                     with open(self.filename, 'r') as file:
                         rtf_text = file.read()
                         document = QTextDocument()
                         document.setHtml(rtf_text)
-                        self.text.setDocument(document)
+                        self.editor.setDocument(document)
                 elif self.filename.endswith('.docx'):
                     document = Document(self.filename)
                     text = []
                     for paragraph in document.paragraphs:
                         text.append(paragraph.text)
-                    self.text.setText('\n'.join(text))
+                    self.editor.setText('\n'.join(text))
                 else:
                     QMessageBox.critical(self, 'Error', 'Unsupported file format')
             except Exception as e:
@@ -644,7 +644,7 @@ class TextEditor(QtWidgets.QMainWindow):
 
             # Create a QTextDocument and set the HTML content from QTextEdit
             document = QTextDocument()
-            document.setHtml(self.text.toHtml())
+            document.setHtml(self.editor.toHtml())
 
             if self.filename.endswith(".rtf"):
                 # Save as RTF using QTextDocumentWriter
@@ -653,7 +653,7 @@ class TextEditor(QtWidgets.QMainWindow):
             elif self.filename.endswith(".docx"):
                 # Save as DOCX using python-docx
                 document = Document()
-                for line in self.text.toPlainText().split('\n'):
+                for line in self.editor.toPlainText().split('\n'):
                     document.add_paragraph(line)
                 document.save(self.filename)  # Use self.filename instead of filename
                 success = True
@@ -669,7 +669,7 @@ class TextEditor(QtWidgets.QMainWindow):
             elif self.filename.endswith(".txt"):
                 # Save as TXT
                 with open(self.filename, "w", encoding="utf-8") as txt_file:
-                    txt_file.write(self.text.toPlainText())
+                    txt_file.write(self.editor.toPlainText())
                 success = True
             else:
                 QMessageBox.critical(self, 'Error', 'Unsupported file format.')
@@ -704,7 +704,7 @@ class TextEditor(QtWidgets.QMainWindow):
     #
     #         # Create a QTextDocument and set the HTML content from QTextEdit
     #         document = QTextDocument()
-    #         document.setHtml(self.text.toHtml())
+    #         document.setHtml(self.editor.toHtml())
     #
     #         if filename.endswith(".rtf"):
     #             # Save as RTF using QTextDocumentWriter
@@ -727,7 +727,7 @@ class TextEditor(QtWidgets.QMainWindow):
     #         elif filename.endswith(".txt"):
     #             # Save as TXT with UTF-8 encoding
     #             with open(filename, "w", encoding="utf-8") as txt_file:
-    #                 txt_file.write(self.text.toPlainText())
+    #                 txt_file.write(self.editor.toPlainText())
     #             success = True
     #         else:
     #             QMessageBox.critical(self, 'Error', 'Unsupported file format.')
@@ -762,13 +762,13 @@ class TextEditor(QtWidgets.QMainWindow):
             if filename.endswith(".rtf"):
                 # Save as RTF using QTextDocumentWriter
                 document = QTextDocument()
-                document.setHtml(self.text.toHtml())
+                document.setHtml(self.editor.toHtml())
                 writer = QTextDocumentWriter(filename)
                 success = writer.write(document)
             elif filename.endswith(".docx"):
                 # Save as DOCX using python-docx
                 document = Document()
-                for line in self.text.toPlainText().split('\n'):
+                for line in self.editor.toPlainText().split('\n'):
                     document.add_paragraph(line)
                 document.save(filename)
                 success = True
@@ -779,14 +779,14 @@ class TextEditor(QtWidgets.QMainWindow):
                 printer.setOutputFileName(filename)
                 painter = QPainter(printer)
                 document = QTextDocument()
-                document.setHtml(self.text.toHtml())
+                document.setHtml(self.editor.toHtml())
                 document.drawContents(painter)
                 painter.end()
                 success = True
             elif filename.endswith(".txt"):
                 # Save as TXT with UTF-8 encoding
                 with open(filename, "w", encoding="utf-8") as txt_file:
-                    txt_file.write(self.text.toPlainText())
+                    txt_file.write(self.editor.toPlainText())
                 success = True
             else:
                 QMessageBox.critical(self, 'Error', 'Unsupported file format.')
@@ -807,7 +807,7 @@ class TextEditor(QtWidgets.QMainWindow):
         preview = QtPrintSupport.QPrintPreviewDialog()
 
         # If a print is requested, open print dialog
-        preview.paintRequested.connect(lambda p: self.text.print_(p))
+        preview.paintRequested.connect(lambda p: self.editor.print_(p))
 
         preview.exec_()
 
@@ -817,11 +817,11 @@ class TextEditor(QtWidgets.QMainWindow):
         dialog = QtPrintSupport.QPrintDialog()
 
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            self.text.document().print_(dialog.printer())
+            self.editor.document().print_(dialog.printer())
 
     def cursorPosition(self):
 
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Mortals like 1-indexed things
         line = cursor.blockNumber() + 1
@@ -862,7 +862,7 @@ class TextEditor(QtWidgets.QMainWindow):
 
             else:
 
-                cursor = self.text.textCursor()
+                cursor = self.editor.textCursor()
 
                 cursor.insertImage(image, filename)
 
@@ -872,51 +872,51 @@ class TextEditor(QtWidgets.QMainWindow):
         color = QtWidgets.QColorDialog.getColor()
 
         # Set it as the new text color
-        self.text.setTextColor(color)
+        self.editor.setTextColor(color)
 
     def highlight(self):
 
         color = QtWidgets.QColorDialog.getColor()
 
-        self.text.setTextBackgroundColor(color)
+        self.editor.setTextBackgroundColor(color)
 
     def bold(self):
 
-        if self.text.fontWeight() == QtGui.QFont.Bold:
+        if self.editor.fontWeight() == QtGui.QFont.Bold:
 
-            self.text.setFontWeight(QtGui.QFont.Normal)
+            self.editor.setFontWeight(QtGui.QFont.Normal)
 
         else:
 
-            self.text.setFontWeight(QtGui.QFont.Bold)
+            self.editor.setFontWeight(QtGui.QFont.Bold)
 
     def italic(self):
 
-        state = self.text.fontItalic()
+        state = self.editor.fontItalic()
 
-        self.text.setFontItalic(not state)
+        self.editor.setFontItalic(not state)
 
     def underline(self):
 
-        state = self.text.fontUnderline()
+        state = self.editor.fontUnderline()
 
-        self.text.setFontUnderline(not state)
+        self.editor.setFontUnderline(not state)
 
     def strike(self):
 
         # Grab the text's format
-        fmt = self.text.currentCharFormat()
+        fmt = self.editor.currentCharFormat()
 
         # Set the fontStrikeOut property to its opposite
         fmt.setFontStrikeOut(not fmt.fontStrikeOut())
 
         # And set the next char format
-        self.text.setCurrentCharFormat(fmt)
+        self.editor.setCurrentCharFormat(fmt)
 
     def superScript(self):
 
         # Grab the current format
-        fmt = self.text.currentCharFormat()
+        fmt = self.editor.currentCharFormat()
 
         # And get the vertical alignment property
         align = fmt.verticalAlignment()
@@ -931,12 +931,12 @@ class TextEditor(QtWidgets.QMainWindow):
             fmt.setVerticalAlignment(QtGui.QTextCharFormat.AlignNormal)
 
         # Set the new format
-        self.text.setCurrentCharFormat(fmt)
+        self.editor.setCurrentCharFormat(fmt)
 
     def subScript(self):
 
         # Grab the current format
-        fmt = self.text.currentCharFormat()
+        fmt = self.editor.currentCharFormat()
 
         # And get the vertical alignment property
         align = fmt.verticalAlignment()
@@ -951,24 +951,24 @@ class TextEditor(QtWidgets.QMainWindow):
             fmt.setVerticalAlignment(QtGui.QTextCharFormat.AlignNormal)
 
         # Set the new format
-        self.text.setCurrentCharFormat(fmt)
+        self.editor.setCurrentCharFormat(fmt)
 
     def alignLeft(self):
-        self.text.setAlignment(Qt.AlignLeft)
+        self.editor.setAlignment(Qt.AlignLeft)
 
     def alignRight(self):
-        self.text.setAlignment(Qt.AlignRight)
+        self.editor.setAlignment(Qt.AlignRight)
 
     def alignCenter(self):
-        self.text.setAlignment(Qt.AlignCenter)
+        self.editor.setAlignment(Qt.AlignCenter)
 
     def alignJustify(self):
-        self.text.setAlignment(Qt.AlignJustify)
+        self.editor.setAlignment(Qt.AlignJustify)
 
     def indent(self):
 
         # Grab the cursor
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         if cursor.hasSelection():
 
@@ -1023,7 +1023,7 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def dedent(self):
 
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         if cursor.hasSelection():
 
@@ -1050,27 +1050,27 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def bulletList(self):
 
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Insert bulleted list
         cursor.insertList(QtGui.QTextListFormat.ListDisc)
 
     def numberList(self):
 
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
 
         # Insert list with numbers
         cursor.insertList(QtGui.QTextListFormat.ListDecimal)
 
     def eventFilter(self, obj, event):
-        if obj == self.text and event.type() == QEvent.KeyPress:
+        if obj == self.editor and event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Space:
                 self.spacebarClicked()
                 return True  # Event handled
         return super().eventFilter(obj, event)
 
     def spacebarClicked(self):
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
         original_position = cursor.position()
 
         # Insert a space
@@ -1089,13 +1089,13 @@ class TextEditor(QtWidgets.QMainWindow):
             # Trim the selected word
             wrong_word = f'<span style="text-decoration: underline;">{word_left_of_cursor.strip()}</span>'
             #print("word left of cursor: ", wrong_word)
-            html_content = self.text.toHtml()
+            html_content = self.editor.toHtml()
             new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
             # Set the new HTML content
-            self.text.setHtml(new_html_content)
+            self.editor.setHtml(new_html_content)
             # Move the cursor to the right of the replaced word
             cursor.movePosition(QTextCursor.Right)
-            self.text.setTextCursor(cursor)
+            self.editor.setTextCursor(cursor)
 
     def addToDictionary(self, word):
         with open(fp.bloomfilter_data, 'a', encoding='utf-8') as dict_file:
@@ -1107,10 +1107,10 @@ class TextEditor(QtWidgets.QMainWindow):
                     print(word, "successfully Added to Dictionary")
 
                 # Remove underline from the word
-                cursor = self.text.textCursor()
+                cursor = self.editor.textCursor()
                 cursor.beginEditBlock()  # Begin editing block to improve performance
                 format = QTextCharFormat()
-                format.setForeground(self.text.palette().color(self.text.foregroundRole()))
+                format.setForeground(self.editor.palette().color(self.editor.foregroundRole()))
                 format.setUnderlineStyle(QTextCharFormat.NoUnderline)  # Clear underline
                 cursor.mergeCharFormat(format)
                 cursor.endEditBlock()
@@ -1118,11 +1118,11 @@ class TextEditor(QtWidgets.QMainWindow):
                 print("word already present in Dictionary file")
 
     def ignore_word(self, word):
-        cursor = self.text.textCursor()
+        cursor = self.editor.textCursor()
         cursor.beginEditBlock()  # Begin editing block to improve performance
 
         format = QTextCharFormat()
-        format.setForeground(self.text.palette().color(self.text.foregroundRole()))
+        format.setForeground(self.editor.palette().color(self.editor.foregroundRole()))
 
         # Clear underline
         format.setUnderlineStyle(QTextCharFormat.NoUnderline)
@@ -1134,19 +1134,19 @@ class TextEditor(QtWidgets.QMainWindow):
         new_word, ok = QInputDialog.getText(self, 'Replace Word', f'Enter new word to replace {word_to_replace}',
                                             QLineEdit.Normal)
         if ok and new_word:
-            cursor = self.text.textCursor()  # Get the current cursor position
-            current_text = self.text.toPlainText()
+            cursor = self.editor.textCursor()  # Get the current cursor position
+            current_text = self.editor.toPlainText()
             new_text = current_text.replace(word_to_replace, new_word)
-            self.text.setPlainText(new_text)
+            self.editor.setPlainText(new_text)
             # Restore the cursor position
             cursor.setPosition(cursor.position() + len(new_word))
-            self.text.setTextCursor(cursor)
+            self.editor.setTextCursor(cursor)
 
     def refresh_recheck(self):
         reload_bloom_filter()
-        cursor_position = self.text.textCursor()
-        text_content = self.text.toHtml()
-        plain_text = self.text.toPlainText()
+        cursor_position = self.editor.textCursor()
+        text_content = self.editor.toHtml()
+        plain_text = self.editor.toPlainText()
         content_for_bloom = [get_clean_words_for_dictionary(word) for word in plain_text.split() if word if
                              len(word) > 1]
         wrong_words = start_bloom(content_for_bloom)
@@ -1156,9 +1156,9 @@ class TextEditor(QtWidgets.QMainWindow):
             highlighted_content = highlighted_content.replace(word,
                                                               f'<span style="text-decoration: underline;">{word}</span>')
         # Update the editor with the highlighted content
-        self.text.setHtml(highlighted_content)
+        self.editor.setHtml(highlighted_content)
         # Restore the cursor position
-        self.text.setTextCursor(cursor_position)
+        self.editor.setTextCursor(cursor_position)
 
     def access_filename(self):
         return self.filename if self.filename is not None else "Untitled"
@@ -1175,5 +1175,5 @@ class TextEditor(QtWidgets.QMainWindow):
         if image_dialog.exec_():
             modified_image = image_dialog.getModifiedImage()
             if not modified_image.isNull():
-                cursor = self.text.textCursor()
+                cursor = self.editor.textCursor()
                 cursor.insertImage(modified_image)
