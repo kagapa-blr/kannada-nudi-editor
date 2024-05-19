@@ -8,7 +8,8 @@ from PyQt5.QtCore import QFileInfo, QEvent
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon
 from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit
+from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QTextEdit, QVBoxLayout, QGroupBox, \
+    QComboBox, QDialog, QRadioButton, QLabel, QHBoxLayout, QPushButton
 from docx import Document
 
 from config import file_path as fp
@@ -18,6 +19,7 @@ from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_blo
 from spellcheck.symspell_suggestions import suggestionReturner
 from utils import find, datetime, table, wordcount
 from utils.corpus_clean import get_clean_words_for_dictionary
+from utils.sort_by import SortDialog
 from utils.util import has_letters_or_digits
 
 filename = os.path.splitext(os.path.basename(__file__))[0]
@@ -37,6 +39,10 @@ def start_background_exe():
 
     except Exception as e:
         print(f"Error starting background exe: {e}")
+
+
+
+
 
 
 class TextEditor(QtWidgets.QMainWindow):
@@ -146,10 +152,19 @@ class TextEditor(QtWidgets.QMainWindow):
         numberedAction.setShortcut("Ctrl+Shift+L")
         numberedAction.triggered.connect(self.numberList)
 
+
+        sort_by_action = QtWidgets.QAction(QtGui.QIcon('resources/images/sortBy.png'), 'Sort By', self)
+        sort_by_action.setStatusTip("Sort By")
+        sort_by_action.triggered.connect(self.sort_by_action)
+
+
+
         refresh_action = QtWidgets.QAction(QtGui.QIcon('resources/images/refresh.png'), 'Refresh and Recheck', self)
         refresh_action.setStatusTip("Refresh and Recheck")
         refresh_action.triggered.connect(self.refresh_recheck)
         #refresh_action.addAction(refresh_action)
+
+
 
         self.toolbar = self.addToolBar("Options")
         self.toolbar.addAction(self.newAction)
@@ -174,6 +189,7 @@ class TextEditor(QtWidgets.QMainWindow):
         self.toolbar.addSeparator()
         self.toolbar.addAction(bulletAction)
         self.toolbar.addAction(numberedAction)
+        self.toolbar.addAction(sort_by_action)
         self.toolbar.addAction(refresh_action)
 
         self.addToolBarBreak()
@@ -310,8 +326,7 @@ class TextEditor(QtWidgets.QMainWindow):
         view.addAction(statusbarAction)
 
     def initUI(self):
-
-        self.editor = QtWidgets.QTextEdit(self)
+        self.editor = QTextEdit(self)
         start_background_exe()
 
         # Set the tab stop width to around 33 pixels which is
@@ -341,11 +356,17 @@ class TextEditor(QtWidgets.QMainWindow):
         self.setGeometry(100, 100, 1030, 800)
 
         self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
-        #self.setWindowIcon(QtGui.QIcon("resources/images/icon.jpg"))
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
 
-        #self.show()
-
+        # Apply styles to the QTextEdit editor
+        self.editor.setStyleSheet("""
+            QTextEdit {
+                margin: 20px; /* Set margin */
+                border: 2px solid black; /* Set border */
+                width: 794px; /* Width of A4 page in pixels (assuming 96 dpi) */
+                height: 1122px; /* Height of A4 page in pixels (assuming 96 dpi) */
+            }
+        """)
     def changed(self):
         self.changesSaved = False
 
@@ -1177,3 +1198,36 @@ class TextEditor(QtWidgets.QMainWindow):
             if not modified_image.isNull():
                 cursor = self.editor.textCursor()
                 cursor.insertImage(modified_image)
+
+    def sort_by_action(self):
+        sort_dialog = SortDialog(self)
+        if sort_dialog.exec_():
+            sort_by = sort_dialog.combo_sort_by.currentText()
+            type_ = sort_dialog.combo_type.currentText()
+            using = sort_dialog.combo_using.currentText()
+            ascending = sort_dialog.radio_asc.isChecked()
+            has_header = sort_dialog.check_has_header.isChecked()
+            separator = sort_dialog.line_separator.text()
+            sort_options = sort_dialog.combo_sort_options.currentText()
+
+            # Get text from editor
+            text = self.editor.toPlainText()
+
+            # Split text into lines (or paragraphs)
+            lines = text.split('\n')
+
+            # Implement your sorting logic here based on the user input
+            # This example will sort the lines alphabetically
+            if type_ == "Text":
+                lines.sort(key=str.lower if not sort_options == "Case sensitive" else str, reverse=not ascending)
+            elif type_ == "Number":
+                lines.sort(key=lambda x: float(x) if x.replace('.', '', 1).isdigit() else float('inf'),
+                           reverse=not ascending)
+            elif type_ == "Date":
+                from datetime import datetime
+                lines.sort(key=lambda x: datetime.strptime(x, '%Y-%m-%d'), reverse=not ascending)
+
+            sorted_text = '\n'.join(lines)
+
+            # Set sorted text back to editor
+            self.editor.setPlainText(sorted_text)

@@ -69,7 +69,7 @@ class Table(QtWidgets.QDialog):
 
     def insert(self):
 
-        cursor = self.parent.text.textCursor()
+        cursor = self.parent.editor.textCursor()
 
         # Get the configurations
         rows = self.rows.value()

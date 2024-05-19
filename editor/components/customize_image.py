@@ -63,12 +63,19 @@
 #         return self.modified_image
 
 
-from PyQt5.QtCore import Qt, QSize, QRect, QRectF
+from PyQt5.QtCore import Qt, QSize, QRect, QRectF, QPoint
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QIcon, QFont
 from PyQt5.QtGui import QTransform
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QPushButton,
     QSlider, QToolBar, QAction, QMessageBox, QLineEdit
+)
+
+from PyQt5.QtCore import Qt, QSize, QRect, QRectF
+from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QIcon, QFont, QColor
+from PyQt5.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QPushButton,
+    QSlider, QToolBar, QAction, QMessageBox, QLineEdit, QColorDialog
 )
 
 
@@ -80,6 +87,8 @@ class ImageEditDialog(QDialog):
         self.current_image = self.modified_image.copy()
         self.history = [self.current_image]
         self.history_index = 0
+        self.brush_color = Qt.black
+        self.brush_size = 5
         self.initUI()
 
     def initUI(self):
@@ -116,9 +125,31 @@ class ImageEditDialog(QDialog):
         rotate_button.clicked.connect(self.rotateImage)
         controls_layout.addWidget(rotate_button)
 
-        crop_button = QPushButton("Crop", self)
-        crop_button.clicked.connect(self.cropImage)
-        controls_layout.addWidget(crop_button)
+        self.brush_color_button = QPushButton("Brush Color", self)
+        self.brush_color_button.clicked.connect(self.selectBrushColor)
+        controls_layout.addWidget(self.brush_color_button)
+
+        self.brush_size_spinbox = QSpinBox(self)
+        self.brush_size_spinbox.setRange(1, 50)
+        self.brush_size_spinbox.setValue(5)
+        self.brush_size_spinbox.valueChanged.connect(self.setBrushSize)
+        controls_layout.addWidget(self.brush_size_spinbox)
+
+        brush_button = QPushButton("Brush", self)
+        brush_button.clicked.connect(self.useBrushTool)
+        controls_layout.addWidget(brush_button)
+
+        rectangle_button = QPushButton("Rectangle", self)
+        rectangle_button.clicked.connect(self.drawRect)
+        controls_layout.addWidget(rectangle_button)
+
+        circle_button = QPushButton("Circle", self)
+        circle_button.clicked.connect(self.drawCircle)
+        controls_layout.addWidget(circle_button)
+
+        fill_button = QPushButton("Fill", self)
+        fill_button.clicked.connect(self.fillColor)
+        controls_layout.addWidget(fill_button)
 
         layout.addLayout(controls_layout)
 
@@ -154,20 +185,109 @@ class ImageEditDialog(QDialog):
         # Variables for cropping
         self.drag_start = None
         self.crop_rect = None
+        self.drawing_shape = False
+        self.shape_start = None
 
-    def insertTextOnImage(self):
-        text = self.text_input.text()
-        if text:
-            temp_image = self.current_image.copy()
-            painter = QPainter(temp_image)
-            painter.setPen(QPen(Qt.black))  # Set text color
-            painter.setFont(QFont("Arial", 20))  # Set font and size
-            painter.drawText(QRectF(50, 50, temp_image.width(), temp_image.height()), Qt.AlignLeft | Qt.AlignTop, text)  # Draw text at position (50, 50)
-            painter.end()
-            self.addToHistory(temp_image)
-            self.current_image = temp_image
-            self.modified_image = temp_image  # Update modified_image to reflect the most recent state including text
+    def selectBrushColor(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.brush_color = color
+
+    def setBrushSize(self, size):
+        self.brush_size = size
+
+    def useBrushTool(self):
+        self.drawing_shape = False
+
+    def drawRect(self):
+        self.drawing_shape = True
+        self.shape_type = "Rectangle"
+
+    def drawCircle(self):
+        self.drawing_shape = True
+        self.shape_type = "Circle"
+
+    def fillColor(self):
+        pass  # Implement fill tool functionality here
+
+    def mousePressEventHandler(self, event):
+        if event.button() == Qt.LeftButton:
+            if self.drawing_shape:
+                self.shape_start = event.pos()
+            else:
+                self.drawBrush(event.pos())
+
+    def mouseMoveEventHandler(self, event):
+        if self.drawing_shape and self.shape_start is not None:
             self.updatePreview()
+
+    def mouseReleaseEventHandler(self, event):
+        if event.button() == Qt.LeftButton:
+            if self.drawing_shape and self.shape_start is not None:
+                self.drawShape(event.pos())
+            else:
+                self.addToHistory(self.current_image)
+
+            self.updatePreview()
+
+    def drawBrush(self, pos):
+        painter = QPainter(self.current_image)
+        painter.setPen(QPen(self.brush_color, self.brush_size, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawPoint(pos)
+        self.image_label.setPixmap(
+            QPixmap.fromImage(self.current_image)
+            .scaled(QSize(400, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
+    def drawShape(self, end_pos):
+        painter = QPainter(self.current_image)
+        painter.setPen(QPen(self.brush_color, self.brush_size, Qt.SolidLine))
+        if self.shape_type == "Rectangle":
+            painter.drawRect(QRect(self.shape_start, end_pos))
+        elif self.shape_type == "Circle":
+            radius = max(abs(self.shape_start.x() - end_pos.x()), abs(self.shape_start.y() - end_pos.y()))
+            center = self.shape_start + QPoint(radius, radius)
+            painter.drawEllipse(center, radius, radius)
+        painter.end()
+
+    def updatePreview(self):
+        temp_image = self.current_image.copy()  # Start with a copy of the current image
+        painter = QPainter(temp_image)
+        if self.drawing_shape and self.shape_start is not None:
+            if self.shape_type == "Rectangle":
+                painter.drawRect(QRect(self.shape_start, self.current_pos))
+            elif self.shape_type == "Circle":
+                radius = max(abs(self.shape_start.x() - self.current_pos.x()), abs(self.shape_start.y() - self.current_pos.y()))
+                center = self.shape_start + QPoint(radius, radius)
+                painter.drawEllipse(center, radius, radius)
+        painter.end()
+        self.image_label.setPixmap(
+            QPixmap.fromImage(temp_image)
+            .scaled(QSize(400, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
+    def addToHistory(self, image):
+        # Remove future history when new action is performed after undo
+        if self.history_index < len(self.history) - 1:
+            self.history = self.history[:self.history_index + 1]
+
+        self.history.append(image.copy())
+        self.history_index = len(self.history) - 1
+
+    def undo(self):
+        if self.history_index > 0:
+            self.history_index -= 1
+            self.current_image = self.history[self.history_index].copy()
+            self.updatePreview()
+
+    def redo(self):
+        if self.history_index < len(self.history) - 1:
+            self.history_index += 1
+            self.current_image = self.history[self.history_index].copy()
+            self.updatePreview()
+
+    def getModifiedImage(self):
+        return self.modified_image
 
     def resizeImage(self):
         new_width = self.resize_spinbox.value()
@@ -184,63 +304,29 @@ class ImageEditDialog(QDialog):
         self.current_image = new_image
         self.updatePreview()
 
-    def cropImage(self):
-        if self.crop_rect is None:
-            QMessageBox.warning(self, "No Selection", "Please select an image area to crop.")
-            return
-
-        new_image = self.current_image.copy(self.crop_rect)
-        self.addToHistory(new_image)
-        self.current_image = new_image
-        self.crop_rect = None
-        self.updatePreview()
-
-    def mousePressEventHandler(self, event):
-        if event.button() == Qt.LeftButton:
-            self.drag_start = event.pos()
+    def insertTextOnImage(self):
+        text = self.text_input.text()
+        if text:
+            temp_image = self.current_image.copy()
+            painter = QPainter(temp_image)
+            painter.setPen(QPen(Qt.black))  # Set text color
+            painter.setFont(QFont("Arial", 20))  # Set font and size
+            painter.drawText(QRectF(50, 50, temp_image.width(), temp_image.height()), Qt.AlignLeft | Qt.AlignTop,
+                             text)  # Draw text at position (50, 50)
+            painter.end()
+            self.addToHistory(temp_image)
+            self.current_image = temp_image
+            self.modified_image = temp_image  # Update modified_image to reflect the most recent state including text
+            self.updatePreview()
 
     def mouseMoveEventHandler(self, event):
-        if self.drag_start is not None:
-            end_pos = event.pos()
-            self.crop_rect = QRect(self.drag_start, end_pos).normalized()
-            self.updatePreview()
+        if self.drawing_shape:
+            self.current_pos = event.pos()
+            if self.shape_start is not None:
+                self.updatePreview()
+        else:
+            if event.buttons() == Qt.LeftButton:
+                self.drawBrush(event.pos())
 
-    def mouseReleaseEventHandler(self, event):
-        if event.button() == Qt.LeftButton:
-            self.drag_start = None
 
-    def addToHistory(self, image):
-        # Remove future history when new action is performed after undo
-        if self.history_index < len(self.history) - 1:
-            self.history = self.history[:self.history_index + 1]
 
-        self.history.append(image)
-        self.history_index = len(self.history) - 1
-
-    def updatePreview(self):
-        temp_image = self.current_image.copy()  # Start with a copy of the current image
-        if self.crop_rect is not None:
-            painter = QPainter(temp_image)
-            painter.setPen(QPen(Qt.red, 2, Qt.SolidLine))
-            painter.drawRect(self.crop_rect)
-            painter.end()
-
-        self.image_label.setPixmap(
-            QPixmap.fromImage(temp_image)
-            .scaled(QSize(400, 300), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        )
-
-    def undo(self):
-        if self.history_index > 0:
-            self.history_index -= 1
-            self.current_image = self.history[self.history_index]
-            self.updatePreview()
-
-    def redo(self):
-        if self.history_index < len(self.history) - 1:
-            self.history_index += 1
-            self.current_image = self.history[self.history_index]
-            self.updatePreview()
-
-    def getModifiedImage(self):
-        return self.modified_image
