@@ -1,15 +1,13 @@
 import os
 import subprocess
 
-from PyQt5 import QtCore
 from PyQt5 import QtPrintSupport
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import QFileInfo, QEvent
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QFileInfo, QEvent, pyqtSlot
+from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon
 from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QTextEdit, QVBoxLayout, QGroupBox, \
-    QComboBox, QDialog, QRadioButton, QLabel, QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea
 from docx import Document
 
 from config import file_path as fp
@@ -41,8 +39,48 @@ def start_background_exe():
         print(f"Error starting background exe: {e}")
 
 
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy
 
 
+class Page(QWidget):
+    activeEditorChanged = pyqtSignal(QTextEdit)
+    textOverflow = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)  # Margins around the page
+
+        self.editor = QTextEdit(self)
+        self.editor.setFixedSize(int(210 * 96 / 25.4), int(297 * 96 / 25.4))  # A4 size
+        self.editor.setCursorWidth(2)  # Set cursor width
+        self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable vertical scrollbar
+        self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable horizontal scrollbar
+        self.editor.setStyleSheet("""
+            QTextEdit {
+                border: 2px solid black; /* Set border */
+            }
+        """)
+        self.editor.setReadOnly(False)  # Set read-only mode to False
+        self.editor.setTextInteractionFlags(Qt.TextEditorInteraction)  # Enable text interaction
+        self.editor.setFocusPolicy(Qt.StrongFocus)  # Enable focus
+
+        layout.addWidget(self.editor)
+
+        # Ensure the parent widget's layout does not allow expanding beyond fixed size
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+
+def show_error_popup(error_message):
+    error_box = QMessageBox()
+    error_box.setIcon(QMessageBox.Critical)
+    error_box.setWindowTitle("Error")
+    error_box.setText("An error occurred:")
+    error_box.setInformativeText(error_message)
+    error_box.exec_()
 
 
 class TextEditor(QtWidgets.QMainWindow):
@@ -51,11 +89,39 @@ class TextEditor(QtWidgets.QMainWindow):
         super().__init__()
         QtWidgets.QMainWindow.__init__(self, parent)
 
+        self.scrollArea = None
+        self.editor = None
+        self.statusbar = None
+        self.pages = []
         self.filename = None
 
         self.changesSaved = True
 
         self.initUI()
+
+    def addPage(self):
+        page = Page(self)
+        page.textOverflow.connect(self.handleOverflow)
+        self.pages.append(page)
+        self.pageLayout.addWidget(page)
+        self.editor = page.editor  # Set the editor to the current page's editor
+        page.editor.cursorPositionChanged.connect(self.cursorPosition)
+        page.editor.setContextMenuPolicy(Qt.CustomContextMenu)
+        page.editor.customContextMenuRequested.connect(self.context)
+        page.editor.textChanged.connect(self.changed)
+        page.editor.installEventFilter(self)
+
+    def handleOverflow(self):
+        currentPage = self.pages[-1]
+        cursor = currentPage.editor.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        cursor.select(QTextCursor.Document)
+        overflowText = cursor.selectedText()
+
+        if overflowText:
+            cursor.removeSelectedText()
+            self.addPage()
+            self.editor.insertPlainText(overflowText)
 
     def initToolbar(self):
 
@@ -152,19 +218,14 @@ class TextEditor(QtWidgets.QMainWindow):
         numberedAction.setShortcut("Ctrl+Shift+L")
         numberedAction.triggered.connect(self.numberList)
 
-
         sort_by_action = QtWidgets.QAction(QtGui.QIcon('resources/images/sortBy.png'), 'Sort By', self)
         sort_by_action.setStatusTip("Sort By")
         sort_by_action.triggered.connect(self.sort_by_action)
-
-
 
         refresh_action = QtWidgets.QAction(QtGui.QIcon('resources/images/refresh.png'), 'Refresh and Recheck', self)
         refresh_action.setStatusTip("Refresh and Recheck")
         refresh_action.triggered.connect(self.refresh_recheck)
         #refresh_action.addAction(refresh_action)
-
-
 
         self.toolbar = self.addToolBar("Options")
         self.toolbar.addAction(self.newAction)
@@ -326,26 +387,48 @@ class TextEditor(QtWidgets.QMainWindow):
         view.addAction(statusbarAction)
 
     def initUI(self):
-        self.editor = QTextEdit(self)
         start_background_exe()
+        self.scrollArea = QScrollArea(self)
+        self.scrollArea.setWidgetResizable(True)
+        centralWidget = QWidget()
+        self.scrollArea.setWidget(centralWidget)
+        self.setCentralWidget(self.scrollArea)
 
-        # Set the tab stop width to around 33 pixels which is
-        # more or less 8 spaces
-        self.editor.setTabStopWidth(33)
+        # Create a QVBoxLayout for centering the pages
+        centralLayout = QVBoxLayout(centralWidget)
+        centralLayout.setAlignment(Qt.AlignCenter)  # Align the pages to the center
+
+        self.pageLayout = QVBoxLayout()  # Remove the parent widget from the QVBoxLayout
+
+        centralLayout.addLayout(self.pageLayout)  # Add the page layout to the central layout
+
+        self.addPage()
 
         self.initToolbar()
         self.initFormatbar()
         self.initMenubar()
 
-        self.setCentralWidget(self.editor)
-
         # Initialize a statusbar for the window
         self.statusbar = self.statusBar()
 
-        # If the cursor position changes, call the function that displays
-        # the line and column number
-        self.editor.cursorPositionChanged.connect(self.cursorPosition)
+        self.setGeometry(100, 100, 1030, 800)
+        self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
+        self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
 
+    def addPage(self):
+        new_page = Page(self)
+        self.pages.append(new_page)
+        self.pageLayout.addWidget(new_page)
+        self.pageLayout.addStretch()  # Add stretch to keep the pages at the top
+
+        # Connect the signal to update the active editor
+        new_page.activeEditorChanged.connect(self.updateActiveEditor)
+
+        # Set the initial editor if this is the first page
+        if len(self.pages) == 1:
+            self.editor = new_page.editor
+
+        self.editor.cursorPositionChanged.connect(self.cursorPosition)
         # We need our own context menu for tables
         self.editor.setContextMenuPolicy(Qt.CustomContextMenu)
         self.editor.customContextMenuRequested.connect(self.context)
@@ -353,20 +436,19 @@ class TextEditor(QtWidgets.QMainWindow):
         self.editor.textChanged.connect(self.changed)
         self.editor.installEventFilter(self)
 
-        self.setGeometry(100, 100, 1030, 800)
+        # Connect the text changed signal to check for overflow
+        new_page.editor.textChanged.connect(lambda: self.checkPageOverflow(new_page))
 
-        self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
-        self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
+    def updateActiveEditor(self, editor):
+        self.editor = editor
 
-        # Apply styles to the QTextEdit editor
-        self.editor.setStyleSheet("""
-            QTextEdit {
-                margin: 20px; /* Set margin */
-                border: 2px solid black; /* Set border */
-                width: 794px; /* Width of A4 page in pixels (assuming 96 dpi) */
-                height: 1122px; /* Height of A4 page in pixels (assuming 96 dpi) */
-            }
-        """)
+    @pyqtSlot()
+    def checkPageOverflow(self, page):
+        editor = page.editor
+        if editor.document().size().height() > editor.height():
+            editor.textChanged.disconnect()
+            self.addPage()
+
     def changed(self):
         self.changesSaved = False
 
@@ -403,105 +485,64 @@ class TextEditor(QtWidgets.QMainWindow):
                 event.ignore()
 
     def context(self, pos):
-
-        # Grab the cursor
-        cursor = self.editor.textCursor()
+        # Obtain the cursor at the position
+        cursor = self.editor.cursorForPosition(pos)
 
         # Grab the current table, if there is one
         table = cursor.currentTable()
 
-        # Above will return 0 if there is no current table, in which case
-        # we call the normal context menu. If there is a table, we create
-        # our own context menu specific to table interaction
+        # Above will return None if there is no current table
         if table:
-
             menu = QMenu(self)
 
+            # Add actions for table manipulation
             appendRowAction = QtWidgets.QAction("Append row", self)
             appendRowAction.triggered.connect(lambda: table.appendRows(1))
-
             appendColAction = QtWidgets.QAction("Append column", self)
             appendColAction.triggered.connect(lambda: table.appendColumns(1))
-
             removeRowAction = QtWidgets.QAction("Remove row", self)
-            removeRowAction.triggered.connect(self.removeRow)
-
+            removeRowAction.triggered.connect(lambda: self.removeRow(table, cursor))
             removeColAction = QtWidgets.QAction("Remove column", self)
-            removeColAction.triggered.connect(self.removeCol)
-
+            removeColAction.triggered.connect(lambda: self.removeCol(table, cursor))
             insertRowAction = QtWidgets.QAction("Insert row", self)
-            insertRowAction.triggered.connect(self.insertRow)
-
+            insertRowAction.triggered.connect(lambda: self.insertRow(table, cursor))
             insertColAction = QtWidgets.QAction("Insert column", self)
-            insertColAction.triggered.connect(self.insertCol)
-
+            insertColAction.triggered.connect(lambda: self.insertCol(table, cursor))
             mergeAction = QtWidgets.QAction("Merge cells", self)
-            mergeAction.triggered.connect(lambda: table.mergeCells(cursor))
+            mergeAction.triggered.connect(lambda: self.mergeCells(table, cursor))
+            splitAction = QtWidgets.QAction("Split cells", self)
+            splitAction.triggered.connect(lambda: self.splitCell(table, cursor))
 
             # Only allow merging if there is a selection
             if not cursor.hasSelection():
                 mergeAction.setEnabled(False)
 
-            splitAction = QtWidgets.QAction("Split cells", self)
-
-            cell = table.cellAt(cursor)
-
-            # Only allow splitting if the current cell is larger
-            # than a normal cell
-            if cell.rowSpan() > 1 or cell.columnSpan() > 1:
-
-                splitAction.triggered.connect(lambda: table.splitCell(cell.row(), cell.column(), 1, 1))
-
-            else:
-                splitAction.setEnabled(False)
-
+            # Add actions to the menu
             menu.addAction(appendRowAction)
             menu.addAction(appendColAction)
-
             menu.addSeparator()
-
             menu.addAction(removeRowAction)
             menu.addAction(removeColAction)
-
             menu.addSeparator()
-
             menu.addAction(insertRowAction)
             menu.addAction(insertColAction)
-
             menu.addSeparator()
-
             menu.addAction(mergeAction)
             menu.addAction(splitAction)
 
-            # Convert the widget coordinates into global coordinates
-            pos = self.mapToGlobal(pos)
-
-            # Add pixels for the tool and formatbars, which are not included
-            # in mapToGlobal(), but only if the two are currently visible and
-            # not toggled by the user
-
-            if self.toolbar.isVisible():
-                pos.setY(pos.y() + 45)
-
-            if self.formatbar.isVisible():
-                pos.setY(pos.y() + 45)
-
-            # Move the menu to the new position
-            menu.move(pos)
-
-            menu.show()
-
-        if cursor.hasSelection():
-            cursor = self.editor.cursorForPosition(pos)
+            # Show the menu
+            menu.exec_(self.editor.mapToGlobal(pos))
+        else:
+            # Handle word suggestions if no table is found
             cursor.select(QTextCursor.WordUnderCursor)
             selected_word = cursor.selectedText()
-            if bloom_lookup(selected_word):
-                return
-            suggestions = suggestionReturner(selected_word)
             if selected_word:
                 menu = QMenu(self)
+                if bloom_lookup(selected_word):
+                    return
+                suggestions = suggestionReturner(selected_word)
 
-                # Create a function to handle the word replacement
+                # Create a function to handle word replacement
                 def replace_word_with_suggestion(suggestion):
                     cursor.removeSelectedText()
                     cursor.insertText(suggestion)
@@ -511,81 +552,57 @@ class TextEditor(QtWidgets.QMainWindow):
                     action = menu.addAction(suggestion)
                     action.triggered.connect(lambda _, s=suggestion: replace_word_with_suggestion(s))
 
+                # Add actions for adding to dictionary, ignoring, and replacing
                 add_to_dict_action = menu.addAction("Add to Dictionary")
                 ignore_action = menu.addAction("Ignore")
                 replace_action = menu.addAction("Replace All")
 
                 # Connect actions to corresponding functions
                 add_to_dict_action.triggered.connect(lambda: self.addToDictionary(selected_word))
-                ignore_action.triggered.connect(lambda: self.ignore_word(selected_word))
+                ignore_action.triggered.connect(lambda: self.ignore_word())
                 replace_action.triggered.connect(lambda: self.replace_word(selected_word))
 
+                # Show the menu
                 menu.exec_(self.editor.mapToGlobal(pos))
-        else:
+            else:
+                # If no selection, call the default context menu event
+                event = QtGui.QContextMenuEvent(QtGui.QContextMenuEvent.Mouse, pos)
+                self.editor.contextMenuEvent(event)
 
-            event = QtGui.QContextMenuEvent(QtGui.QContextMenuEvent.Mouse, QtCore.QPoint())
+    def removeRow(self, table, cursor):
+        try:
+            # Get the cursor position
+            cursor_position = cursor.position()
+            # Find the cell containing the cursor
+            cell = table.cellAt(cursor_position)
+            # Check if a valid cell is found
+            if cell.isValid():
+                # Get the row index of the cell
+                row_index = cell.row()
+                # Remove the row
+                table.removeRows(row_index, 1)
+        except Exception as e:
+            show_error_popup(str(e))
 
-            self.editor.contextMenuEvent(event)
+    def removeCol(self, table, cursor):
+        col = cursor.columnNumber()
+        table.removeColumns(col, 1)
 
-    def removeRow(self):
+    def insertRow(self, table, cursor):
+        row = cursor.blockNumber()
+        table.insertRows(row, 1)
 
-        # Grab the cursor
-        cursor = self.editor.textCursor()
+    def insertCol(self, table, cursor):
+        col = cursor.columnNumber()
+        table.insertColumns(col, 1)
 
-        # Grab the current table (we assume there is one, since
-        # this is checked before calling)
-        table = cursor.currentTable()
+    def mergeCells(self, table, cursor):
+        table.mergeCells(cursor)
 
-        # Get the current cell
+    def splitCell(self, table, cursor):
         cell = table.cellAt(cursor)
-
-        # Delete the cell's row
-        table.removeRows(cell.row(), 1)
-
-    def removeCol(self):
-
-        # Grab the cursor
-        cursor = self.editor.textCursor()
-
-        # Grab the current table (we assume there is one, since
-        # this is checked before calling)
-        table = cursor.currentTable()
-
-        # Get the current cell
-        cell = table.cellAt(cursor)
-
-        # Delete the cell's column
-        table.removeColumns(cell.column(), 1)
-
-    def insertRow(self):
-
-        # Grab the cursor
-        cursor = self.editor.textCursor()
-
-        # Grab the current table (we assume there is one, since
-        # this is checked before calling)
-        table = cursor.currentTable()
-
-        # Get the current cell
-        cell = table.cellAt(cursor)
-
-        # Insert a new row at the cell's position
-        table.insertRows(cell.row(), 1)
-
-    def insertCol(self):
-
-        # Grab the cursor
-        cursor = self.editor.textCursor()
-
-        # Grab the current table (we assume there is one, since
-        # this is checked before calling)
-        table = cursor.currentTable()
-
-        # Get the current cell
-        cell = table.cellAt(cursor)
-
-        # Insert a new row at the cell's position
-        table.insertColumns(cell.column(), 1)
+        if cell.rowSpan() > 1 or cell.columnSpan() > 1:
+            table.splitCell(cell.row(), cell.column(), 1, 1)
 
     def toggleToolbar(self):
 
@@ -706,63 +723,6 @@ class TextEditor(QtWidgets.QMainWindow):
             QMessageBox.critical(self, 'Error', f'Error saving file: {str(e)}')
 
         self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
-
-    # def save_as(self):
-    #     try:
-    #         # Prompt the user to choose a file location for saving
-    #         filename, _ = QFileDialog.getSaveFileName(self, 'Save File As', '',
-    #                                                   filter="All Files (*);;RTF Files (*.rtf);;DOCX Files (*.docx);;PDF Files (*.pdf);;Text Files (*.txt)")
-    #
-    #         if not filename:  # User cancelled the dialog
-    #             return
-    #
-    #         # Determine the file extension and set the appropriate filter
-    #         file_info = QFileInfo(filename)
-    #         file_suffix = file_info.suffix().lower()
-    #         if file_suffix not in ['rtf', 'docx', 'pdf', 'txt']:
-    #             QMessageBox.critical(self, 'Error', 'Unsupported file format.')
-    #             return
-    #
-    #         # Create a QTextDocument and set the HTML content from QTextEdit
-    #         document = QTextDocument()
-    #         document.setHtml(self.editor.toHtml())
-    #
-    #         if filename.endswith(".rtf"):
-    #             # Save as RTF using QTextDocumentWriter
-    #             writer = QTextDocumentWriter(filename)
-    #             success = writer.write(document)
-    #         if filename.endswith(".docx"):
-    #             # Save as DOCX using QTextDocumentWriter
-    #             writer = QTextDocumentWriter(filename)
-    #             writer.setFormat(QByteArray(b"docx"))  # Convert the string to bytes and then to QByteArray
-    #             success = writer.write(document)
-    #         elif filename.endswith(".pdf"):
-    #             # Save as PDF using QPrinter and QPainter
-    #             printer = QPrinter(QPrinter.HighResolution)
-    #             printer.setOutputFormat(QPrinter.PdfFormat)
-    #             printer.setOutputFileName(filename)
-    #             painter = QPainter(printer)
-    #             document.drawContents(painter)
-    #             painter.end()
-    #             success = True
-    #         elif filename.endswith(".txt"):
-    #             # Save as TXT with UTF-8 encoding
-    #             with open(filename, "w", encoding="utf-8") as txt_file:
-    #                 txt_file.write(self.editor.toPlainText())
-    #             success = True
-    #         else:
-    #             QMessageBox.critical(self, 'Error', 'Unsupported file format.')
-    #             return
-    #
-    #         if success:
-    #             QMessageBox.information(self, 'Success', f'File saved successfully: {filename}')
-    #         else:
-    #             QMessageBox.critical(self, 'Error', f'Error saving file: {filename}')
-    #
-    #     except Exception as e:
-    #         print(str(e))
-    #         QMessageBox.critical(self, 'Error', f'Error saving file: {str(e)}')
-    #
 
     def save_as(self):
         try:
@@ -1138,7 +1098,7 @@ class TextEditor(QtWidgets.QMainWindow):
             else:
                 print("word already present in Dictionary file")
 
-    def ignore_word(self, word):
+    def ignore_word(self):
         cursor = self.editor.textCursor()
         cursor.beginEditBlock()  # Begin editing block to improve performance
 
@@ -1151,17 +1111,16 @@ class TextEditor(QtWidgets.QMainWindow):
         cursor.mergeCharFormat(format)
         cursor.endEditBlock()
 
-    def replace_word(self, word_to_replace):
-        new_word, ok = QInputDialog.getText(self, 'Replace Word', f'Enter new word to replace {word_to_replace}',
+    def replace_word(self, selected_word):
+        cursor = self.editor.textCursor()
+        if not cursor.hasSelection():
+            return  # No text selected, nothing to replace
+
+        new_word, ok = QInputDialog.getText(self, 'Replace Word', f'Enter the new word to replace "{selected_word}":',
                                             QLineEdit.Normal)
         if ok and new_word:
-            cursor = self.editor.textCursor()  # Get the current cursor position
-            current_text = self.editor.toPlainText()
-            new_text = current_text.replace(word_to_replace, new_word)
-            self.editor.setPlainText(new_text)
-            # Restore the cursor position
-            cursor.setPosition(cursor.position() + len(new_word))
-            self.editor.setTextCursor(cursor)
+            cursor.insertText(new_word)
+            cursor.removeSelectedText()
 
     def refresh_recheck(self):
         reload_bloom_filter()
