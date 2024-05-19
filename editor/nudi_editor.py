@@ -427,14 +427,16 @@ class TextEditor(QtWidgets.QMainWindow):
         # Set the initial editor if this is the first page
         if len(self.pages) == 1:
             self.editor = new_page.editor
-
+            
+        self.editor.textChanged.connect(self.changed)
         self.editor.cursorPositionChanged.connect(self.cursorPosition)
         # We need our own context menu for tables
         self.editor.setContextMenuPolicy(Qt.CustomContextMenu)
         self.editor.customContextMenuRequested.connect(self.context)
 
-        self.editor.textChanged.connect(self.changed)
+
         self.editor.installEventFilter(self)
+        self.editor.setTabStopWidth(33)
 
         # Connect the text changed signal to check for overflow
         new_page.editor.textChanged.connect(lambda: self.checkPageOverflow(new_page))
