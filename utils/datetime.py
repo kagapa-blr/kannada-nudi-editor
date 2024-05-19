@@ -53,7 +53,7 @@ class DateTime(QtWidgets.QDialog):
     def insert(self):
 
         # Grab cursor
-        cursor = self.parent.text.textCursor()
+        cursor = self.parent.editor.textCursor()
 
         datetime = strftime(self.formats[self.box.currentIndex()])
 

@@ -70,7 +70,7 @@ class Find(QtWidgets.QDialog):
     def find(self):
 
         # Grab the parent's text
-        text = self.parent.text.toPlainText()
+        text = self.parent.editor.toPlainText()
 
         # And the text to find
         query = self.findField.toPlainText()
@@ -93,7 +93,7 @@ class Find(QtWidgets.QDialog):
                 # Make the next search start from the begining again
                 self.lastStart = 0
                 
-                self.parent.text.moveCursor(QtGui.QTextCursor.End)
+                self.parent.editor.moveCursor(QtGui.QTextCursor.End)
 
         else:
 
@@ -114,12 +114,12 @@ class Find(QtWidgets.QDialog):
                 self.lastStart = 0
                 
                 # We set the cursor to the end if the search was unsuccessful
-                self.parent.text.moveCursor(QtGui.QTextCursor.End)
+                self.parent.editor.moveCursor(QtGui.QTextCursor.End)
 
     def replace(self):
 
         # Grab the text cursor
-        cursor = self.parent.text.textCursor()
+        cursor = self.parent.editor.textCursor()
 
         # Security
         if cursor.hasSelection():
@@ -129,7 +129,7 @@ class Find(QtWidgets.QDialog):
             cursor.insertText(self.replaceField.toPlainText())
 
             # And set the new cursor
-            self.parent.text.setTextCursor(cursor)
+            self.parent.editor.setTextCursor(cursor)
 
     def replaceAll(self):
 
@@ -145,7 +145,7 @@ class Find(QtWidgets.QDialog):
     def moveCursor(self,start,end):
 
         # We retrieve the QTextCursor object from the parent's QTextEdit
-        cursor = self.parent.text.textCursor()
+        cursor = self.parent.editor.textCursor()
 
         # Then we set the position to the beginning of the last match
         cursor.setPosition(start)
@@ -155,4 +155,4 @@ class Find(QtWidgets.QDialog):
         cursor.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.KeepAnchor,end - start)
 
         # And finally we set this new cursor as the parent's 
-        self.parent.text.setTextCursor(cursor)
+        self.parent.editor.setTextCursor(cursor)
