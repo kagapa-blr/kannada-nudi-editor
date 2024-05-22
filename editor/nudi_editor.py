@@ -1,6 +1,6 @@
 import os
 import subprocess
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy, QLabel, QSlider, QHBoxLayout
 from PyQt5 import QtPrintSupport
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QFileInfo, QEvent, pyqtSlot
@@ -38,7 +38,6 @@ def start_background_exe():
     except Exception as e:
         print(f"Error starting background exe: {e}")
 
-
 class Page(QWidget):
     activeEditorChanged = pyqtSignal(QTextEdit)
     textOverflow = pyqtSignal()
@@ -47,6 +46,7 @@ class Page(QWidget):
         super().__init__(parent)
         self.initUI()
         self.editor.installEventFilter(self)
+        self.currentZoomFactor = 1.0  # Track the current zoom factor
 
     def initUI(self):
         layout = QVBoxLayout(self)
@@ -106,6 +106,15 @@ class Page(QWidget):
             new_cursor = self.editor.textCursor()
             new_cursor.setPosition(original_position + 1)
             self.editor.setTextCursor(new_cursor)
+
+    def setZoomFactor(self, factor):
+        self.currentZoomFactor = factor
+        font = self.editor.font()
+        font.setPointSizeF(12 * factor)  # Adjust the base font size accordingly
+        self.editor.setFont(font)
+        new_width = int(210 * 96 / 25.4 * factor)
+        new_height = int(297 * 96 / 25.4 * factor)
+        self.editor.setFixedSize(new_width, new_height)
 
 
 def show_error_popup(error_message):
@@ -420,6 +429,27 @@ class TextEditor(QtWidgets.QMainWindow):
         view.addAction(formatbarAction)
         view.addAction(statusbarAction)
 
+    def initZoomSlider(self):
+        # Create a zoom slider
+        zoomLabel = QLabel("Zoom:", self)
+        self.zoomSlider = QSlider(Qt.Horizontal, self)
+        self.zoomSlider.setRange(10, 300)  # Zoom range from 10% to 300%
+        self.zoomSlider.setValue(100)  # Default zoom level at 100%
+        self.zoomSlider.setTickInterval(10)
+        self.zoomSlider.setTickPosition(QSlider.TicksBelow)
+        self.zoomSlider.setFixedWidth(150)  # Set a fixed width for the slider
+        self.zoomSlider.valueChanged.connect(self.zoomText)
+
+        # Add zoom slider to the status bar
+        zoomWidget = QWidget(self)
+        zoomLayout = QHBoxLayout(zoomWidget)
+        zoomLayout.setContentsMargins(0, 0, 0, 0)  # No margins
+        zoomLayout.addWidget(zoomLabel)
+        zoomLayout.addWidget(self.zoomSlider)
+        zoomWidget.setLayout(zoomLayout)
+
+        self.statusbar.addPermanentWidget(zoomWidget)
+
     def initUI(self):
         start_background_exe()
         self.scrollArea = QScrollArea(self)
@@ -445,9 +475,16 @@ class TextEditor(QtWidgets.QMainWindow):
         # Initialize a statusbar for the window
         self.statusbar = self.statusBar()
 
+        # Initialize the zoom slider
+        self.initZoomSlider()
+
         self.setGeometry(100, 100, 1030, 800)
         self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
+
+
+        # Open in maximized mode
+        self.showMaximized()
 
     def addPage(self):
         new_page = Page(self)
@@ -473,6 +510,11 @@ class TextEditor(QtWidgets.QMainWindow):
 
         # Connect the text changed signal to check for overflow
         new_page.editor.textChanged.connect(lambda: self.checkPageOverflow(new_page))
+
+    def zoomText(self, value):
+        factor = value / 100.0
+        for page in self.pages:
+            page.setZoomFactor(factor)
 
     def updateActiveEditor(self, editor):
         self.editor = editor
