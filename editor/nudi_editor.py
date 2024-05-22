@@ -1,6 +1,6 @@
 import os
 import subprocess
-
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy
 from PyQt5 import QtPrintSupport
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QFileInfo, QEvent, pyqtSlot
@@ -39,9 +39,6 @@ def start_background_exe():
         print(f"Error starting background exe: {e}")
 
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy
-
-
 class Page(QWidget):
     activeEditorChanged = pyqtSignal(QTextEdit)
     textOverflow = pyqtSignal()
@@ -49,6 +46,7 @@ class Page(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.initUI()
+        self.editor.installEventFilter(self)
 
     def initUI(self):
         layout = QVBoxLayout(self)
@@ -72,6 +70,42 @@ class Page(QWidget):
 
         # Ensure the parent widget's layout does not allow expanding beyond fixed size
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+    def eventFilter(self, obj, event):
+        if obj == self.editor and event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Space:
+                self.spacebarClicked()
+                return True  # Event handled
+        return super().eventFilter(obj, event)
+
+    def spacebarClicked(self):
+        cursor = self.editor.textCursor()
+        original_position = cursor.position()
+
+        # Insert a space
+        cursor.insertText(" ")
+
+        # Move cursor to the left of the inserted space
+        cursor.movePosition(QTextCursor.WordLeft, QTextCursor.MoveAnchor)
+
+        # Select the entire word to the left of the cursor
+        cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
+        word_left_of_cursor = cursor.selectedText()
+
+        if has_letters_or_digits(word_left_of_cursor):
+            print("Correct word")
+        elif not bloom_lookup(word_left_of_cursor):
+            # Trim the selected word
+            wrong_word = f'<span style="text-decoration: underline;">{word_left_of_cursor.strip()}</span>'
+            html_content = self.editor.toHtml()
+            new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
+            # Set the new HTML content
+            self.editor.setHtml(new_html_content)
+
+            # Restore the cursor to the original position plus one (after the inserted space)
+            new_cursor = self.editor.textCursor()
+            new_cursor.setPosition(original_position + 1)
+            self.editor.setTextCursor(new_cursor)
 
 
 def show_error_popup(error_message):
@@ -427,13 +461,12 @@ class TextEditor(QtWidgets.QMainWindow):
         # Set the initial editor if this is the first page
         if len(self.pages) == 1:
             self.editor = new_page.editor
-            
+
         self.editor.textChanged.connect(self.changed)
         self.editor.cursorPositionChanged.connect(self.cursorPosition)
         # We need our own context menu for tables
         self.editor.setContextMenuPolicy(Qt.CustomContextMenu)
         self.editor.customContextMenuRequested.connect(self.context)
-
 
         self.editor.installEventFilter(self)
         self.editor.setTabStopWidth(33)
@@ -1045,40 +1078,40 @@ class TextEditor(QtWidgets.QMainWindow):
         # Insert list with numbers
         cursor.insertList(QtGui.QTextListFormat.ListDecimal)
 
-    def eventFilter(self, obj, event):
-        if obj == self.editor and event.type() == QEvent.KeyPress:
-            if event.key() == Qt.Key_Space:
-                self.spacebarClicked()
-                return True  # Event handled
-        return super().eventFilter(obj, event)
-
-    def spacebarClicked(self):
-        cursor = self.editor.textCursor()
-        original_position = cursor.position()
-
-        # Insert a space
-        cursor.insertText(" ")
-
-        # Move cursor to the left of the inserted space
-        cursor.movePosition(QTextCursor.WordLeft, QTextCursor.MoveAnchor)
-
-        # Select the entire word to the left of the cursor
-        cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
-        word_left_of_cursor = cursor.selectedText()
-
-        if has_letters_or_digits(word_left_of_cursor):
-            print("Correct word")
-        elif not bloom_lookup(word_left_of_cursor):
-            # Trim the selected word
-            wrong_word = f'<span style="text-decoration: underline;">{word_left_of_cursor.strip()}</span>'
-            #print("word left of cursor: ", wrong_word)
-            html_content = self.editor.toHtml()
-            new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
-            # Set the new HTML content
-            self.editor.setHtml(new_html_content)
-            # Move the cursor to the right of the replaced word
-            cursor.movePosition(QTextCursor.Right)
-            self.editor.setTextCursor(cursor)
+    # def eventFilter(self, obj, event):
+    #     if obj == self.editor and event.type() == QEvent.KeyPress:
+    #         if event.key() == Qt.Key_Space:
+    #             self.spacebarClicked()
+    #             return True  # Event handled
+    #     return super().eventFilter(obj, event)
+    #
+    # def spacebarClicked(self):
+    #     cursor = self.editor.textCursor()
+    #     original_position = cursor.position()
+    #
+    #     # Insert a space
+    #     cursor.insertText(" ")
+    #
+    #     # Move cursor to the left of the inserted space
+    #     cursor.movePosition(QTextCursor.WordLeft, QTextCursor.MoveAnchor)
+    #
+    #     # Select the entire word to the left of the cursor
+    #     cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
+    #     word_left_of_cursor = cursor.selectedText()
+    #
+    #     if has_letters_or_digits(word_left_of_cursor):
+    #         print("Correct word")
+    #     elif not bloom_lookup(word_left_of_cursor):
+    #         # Trim the selected word
+    #         wrong_word = f'<span style="text-decoration: underline;">{word_left_of_cursor.strip()}</span>'
+    #         #print("word left of cursor: ", wrong_word)
+    #         html_content = self.editor.toHtml()
+    #         new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
+    #         # Set the new HTML content
+    #         self.editor.setHtml(new_html_content)
+    #         # Move the cursor to the right of the replaced word
+    #         cursor.movePosition(QTextCursor.Right)
+    #         self.editor.setTextCursor(cursor)
 
     def addToDictionary(self, word):
         with open(fp.bloomfilter_data, 'a', encoding='utf-8') as dict_file:
