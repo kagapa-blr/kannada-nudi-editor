@@ -44,9 +44,9 @@ class Page(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.currentZoomFactor = 1.0
         self.initUI()
         self.editor.installEventFilter(self)
-        self.currentZoomFactor = 1.0  # Track the current zoom factor
 
     def initUI(self):
         layout = QVBoxLayout(self)
@@ -70,6 +70,17 @@ class Page(QWidget):
 
         # Ensure the parent widget's layout does not allow expanding beyond fixed size
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+    def setZoomFactor(self, factor):
+        self.currentZoomFactor = factor
+        font = self.editor.font()
+        font.setPointSize(int(12 * factor))  # Convert the result to an integer
+        self.editor.setFont(font)
+
+        # Adjust page size based on zoom factor
+        new_width = int(210 * 96 / 25.4 * factor)
+        new_height = int(297 * 96 / 25.4 * factor)
+        self.editor.setFixedSize(new_width, new_height)
 
     def eventFilter(self, obj, event):
         if obj == self.editor and event.type() == QEvent.KeyPress:
@@ -106,16 +117,6 @@ class Page(QWidget):
             new_cursor = self.editor.textCursor()
             new_cursor.setPosition(original_position + 1)
             self.editor.setTextCursor(new_cursor)
-
-    def setZoomFactor(self, factor):
-        self.currentZoomFactor = factor
-        font = self.editor.font()
-        font.setPointSizeF(12 * factor)  # Adjust the base font size accordingly
-        self.editor.setFont(font)
-        new_width = int(210 * 96 / 25.4 * factor)
-        new_height = int(297 * 96 / 25.4 * factor)
-        self.editor.setFixedSize(new_width, new_height)
-
 
 def show_error_popup(error_message):
     error_box = QMessageBox()
