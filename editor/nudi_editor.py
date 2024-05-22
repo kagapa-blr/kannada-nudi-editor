@@ -1,16 +1,18 @@
 import os
 import subprocess
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy, QLabel, QSlider, QHBoxLayout
+
 from PyQt5 import QtPrintSupport
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import QFileInfo, QEvent, pyqtSlot
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import QFileInfo, pyqtSlot
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSlider, QHBoxLayout
 from docx import Document
 
 from config import file_path as fp
+from editor.components.customise_page import Page
 from editor.components.customize_image import ImageEditDialog
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
@@ -18,7 +20,6 @@ from spellcheck.symspell_suggestions import suggestionReturner
 from utils import find, datetime, table, wordcount
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.sort_by import SortDialog
-from utils.util import has_letters_or_digits
 
 filename = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -38,85 +39,6 @@ def start_background_exe():
     except Exception as e:
         print(f"Error starting background exe: {e}")
 
-class Page(QWidget):
-    activeEditorChanged = pyqtSignal(QTextEdit)
-    textOverflow = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.currentZoomFactor = 1.0
-        self.initUI()
-        self.editor.installEventFilter(self)
-
-    def initUI(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)  # Margins around the page
-
-        self.editor = QTextEdit(self)
-        self.editor.setFixedSize(int(210 * 96 / 25.4), int(297 * 96 / 25.4))  # A4 size
-        self.editor.setCursorWidth(2)  # Set cursor width
-        self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable vertical scrollbar
-        self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable horizontal scrollbar
-        self.editor.setStyleSheet("""
-            QTextEdit {
-                border: 2px solid black; /* Set border */
-            }
-        """)
-        self.editor.setReadOnly(False)  # Set read-only mode to False
-        self.editor.setTextInteractionFlags(Qt.TextEditorInteraction)  # Enable text interaction
-        self.editor.setFocusPolicy(Qt.StrongFocus)  # Enable focus
-
-        layout.addWidget(self.editor)
-
-        # Ensure the parent widget's layout does not allow expanding beyond fixed size
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-    def setZoomFactor(self, factor):
-        self.currentZoomFactor = factor
-        font = self.editor.font()
-        font.setPointSize(int(12 * factor))  # Convert the result to an integer
-        self.editor.setFont(font)
-
-        # Adjust page size based on zoom factor
-        new_width = int(210 * 96 / 25.4 * factor)
-        new_height = int(297 * 96 / 25.4 * factor)
-        self.editor.setFixedSize(new_width, new_height)
-
-    def eventFilter(self, obj, event):
-        if obj == self.editor and event.type() == QEvent.KeyPress:
-            if event.key() == Qt.Key_Space:
-                self.spacebarClicked()
-                return True  # Event handled
-        return super().eventFilter(obj, event)
-
-    def spacebarClicked(self):
-        cursor = self.editor.textCursor()
-        original_position = cursor.position()
-
-        # Insert a space
-        cursor.insertText(" ")
-
-        # Move cursor to the left of the inserted space
-        cursor.movePosition(QTextCursor.WordLeft, QTextCursor.MoveAnchor)
-
-        # Select the entire word to the left of the cursor
-        cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
-        word_left_of_cursor = cursor.selectedText()
-
-        if has_letters_or_digits(word_left_of_cursor):
-            print("Correct word")
-        elif not bloom_lookup(word_left_of_cursor):
-            # Trim the selected word
-            wrong_word = f'<span style="text-decoration: underline;">{word_left_of_cursor.strip()}</span>'
-            html_content = self.editor.toHtml()
-            new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
-            # Set the new HTML content
-            self.editor.setHtml(new_html_content)
-
-            # Restore the cursor to the original position plus one (after the inserted space)
-            new_cursor = self.editor.textCursor()
-            new_cursor.setPosition(original_position + 1)
-            self.editor.setTextCursor(new_cursor)
 
 def show_error_popup(error_message):
     error_box = QMessageBox()
