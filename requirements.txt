@@ -10,3 +10,4 @@ pyxdameraulevenshtein
 pyqt5
 pyinstaller
 pybloom_live
+psutil

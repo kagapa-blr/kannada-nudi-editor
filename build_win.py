@@ -15,7 +15,7 @@ def remove(path):
         else:
             raise ValueError("File {} is not a file or directory.".format(path))
     except Exception as e:
-        print("Permission denied! Please close other applications.")
+        print("Permission denied! Please close other applications."+str(e))
 
 
 # Define your application script and other parameters
