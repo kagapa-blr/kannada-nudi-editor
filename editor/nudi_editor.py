@@ -237,7 +237,7 @@ class TextEditor(QtWidgets.QMainWindow):
 
         fontSize.valueChanged.connect(lambda size: self.editor.setFontPointSize(size))
 
-        fontSize.setValue(14)
+        fontSize.setValue(12)
 
         fontColor = QtWidgets.QAction(QtGui.QIcon("resources/images/font-color.png"), "Change font color", self)
         fontColor.triggered.connect(self.fontColorChanged)

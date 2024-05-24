@@ -26,7 +26,9 @@ class Page(QWidget):
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable horizontal scrollbar
         self.editor.setStyleSheet("""
             QTextEdit {
-                border: 2px solid black; /* Set border */
+                border: 1px solid #C3BFBE; /* Add border with specified color */
+                padding: 20px; /* Add padding to the text */
+                background-color: white; /* Set background color to white */
             }
         """)
         self.editor.setReadOnly(False)  # Set read-only mode to False
