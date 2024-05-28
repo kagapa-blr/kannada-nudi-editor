@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QWidget, QTextEdit, QVBoxLayout, QSizePolicy
 from spellcheck.bloom_filter import bloom_lookup
 from utils.util import has_letters_or_digits
 
+
 class Page(QWidget):
     activeEditorChanged = pyqtSignal(QTextEdit)
     textOverflow = pyqtSignal()

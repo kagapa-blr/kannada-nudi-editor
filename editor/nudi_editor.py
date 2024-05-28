@@ -5,15 +5,18 @@ from PyQt5 import QtPrintSupport
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QFileInfo, pyqtSlot
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon
+from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon, \
+    QTextBlockFormat
 from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea
+from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea, QComboBox, QSpinBox, \
+    QDialog, QFormLayout
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSlider, QHBoxLayout
 from docx import Document
 
 from config import file_path as fp
 from editor.components.customise_page import Page
 from editor.components.customize_image import ImageEditDialog
+from editor.components.format_content import SpacingDialog
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
 from spellcheck.symspell_suggestions import suggestionReturner
@@ -38,6 +41,7 @@ def start_background_exe():
 
     except Exception as e:
         print(f"Error starting background exe: {e}")
+
 
 
 def show_error_popup(error_message):
@@ -283,6 +287,11 @@ class TextEditor(QtWidgets.QMainWindow):
         backColor = QtWidgets.QAction(QtGui.QIcon("resources/images/highlight.png"), "Change background color", self)
         backColor.triggered.connect(self.highlight)
 
+        line_para_spacing = QtWidgets.QAction(QtGui.QIcon("resources/images/line-paragraph-spacing.png"),
+                                              "line and Paragaraph spacing", self)
+        line_para_spacing.setStatusTip("line and paragraph spacing .")
+        line_para_spacing.triggered.connect(self.setSpacing)
+
         self.formatbar = self.addToolBar("Format")
 
         self.formatbar.addWidget(fontBox)
@@ -313,6 +322,7 @@ class TextEditor(QtWidgets.QMainWindow):
 
         self.formatbar.addAction(indentAction)
         self.formatbar.addAction(dedentAction)
+        self.formatbar.addAction(line_para_spacing)
 
     def initMenubar(self):
 
@@ -374,7 +384,7 @@ class TextEditor(QtWidgets.QMainWindow):
         self.statusbar.addPermanentWidget(zoomWidget)
 
     def initUI(self):
-        start_background_exe()
+        #start_background_exe()
         self.scrollArea = QScrollArea(self)
         self.scrollArea.setWidgetResizable(True)
         centralWidget = QWidget()
@@ -404,7 +414,6 @@ class TextEditor(QtWidgets.QMainWindow):
         self.setGeometry(100, 100, 1030, 800)
         self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
-
 
         # Open in maximized mode
         self.showMaximized()
@@ -1190,3 +1199,26 @@ class TextEditor(QtWidgets.QMainWindow):
 
             # Set sorted text back to editor
             self.editor.setPlainText(sorted_text)
+
+    def setSpacing(self):
+        dialog = SpacingDialog(self)
+        dialog.setWindowTitle('Line & Paragraph Spacing')
+        dialog.lineSpacingLabel.setText('Line Spacing (pixels):')
+        dialog.customLineSpacingSpinBox.setValue(self.editor.currentFont().pixelSize())
+        dialog.beforeParagraphSpinBox.setValue(0)
+        dialog.afterParagraphSpinBox.setValue(0)
+        dialog.exec_()
+        dialog.applySettings()
+
+    def setLineSpacing(self, value):
+        cursor = self.editor.textCursor()
+        fmt = cursor.blockFormat()
+        fmt.setLineHeight(value, QTextBlockFormat.LineDistanceHeight)
+        cursor.setBlockFormat(fmt)
+
+    def setParagraphSpacing(self, before, after):
+        cursor = self.editor.textCursor()
+        fmt = cursor.blockFormat()
+        fmt.setTopMargin(before)
+        fmt.setBottomMargin(after)
+        cursor.setBlockFormat(fmt)
