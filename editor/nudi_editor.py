@@ -8,8 +8,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon, \
     QTextBlockFormat
 from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea, QComboBox, QSpinBox, \
-    QDialog, QFormLayout
+from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSlider, QHBoxLayout
 from docx import Document
 
@@ -17,6 +16,7 @@ from config import file_path as fp
 from editor.components.customise_page import Page
 from editor.components.customize_image import ImageEditDialog
 from editor.components.format_content import SpacingDialog
+from editor.components.speech_to_text import SpeechToTextThread
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
 from spellcheck.symspell_suggestions import suggestionReturner
@@ -41,7 +41,6 @@ def start_background_exe():
 
     except Exception as e:
         print(f"Error starting background exe: {e}")
-
 
 
 def show_error_popup(error_message):
@@ -192,10 +191,15 @@ class TextEditor(QtWidgets.QMainWindow):
         sort_by_action.setStatusTip("Sort By")
         sort_by_action.triggered.connect(self.sort_by_action)
 
+        speech_to_text = QtWidgets.QAction(QtGui.QIcon('resources/images/mic-speecch-to-text.png'), 'speech to Text',
+                                           self)
+        speech_to_text.setStatusTip("speech to text")
+        speech_to_text.setCheckable(True)
+        speech_to_text.triggered.connect(self.toggle_speech_to_text)
+
         refresh_action = QtWidgets.QAction(QtGui.QIcon('resources/images/refresh.png'), 'Refresh and Recheck', self)
         refresh_action.setStatusTip("Refresh and Recheck")
         refresh_action.triggered.connect(self.refresh_recheck)
-        #refresh_action.addAction(refresh_action)
 
         self.toolbar = self.addToolBar("Options")
         self.toolbar.addAction(self.newAction)
@@ -221,6 +225,7 @@ class TextEditor(QtWidgets.QMainWindow):
         self.toolbar.addAction(bulletAction)
         self.toolbar.addAction(numberedAction)
         self.toolbar.addAction(sort_by_action)
+        self.toolbar.addAction(speech_to_text)
         self.toolbar.addAction(refresh_action)
 
         self.addToolBarBreak()
@@ -1222,3 +1227,20 @@ class TextEditor(QtWidgets.QMainWindow):
         fmt.setTopMargin(before)
         fmt.setBottomMargin(after)
         cursor.setBlockFormat(fmt)
+
+    def toggle_speech_to_text(self):
+        sender = self.sender()
+        if sender.isChecked():
+            sender.setText("Stop Speech to Text")
+            self.speech_thread = SpeechToTextThread(self.editor)
+            self.speech_thread.start()
+        else:
+            sender.setText("Speech to Text")
+            if self.speech_thread:
+                self.speech_thread.stop()
+                self.speech_thread = None
+
+    def closeEvent(self, event):
+        if self.speech_thread:
+            self.speech_thread.stop()
+        event.accept()
