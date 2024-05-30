@@ -58,6 +58,7 @@ class TextEditor(QtWidgets.QMainWindow):
         super().__init__()
         QtWidgets.QMainWindow.__init__(self, parent)
 
+        self.speech_thread = None
         self.scrollArea = None
         self.editor = None
         self.statusbar = None
@@ -467,13 +468,16 @@ class TextEditor(QtWidgets.QMainWindow):
         self.changesSaved = False
 
     def closeEvent(self, event):
+        try:
+            if self.speech_thread:
+                self.speech_thread.stop()
+            event.accept()
+        except Exception as e:
+            show_error_popup(str(e))
 
         if self.changesSaved:
-
             event.accept()
-
         else:
-
             popup = QtWidgets.QMessageBox(self)
             popup.setIcon(QtWidgets.QMessageBox.Warning)
             popup.setWindowTitle("ಕನ್ನಡ ನುಡಿ")  # Set the title here
@@ -1239,8 +1243,3 @@ class TextEditor(QtWidgets.QMainWindow):
             if self.speech_thread:
                 self.speech_thread.stop()
                 self.speech_thread = None
-
-    def closeEvent(self, event):
-        if self.speech_thread:
-            self.speech_thread.stop()
-        event.accept()
