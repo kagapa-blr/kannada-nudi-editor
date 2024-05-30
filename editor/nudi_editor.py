@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSlider, QHBoxLayout
 from docx import Document
 
 from config import file_path as fp
+from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customise_page import Page
 from editor.components.customize_image import ImageEditDialog
 from editor.components.format_content import SpacingDialog
@@ -198,6 +199,12 @@ class TextEditor(QtWidgets.QMainWindow):
         speech_to_text.setCheckable(True)
         speech_to_text.triggered.connect(self.toggle_speech_to_text)
 
+        ascii_to_unicode = QtWidgets.QAction(QtGui.QIcon('resources/images/convert.png'), 'speech to Text',
+                                             self)
+        ascii_to_unicode.setStatusTip("ASCII to Unicode vs converter")
+        ascii_to_unicode.setCheckable(True)
+        ascii_to_unicode.triggered.connect(self.ascii_to_unicode_converter)
+
         refresh_action = QtWidgets.QAction(QtGui.QIcon('resources/images/refresh.png'), 'Refresh and Recheck', self)
         refresh_action.setStatusTip("Refresh and Recheck")
         refresh_action.triggered.connect(self.refresh_recheck)
@@ -228,6 +235,7 @@ class TextEditor(QtWidgets.QMainWindow):
         self.toolbar.addAction(sort_by_action)
         self.toolbar.addAction(speech_to_text)
         self.toolbar.addAction(refresh_action)
+        self.toolbar.addAction(ascii_to_unicode)
 
         self.addToolBarBreak()
 
@@ -1243,3 +1251,7 @@ class TextEditor(QtWidgets.QMainWindow):
             if self.speech_thread:
                 self.speech_thread.stop()
                 self.speech_thread = None
+
+    def ascii_to_unicode_converter(self):
+        dialog = ConversionDialog(self)
+        dialog.exec_()
