@@ -20,6 +20,7 @@ from editor.components.customize_image import ImageEditDialog
 from editor.components.excel_csv_file_handling import ExcelCsvViewer
 from editor.components.format_content import SpacingDialog
 from editor.components.speech_to_text import SpeechToTextThread
+from editor.components.table_functionality import TableFunctionality
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
 from spellcheck.symspell_suggestions import suggestionReturner
@@ -73,29 +74,8 @@ class TextEditor(QtWidgets.QMainWindow):
 
         self.initUI()
 
-    # def addPage(self):
-    #     page = Page(self)
-    #     page.textOverflow.connect(self.handleOverflow)
-    #     self.pages.append(page)
-    #     self.pageLayout.addWidget(page)
-    #     self.editor = page.editor  # Set the editor to the current page's editor
-    #     page.editor.cursorPositionChanged.connect(self.cursorPosition)
-    #     page.editor.setContextMenuPolicy(Qt.CustomContextMenu)
-    #     page.editor.customContextMenuRequested.connect(self.context)
-    #     page.editor.textChanged.connect(self.changed)
-    #     page.editor.installEventFilter(self)
 
-    def handleOverflow(self):
-        currentPage = self.pages[-1]
-        cursor = currentPage.editor.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        cursor.select(QTextCursor.Document)
-        overflowText = cursor.selectedText()
 
-        if overflowText:
-            cursor.removeSelectedText()
-            self.addPage()
-            self.editor.insertPlainText(overflowText)
 
     def initToolbar(self):
 
@@ -531,23 +511,26 @@ class TextEditor(QtWidgets.QMainWindow):
         if table:
             menu = QMenu(self)
 
+            # Instantiate TableFunctionality for table manipulation
+            table_functionality = TableFunctionality()
+
             # Add actions for table manipulation
             appendRowAction = QtWidgets.QAction("Append row", self)
             appendRowAction.triggered.connect(lambda: table.appendRows(1))
             appendColAction = QtWidgets.QAction("Append column", self)
             appendColAction.triggered.connect(lambda: table.appendColumns(1))
             removeRowAction = QtWidgets.QAction("Remove row", self)
-            removeRowAction.triggered.connect(lambda: self.removeRow(table, cursor))
+            removeRowAction.triggered.connect(lambda: table_functionality.removeRow(table, cursor))
             removeColAction = QtWidgets.QAction("Remove column", self)
-            removeColAction.triggered.connect(lambda: self.removeCol(table, cursor))
+            removeColAction.triggered.connect(lambda: table_functionality.removeCol(table, cursor))
             insertRowAction = QtWidgets.QAction("Insert row", self)
-            insertRowAction.triggered.connect(lambda: self.insertRow(table, cursor))
+            insertRowAction.triggered.connect(lambda: table_functionality.insertRow(table, cursor))
             insertColAction = QtWidgets.QAction("Insert column", self)
-            insertColAction.triggered.connect(lambda: self.insertCol(table, cursor))
+            insertColAction.triggered.connect(lambda: table_functionality.insertCol(table, cursor))
             mergeAction = QtWidgets.QAction("Merge cells", self)
-            mergeAction.triggered.connect(lambda: self.mergeCells(table, cursor))
+            mergeAction.triggered.connect(lambda: table_functionality.mergeCells(table, cursor))
             splitAction = QtWidgets.QAction("Split cells", self)
-            splitAction.triggered.connect(lambda: self.splitCell(table, cursor))
+            splitAction.triggered.connect(lambda: table_functionality.splitCell(table, cursor))
 
             # Only allow merging if there is a selection
             if not cursor.hasSelection():
@@ -568,6 +551,7 @@ class TextEditor(QtWidgets.QMainWindow):
 
             # Show the menu
             menu.exec_(self.editor.mapToGlobal(pos))
+
         else:
             # Handle word suggestions if no table is found
             cursor.select(QTextCursor.WordUnderCursor)
@@ -605,40 +589,7 @@ class TextEditor(QtWidgets.QMainWindow):
                 event = QtGui.QContextMenuEvent(QtGui.QContextMenuEvent.Mouse, pos)
                 self.editor.contextMenuEvent(event)
 
-    def removeRow(self, table, cursor):
-        try:
-            # Get the cursor position
-            cursor_position = cursor.position()
-            # Find the cell containing the cursor
-            cell = table.cellAt(cursor_position)
-            # Check if a valid cell is found
-            if cell.isValid():
-                # Get the row index of the cell
-                row_index = cell.row()
-                # Remove the row
-                table.removeRows(row_index, 1)
-        except Exception as e:
-            show_error_popup(str(e))
 
-    def removeCol(self, table, cursor):
-        col = cursor.columnNumber()
-        table.removeColumns(col, 1)
-
-    def insertRow(self, table, cursor):
-        row = cursor.blockNumber()
-        table.insertRows(row, 1)
-
-    def insertCol(self, table, cursor):
-        col = cursor.columnNumber()
-        table.insertColumns(col, 1)
-
-    def mergeCells(self, table, cursor):
-        table.mergeCells(cursor)
-
-    def splitCell(self, table, cursor):
-        cell = table.cellAt(cursor)
-        if cell.rowSpan() > 1 or cell.columnSpan() > 1:
-            table.splitCell(cell.row(), cell.column(), 1, 1)
 
     def toggleToolbar(self):
 
