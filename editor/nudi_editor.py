@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSlider, QHBoxLayout
 from docx import Document
 
 from config import file_path as fp
+from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customise_page import Page
 from editor.components.customize_image import ImageEditDialog
@@ -48,20 +49,14 @@ def start_background_exe():
         print(f"Error starting background exe: {e}")
 
 
-def show_error_popup(error_message):
-    error_box = QMessageBox()
-    error_box.setIcon(QMessageBox.Critical)
-    error_box.setWindowTitle("Error")
-    error_box.setText("An error occurred:")
-    error_box.setInformativeText(error_message)
-    error_box.exec_()
-
 
 class TextEditor(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__()
         QtWidgets.QMainWindow.__init__(self, parent)
+
+        self.error_dialog = CommonDialogs()
 
         self.speech_thread = None
         self.scrollArea = None
@@ -471,7 +466,8 @@ class TextEditor(QtWidgets.QMainWindow):
                 self.speech_thread.stop()
             event.accept()
         except Exception as e:
-            show_error_popup(str(e))
+            self.error_dialog.show_error_popup(str(e))
+
 
         if self.changesSaved:
             event.accept()
@@ -1033,41 +1029,6 @@ class TextEditor(QtWidgets.QMainWindow):
 
         # Insert list with numbers
         cursor.insertList(QtGui.QTextListFormat.ListDecimal)
-
-    # def eventFilter(self, obj, event):
-    #     if obj == self.editor and event.type() == QEvent.KeyPress:
-    #         if event.key() == Qt.Key_Space:
-    #             self.spacebarClicked()
-    #             return True  # Event handled
-    #     return super().eventFilter(obj, event)
-    #
-    # def spacebarClicked(self):
-    #     cursor = self.editor.textCursor()
-    #     original_position = cursor.position()
-    #
-    #     # Insert a space
-    #     cursor.insertText(" ")
-    #
-    #     # Move cursor to the left of the inserted space
-    #     cursor.movePosition(QTextCursor.WordLeft, QTextCursor.MoveAnchor)
-    #
-    #     # Select the entire word to the left of the cursor
-    #     cursor.movePosition(QTextCursor.EndOfWord, QTextCursor.KeepAnchor)
-    #     word_left_of_cursor = cursor.selectedText()
-    #
-    #     if has_letters_or_digits(word_left_of_cursor):
-    #         print("Correct word")
-    #     elif not bloom_lookup(word_left_of_cursor):
-    #         # Trim the selected word
-    #         wrong_word = f'<span style="text-decoration: underline;">{word_left_of_cursor.strip()}</span>'
-    #         #print("word left of cursor: ", wrong_word)
-    #         html_content = self.editor.toHtml()
-    #         new_html_content = html_content.replace(word_left_of_cursor.lstrip(), wrong_word.strip(), 1)
-    #         # Set the new HTML content
-    #         self.editor.setHtml(new_html_content)
-    #         # Move the cursor to the right of the replaced word
-    #         cursor.movePosition(QTextCursor.Right)
-    #         self.editor.setTextCursor(cursor)
 
     def addToDictionary(self, word):
         with open(fp.bloomfilter_data, 'a', encoding='utf-8') as dict_file:
