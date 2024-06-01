@@ -12,25 +12,29 @@ def show_error_popup(error_message):
     error_box.setInformativeText(error_message)
     error_box.exec_()
 
+
 class ConversionDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("ASCII ಮತ್ತು ಯುನಿಕೋಡ್ ಪರಿವರ್ತಕ")
+        self.filename = None
+        self.setWindowTitle("ASCII ಮತ್ತು ಯುನಿಕೋಡ್ ಪರಿವರ್ತಕ - Untitled")
 
         # Set default font to NudiParijatha
-        default_font = QtGui.QFont("NudiParijatha")
+        default_font = QtGui.QFont("NudiParijatha", 12)
+        self.unsaved_changes = False
         self.setFont(default_font)
 
         self.initUI()
 
     def initUI(self):
         self.ascii_editor = QtWidgets.QTextEdit(self)
-        self.ascii_editor.setMinimumSize(300, 300)
+        self.ascii_editor.setMinimumSize(500, 450)
         self.ascii_editor.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.ascii_editor.textChanged.connect(self.mark_unsaved_changes)
 
         self.unicode_editor = QtWidgets.QTextEdit(self)
         self.unicode_editor.setReadOnly(False)
-        self.unicode_editor.setMinimumSize(300, 300)
+        self.unicode_editor.setMinimumSize(500, 450)
         self.unicode_editor.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         self.convert_to_unicode_button = QtWidgets.QPushButton("ಯುನಿಕೋಡ್‌ಗೆ ಪರಿವರ್ತಿಸು", self)
@@ -39,7 +43,7 @@ class ConversionDialog(QtWidgets.QDialog):
         self.convert_to_ascii_button = QtWidgets.QPushButton("ASCII ಗೆ ಪರಿವರ್ತಿಸು", self)
         self.convert_to_ascii_button.clicked.connect(self.convert_to_ascii)
 
-        self.reset_button = QtWidgets.QPushButton("Reset", self)
+        self.reset_button = QtWidgets.QPushButton("ಮರುಹೊಂದಿಸಿ", self)
         self.reset_button.clicked.connect(self.reset_editors)
 
         ascii_label = QtWidgets.QLabel("ASCII ಇನ್‌ಪುಟ್")
@@ -65,6 +69,7 @@ class ConversionDialog(QtWidgets.QDialog):
         button_layout.addWidget(self.reset_button)
 
         layout.addLayout(editor_layout)
+        layout.addStretch()  # Add stretch to push buttons to the bottom
         layout.addLayout(button_layout)
 
         # Add toolbar to the layout
@@ -73,7 +78,7 @@ class ConversionDialog(QtWidgets.QDialog):
         layout.addWidget(self.toolbar)
 
         self.setLayout(layout)
-        self.resize(800, 400)
+        self.resize(800, 600)
 
         self.initFormatbar()
         self.initMenubar()
@@ -103,34 +108,58 @@ class ConversionDialog(QtWidgets.QDialog):
         self.layout().setMenuBar(menubar)
 
     def open_ascii_file(self):
-        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open ASCII File', '', 'Text files (*.txt);;Word files (*.docx)')
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open ASCII File', '',
+                                                             'Text files (*.txt);;Word files (*.docx)')
         if file_path:
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
                     ascii_text = file.read()
                     self.ascii_editor.setPlainText(ascii_text)
+                    self.filename = file_path
+                    self.update_window_title()
             except Exception as e:
                 error_message = str(e)
                 show_error_popup(error_message)
 
     def open_unicode_file(self):
-        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Unicode File', '', 'Text files (*.txt);;Word files (*.docx)')
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Unicode File', '',
+                                                             'Text files (*.txt);;Word files (*.docx)')
         if file_path:
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
                     unicode_text = file.read()
                     self.unicode_editor.setPlainText(unicode_text)
+                    self.filename = file_path
+                    self.update_window_title()
             except Exception as e:
                 error_message = str(e)
                 show_error_popup(error_message)
 
     def save_file(self):
-        # Implement save functionality here
-        pass
+        if self.filename:
+            try:
+                with open(self.filename, 'w', encoding='utf-8') as file:
+                    file.write(self.ascii_editor.toPlainText())
+                self.unsaved_changes = False
+            except Exception as e:
+                error_message = str(e)
+                show_error_popup(error_message)
+        else:
+            self.save_file_as('txt')
 
     def save_file_as(self, file_format):
-        # Implement save as functionality here
-        pass
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save File As', '',
+                                                             f'{file_format.upper()} files (*.{file_format});;All files (*.*)')
+        if file_path:
+            try:
+                with open(file_path, 'w', encoding='utf-8') as file:
+                    file.write(self.ascii_editor.toPlainText())
+                self.filename = file_path
+                self.update_window_title()
+                self.unsaved_changes = False
+            except Exception as e:
+                error_message = str(e)
+                show_error_popup(error_message)
 
     def convert_to_unicode(self):
         ascii_text = self.ascii_editor.toPlainText()
@@ -154,6 +183,31 @@ class ConversionDialog(QtWidgets.QDialog):
     def reset_editors(self):
         self.ascii_editor.clear()
         self.unicode_editor.clear()
+        self.filename = None
+        self.update_window_title()
 
-# Usage
+    def mark_unsaved_changes(self):
+        self.unsaved_changes = True
+
+    def update_window_title(self):
+        if self.filename:
+            self.setWindowTitle(f"ASCII ಮತ್ತು ಯುನಿಕೋಡ್ ಪರಿವರ್ತಕ - {self.filename}")
+        else:
+            self.setWindowTitle("ASCII ಮತ್ತು ಯುನಿಕೋಡ್ ಪರಿವರ್ತಕ - Untitled")
+
+    def closeEvent(self, event):
+        if self.unsaved_changes:
+            reply = QMessageBox.question(self, 'ಸೂಚನೆ',
+                                         "ನೀವು ಉಳಿಸದ ಬದಲಾವಣೆಗಳನ್ನು ಹೊಂದಿದ್ದೀರಿ. ನಿಮ್ಮ ಬದಲಾವಣೆಗಳನ್ನು ಉಳಿಸಲು ನೀವು ಬಯಸುವಿರಾ?",
+                                         QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel, QMessageBox.Cancel)
+
+            if reply == QMessageBox.Yes:
+                self.save_file()
+                event.accept()
+            elif reply == QMessageBox.No:
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
 
