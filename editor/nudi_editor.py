@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+import docx
+import docx2txt
 from PyQt5 import QtPrintSupport
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QFileInfo, pyqtSlot
@@ -16,12 +18,14 @@ from config import file_path as fp
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customise_page import Page
 from editor.components.customize_image import ImageEditDialog
+from editor.components.excel_csv_file_handling import ExcelCsvViewer
 from editor.components.format_content import SpacingDialog
 from editor.components.speech_to_text import SpeechToTextThread
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
 from spellcheck.symspell_suggestions import suggestionReturner
 from utils import find, datetime, table, wordcount
+from utils.asciitounicode import process_line
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.sort_by import SortDialog
 
@@ -70,17 +74,17 @@ class TextEditor(QtWidgets.QMainWindow):
 
         self.initUI()
 
-    def addPage(self):
-        page = Page(self)
-        page.textOverflow.connect(self.handleOverflow)
-        self.pages.append(page)
-        self.pageLayout.addWidget(page)
-        self.editor = page.editor  # Set the editor to the current page's editor
-        page.editor.cursorPositionChanged.connect(self.cursorPosition)
-        page.editor.setContextMenuPolicy(Qt.CustomContextMenu)
-        page.editor.customContextMenuRequested.connect(self.context)
-        page.editor.textChanged.connect(self.changed)
-        page.editor.installEventFilter(self)
+    # def addPage(self):
+    #     page = Page(self)
+    #     page.textOverflow.connect(self.handleOverflow)
+    #     self.pages.append(page)
+    #     self.pageLayout.addWidget(page)
+    #     self.editor = page.editor  # Set the editor to the current page's editor
+    #     page.editor.cursorPositionChanged.connect(self.cursorPosition)
+    #     page.editor.setContextMenuPolicy(Qt.CustomContextMenu)
+    #     page.editor.customContextMenuRequested.connect(self.context)
+    #     page.editor.textChanged.connect(self.changed)
+    #     page.editor.installEventFilter(self)
 
     def handleOverflow(self):
         currentPage = self.pages[-1]
@@ -205,6 +209,13 @@ class TextEditor(QtWidgets.QMainWindow):
         ascii_to_unicode.setCheckable(True)
         ascii_to_unicode.triggered.connect(self.ascii_to_unicode_converter)
 
+
+        excel_csv = QtWidgets.QAction(QtGui.QIcon('resources/images/excel_csv.png'), 'Excel and CSV file operations',
+                                             self)
+        excel_csv.setStatusTip("ASCII to Unicode vs converter")
+        excel_csv.setCheckable(True)
+        excel_csv.triggered.connect(self.excel_csv_file)
+
         refresh_action = QtWidgets.QAction(QtGui.QIcon('resources/images/refresh.png'), 'Refresh and Recheck', self)
         refresh_action.setStatusTip("Refresh and Recheck")
         refresh_action.triggered.connect(self.refresh_recheck)
@@ -236,6 +247,8 @@ class TextEditor(QtWidgets.QMainWindow):
         self.toolbar.addAction(speech_to_text)
         self.toolbar.addAction(refresh_action)
         self.toolbar.addAction(ascii_to_unicode)
+        self.toolbar.addAction(excel_csv)
+
 
         self.addToolBarBreak()
 
@@ -657,6 +670,7 @@ class TextEditor(QtWidgets.QMainWindow):
 
         spawn.show()
 
+
     def open(self):
         # Define the file filter
         filter = "Text Files (*.txt);;Word Documents (*.docx);;Rich Text Files (*.rtf)"
@@ -669,7 +683,8 @@ class TextEditor(QtWidgets.QMainWindow):
             try:
                 if self.filename.endswith('.txt'):
                     with open(self.filename, 'r', encoding='utf-8') as file:
-                        self.editor.setText(file.read())
+                        unicode_lines = [process_line(line) for line in file.readlines()]
+                        self.editor.setText('\n'.join(unicode_lines))
                 elif self.filename.endswith('.rtf'):
                     with open(self.filename, 'r') as file:
                         rtf_text = file.read()
@@ -677,11 +692,11 @@ class TextEditor(QtWidgets.QMainWindow):
                         document.setHtml(rtf_text)
                         self.editor.setDocument(document)
                 elif self.filename.endswith('.docx'):
-                    document = Document(self.filename)
-                    text = []
-                    for paragraph in document.paragraphs:
-                        text.append(paragraph.text)
-                    self.editor.setText('\n'.join(text))
+                    # Use python-docx2txt to extract text from DOCX with formatting
+                    docx_text = docx2txt.process(self.filename)
+                    # Remove extra empty lines
+                    docx_text = "\n".join([line for line in docx_text.split('\n') if line.strip()])
+                    self.editor.setText(docx_text)
                 else:
                     QMessageBox.critical(self, 'Error', 'Unsupported file format')
             except Exception as e:
@@ -1255,3 +1270,7 @@ class TextEditor(QtWidgets.QMainWindow):
     def ascii_to_unicode_converter(self):
         dialog = ConversionDialog(self)
         dialog.exec_()
+
+    def excel_csv_file(self):
+        self.viewer = ExcelCsvViewer()
+        self.viewer.show()

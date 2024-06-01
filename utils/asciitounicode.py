@@ -1,4 +1,3 @@
-
 import sys
 import codecs
 import argparse
@@ -524,23 +523,26 @@ def process_word(word):
 
 
 def process_line(line):
-    """Splits the line into words and processes each word
-    """
+    """Splits the line into words and processes each word, preserving formatting for spaces and tabs"""
 
     # Clean the input
     line = line.strip()
 
-    # Into words
+    # Split the line into words while preserving spaces and tabs
     words = line.split(' ')
 
-    # To stote converted words
+    # Process and append to the main array
     op_words = []
 
-    # Process and append to main array
+    # Process each word while preserving formatting for spaces and tabs
     for word in words:
-        op_words.append(process_word(word))
+        if word.strip():  # If the word is not just whitespace
+            processed_word = process_word(word)  # Process the word
+            op_words.append(processed_word)
+        else:
+            op_words.append(word)  # Preserve formatting for spaces and tabs
 
-    # Return converted line
+    # Return the converted line with preserved formatting
     return ' '.join(op_words)
 
 

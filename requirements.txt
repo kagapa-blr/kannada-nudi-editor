@@ -3,7 +3,6 @@ python-docx
 textract
 symspellpy
 openpyxl
-pandas
 bitarray
 mmh3
 pyxdameraulevenshtein
@@ -11,3 +10,4 @@ pyqt5
 pyinstaller
 pybloom_live
 psutil
+PyAudio

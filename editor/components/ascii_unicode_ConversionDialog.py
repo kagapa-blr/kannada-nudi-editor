@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QMessageBox
-
+from docx import Document
 from utils.asciitounicode import process_line
 
 
@@ -112,14 +112,26 @@ class ConversionDialog(QtWidgets.QDialog):
                                                              'Text files (*.txt);;Word files (*.docx)')
         if file_path:
             try:
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    ascii_text = file.read()
-                    self.ascii_editor.setPlainText(ascii_text)
-                    self.filename = file_path
-                    self.update_window_title()
+                if file_path.endswith('.txt'):
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        ascii_text = file.read()
+                elif file_path.endswith('.docx'):
+                    doc = Document(file_path)
+                    ascii_text = ''
+                    for paragraph in doc.paragraphs:
+                        ascii_text += paragraph.text + '\n'
+                else:
+                    raise ValueError("Unsupported file format")
+
+                self.ascii_editor.setPlainText(ascii_text)
+                self.filename = file_path
+                self.update_window_title()
             except Exception as e:
                 error_message = str(e)
                 show_error_popup(error_message)
+
+
+
 
     def open_unicode_file(self):
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Unicode File', '',
@@ -210,4 +222,3 @@ class ConversionDialog(QtWidgets.QDialog):
                 event.ignore()
         else:
             event.accept()
-
