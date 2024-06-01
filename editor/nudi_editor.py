@@ -2,7 +2,6 @@ import os
 import subprocess
 
 import docx
-import docx2txt
 from PyQt5 import QtPrintSupport
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QFileInfo, pyqtSlot
@@ -209,9 +208,8 @@ class TextEditor(QtWidgets.QMainWindow):
         ascii_to_unicode.setCheckable(True)
         ascii_to_unicode.triggered.connect(self.ascii_to_unicode_converter)
 
-
         excel_csv = QtWidgets.QAction(QtGui.QIcon('resources/images/excel_csv.png'), 'Excel and CSV file operations',
-                                             self)
+                                      self)
         excel_csv.setStatusTip("ASCII to Unicode vs converter")
         excel_csv.setCheckable(True)
         excel_csv.triggered.connect(self.excel_csv_file)
@@ -248,7 +246,6 @@ class TextEditor(QtWidgets.QMainWindow):
         self.toolbar.addAction(refresh_action)
         self.toolbar.addAction(ascii_to_unicode)
         self.toolbar.addAction(excel_csv)
-
 
         self.addToolBarBreak()
 
@@ -670,7 +667,6 @@ class TextEditor(QtWidgets.QMainWindow):
 
         spawn.show()
 
-
     def open(self):
         # Define the file filter
         filter = "Text Files (*.txt);;Word Documents (*.docx);;Rich Text Files (*.rtf)"
@@ -692,10 +688,13 @@ class TextEditor(QtWidgets.QMainWindow):
                         document.setHtml(rtf_text)
                         self.editor.setDocument(document)
                 elif self.filename.endswith('.docx'):
-                    # Use python-docx2txt to extract text from DOCX with formatting
-                    docx_text = docx2txt.process(self.filename)
-                    # Remove extra empty lines
-                    docx_text = "\n".join([line for line in docx_text.split('\n') if line.strip()])
+                    # Use python-docx to extract text from DOCX with formatting
+                    doc = docx.Document(self.filename)
+                    docx_text = []
+                    for para in doc.paragraphs:
+                        docx_text.append(para.text)
+                    # Join the paragraphs into a single string with newlines
+                    docx_text = "\n".join(docx_text)
                     self.editor.setText(docx_text)
                 else:
                     QMessageBox.critical(self, 'Error', 'Unsupported file format')
