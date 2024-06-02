@@ -1,6 +1,3 @@
-import sys
-import codecs
-import argparse
 import re
 
 # Direct mapping of ASCII chars to Unicode

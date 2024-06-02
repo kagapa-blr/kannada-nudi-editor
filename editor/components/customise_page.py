@@ -12,6 +12,7 @@ class Page(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.editor = QTextEdit(self)
         self.currentZoomFactor = 1.0
         self.initUI()
         self.editor.installEventFilter(self)
@@ -20,7 +21,6 @@ class Page(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)  # Margins around the page
 
-        self.editor = QTextEdit(self)
         self.editor.setFixedSize(int(210 * 96 / 25.4), int(297 * 96 / 25.4))  # A4 size
         self.editor.setCursorWidth(2)  # Set cursor width
         self.editor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable vertical scrollbar

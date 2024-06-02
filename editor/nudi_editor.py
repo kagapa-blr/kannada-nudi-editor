@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextDocument, QTextDocumentWriter, QPainter, QTextCursor, QTextCharFormat, QIcon, \
     QTextBlockFormat
 from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea
+from PyQt5.QtWidgets import QFileDialog, QMenu, QMessageBox, QInputDialog, QLineEdit, QScrollArea, QDialog
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QSlider, QHBoxLayout
 from docx import Document
 
@@ -20,7 +20,7 @@ from editor.components.customise_page import Page
 from editor.components.customize_image import ImageEditDialog
 from editor.components.excel_csv_file_handling import ExcelCsvViewer
 from editor.components.format_content import SpacingDialog
-from editor.components.speech_to_text import SpeechToTextThread
+from editor.components.speech_to_text import SpeechToTextThread, LanguageSelectionPopup
 from editor.components.table_functionality import TableFunctionality
 from logger import setup_logger
 from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
@@ -49,7 +49,6 @@ def start_background_exe():
         print(f"Error starting background exe: {e}")
 
 
-
 class TextEditor(QtWidgets.QMainWindow):
 
     def __init__(self, parent=None):
@@ -68,9 +67,6 @@ class TextEditor(QtWidgets.QMainWindow):
         self.changesSaved = True
 
         self.initUI()
-
-
-
 
     def initToolbar(self):
 
@@ -468,7 +464,6 @@ class TextEditor(QtWidgets.QMainWindow):
         except Exception as e:
             self.error_dialog.show_error_popup(str(e))
 
-
         if self.changesSaved:
             event.accept()
         else:
@@ -584,8 +579,6 @@ class TextEditor(QtWidgets.QMainWindow):
                 # If no selection, call the default context menu event
                 event = QtGui.QContextMenuEvent(QtGui.QContextMenuEvent.Mouse, pos)
                 self.editor.contextMenuEvent(event)
-
-
 
     def toggleToolbar(self):
 
@@ -1169,9 +1162,19 @@ class TextEditor(QtWidgets.QMainWindow):
     def toggle_speech_to_text(self):
         sender = self.sender()
         if sender.isChecked():
-            sender.setText("Stop Speech to Text")
-            self.speech_thread = SpeechToTextThread(self.editor)
-            self.speech_thread.start()
+            popup = LanguageSelectionPopup()
+            if popup.exec_() == QDialog.Accepted:
+                selected_language = popup.selectedLanguage
+                if selected_language is None:
+                    QMessageBox.critical(None, 'Error', 'No language selected')
+                    sender.setChecked(False)
+                    return
+
+                sender.setText("Stop Speech to Text")
+                self.speech_thread = SpeechToTextThread(self.editor, selected_language)
+                self.speech_thread.start()
+            else:
+                sender.setChecked(False)
         else:
             sender.setText("Speech to Text")
             if self.speech_thread:
