@@ -222,21 +222,31 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def initFormatbar(self):
 
+        # Load the custom font
+        font_id = QtGui.QFontDatabase.addApplicationFont('resources/static/Nudi_fonts/NudiParijatha.ttf')
+        font_family = QtGui.QFontDatabase.applicationFontFamilies(font_id)
+
+        if font_family:
+            default_font = QtGui.QFont(font_family[0])
+        else:
+            default_font = QtGui.QFont("nudiParijatha")  # Fallback if font loading fails
+
         fontBox = QtWidgets.QFontComboBox(self)
         fontBox.currentFontChanged.connect(lambda font: self.editor.setCurrentFont(font))
 
-        # Set default font to "Nudist Parijath"
-        default_font = QtGui.QFont("nudiParijatha")
+        # Set default font to "NudiParijatha"
         fontBox.setCurrentFont(default_font)
 
         fontSize = QtWidgets.QSpinBox(self)
 
         # Will display " pt" after each value
         fontSize.setSuffix(" pt")
-
         fontSize.valueChanged.connect(lambda size: self.editor.setFontPointSize(size))
-
         fontSize.setValue(12)
+
+        # Apply the default font and size to the editor
+        self.editor.setCurrentFont(default_font)
+        self.editor.setFontPointSize(12)
 
         fontColor = QtWidgets.QAction(QtGui.QIcon("resources/images/font-color.png"), "Change font color", self)
         fontColor.triggered.connect(self.fontColorChanged)
