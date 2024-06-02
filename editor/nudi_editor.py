@@ -16,7 +16,7 @@ from docx import Document
 from config import file_path as fp
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
-from editor.components.customise_page import Page
+from editor.components.customise_page import Page, PageLayoutDialog
 from editor.components.customize_image import ImageEditDialog
 from editor.components.excel_csv_file_handling import ExcelCsvViewer
 from editor.components.format_content import SpacingDialog
@@ -185,6 +185,10 @@ class TextEditor(QtWidgets.QMainWindow):
         excel_csv.setCheckable(True)
         excel_csv.triggered.connect(self.excel_csv_file)
 
+        page_layout = QtWidgets.QAction(QtGui.QIcon('resources/images/page-layout.png'), 'Page Layout and Size', self)
+        page_layout.setStatusTip("Page Layout and Size")
+        page_layout.triggered.connect(self.page_layout_size)
+
         refresh_action = QtWidgets.QAction(QtGui.QIcon('resources/images/refresh.png'), 'Refresh and Recheck', self)
         refresh_action.setStatusTip("Refresh and Recheck")
         refresh_action.triggered.connect(self.refresh_recheck)
@@ -217,6 +221,7 @@ class TextEditor(QtWidgets.QMainWindow):
         self.toolbar.addAction(refresh_action)
         self.toolbar.addAction(ascii_to_unicode)
         self.toolbar.addAction(excel_csv)
+        self.toolbar.addAction(page_layout)
 
         self.addToolBarBreak()
 
@@ -390,6 +395,9 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def initUI(self):
         #start_background_exe()
+
+
+
         self.scrollArea = QScrollArea(self)
         self.scrollArea.setWidgetResizable(True)
         centralWidget = QWidget()
@@ -424,6 +432,7 @@ class TextEditor(QtWidgets.QMainWindow):
         self.showMaximized()
 
     def addPage(self):
+
         new_page = Page(self)
         self.pages.append(new_page)
         self.pageLayout.addWidget(new_page)
@@ -1198,3 +1207,10 @@ class TextEditor(QtWidgets.QMainWindow):
     def excel_csv_file(self):
         self.viewer = ExcelCsvViewer()
         self.viewer.show()
+
+    def page_layout_size(self):
+        dialog = PageLayoutDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            width, height = dialog.getPageSize()
+            for page in self.pages:
+                page.setPageSize(width, height)
