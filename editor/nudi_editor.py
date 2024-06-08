@@ -396,8 +396,6 @@ class TextEditor(QtWidgets.QMainWindow):
     def initUI(self):
         #start_background_exe()
 
-
-
         self.scrollArea = QScrollArea(self)
         self.scrollArea.setWidgetResizable(True)
         centralWidget = QWidget()
@@ -457,11 +455,6 @@ class TextEditor(QtWidgets.QMainWindow):
         # Connect the text changed signal to check for overflow
         new_page.editor.textChanged.connect(lambda: self.checkPageOverflow(new_page))
 
-    def zoomText(self, value):
-        factor = value / 100.0
-        for page in self.pages:
-            page.setZoomFactor(factor)
-
     def updateActiveEditor(self, editor):
         self.editor = editor
 
@@ -474,6 +467,11 @@ class TextEditor(QtWidgets.QMainWindow):
 
     def changed(self):
         self.changesSaved = False
+
+    def zoomText(self, value):
+        factor = value / 100.0
+        for page in self.pages:
+            page.setZoomFactor(factor)
 
     def closeEvent(self, event):
         try:
