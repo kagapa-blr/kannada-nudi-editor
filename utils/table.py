@@ -11,12 +11,12 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt
 
 class Table(QtWidgets.QDialog):
-    def __init__(self,parent = None):
+    def __init__(self, editor, parent=None):
         QtWidgets.QDialog.__init__(self, parent)
-
-        self.parent = parent
-         
+        self.editor = editor  # Assign the QTextEdit widget to an attribute
         self.initUI()
+         
+
  
     def initUI(self):
 
@@ -68,37 +68,29 @@ class Table(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def insert(self):
-
-        cursor = self.parent.editor.textCursor()
+        cursor = self.editor.textCursor()  # Access the QTextEdit widget directly using self.editor
 
         # Get the configurations
         rows = self.rows.value()
-
         cols = self.cols.value()
 
         if not rows or not cols:
-
             popup = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
-                                      "Parameter error",
-                                      "Row and column numbers may not be zero!",
-                                      QtWidgets.QMessageBox.Ok,
-                                      self)
+                                          "Parameter error",
+                                          "Row and column numbers may not be zero!",
+                                          QtWidgets.QMessageBox.Ok,
+                                          self)
             popup.show()
-
         else:
-
             padding = self.pad.value()
-
             space = self.space.value()
 
             # Set the padding and spacing
             fmt = QtGui.QTextTableFormat()
-            
             fmt.setCellPadding(padding)
-
             fmt.setCellSpacing(space)
 
-            # Inser the new table
-            cursor.insertTable(rows,cols,fmt)
+            # Insert the new table
+            cursor.insertTable(rows, cols, fmt)
 
             self.close()

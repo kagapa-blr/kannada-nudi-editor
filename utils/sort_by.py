@@ -1,6 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QComboBox, QRadioButton, QLineEdit, QLabel, QHBoxLayout, \
-    QPushButton
-
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QGroupBox, QComboBox, QRadioButton, QLineEdit, QLabel, QHBoxLayout, QPushButton
 
 class SortDialog(QDialog):
     def __init__(self, parent=None):

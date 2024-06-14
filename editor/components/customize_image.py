@@ -77,8 +77,6 @@ from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QSpinBox, QPushButton,
     QSlider, QToolBar, QAction, QMessageBox, QLineEdit, QColorDialog
 )
-
-
 class ImageEditDialog(QDialog):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
@@ -90,6 +88,11 @@ class ImageEditDialog(QDialog):
         self.brush_color = Qt.black
         self.brush_size = 5
         self.initUI()
+
+        # Variables for drawing shapes
+        self.drawing_shape = False
+        self.shape_start = None
+        self.current_pos = QPoint(0, 0)  # Initialize current_pos
 
     def initUI(self):
         layout = QVBoxLayout(self)
@@ -158,35 +161,9 @@ class ImageEditDialog(QDialog):
         insert_button.clicked.connect(self.accept)
         layout.addWidget(insert_button)
 
-        # Text input for inserting text
-        self.text_input = QLineEdit(self)
-        layout.addWidget(self.text_input)
-
-        # Button to insert text
-        insert_text_button = QPushButton("Insert Text", self)
-        insert_text_button.clicked.connect(self.insertTextOnImage)
-        layout.addWidget(insert_text_button)
-
-        # Toolbar setup
-        toolbar = QToolBar()
-        layout.addWidget(toolbar)
-
-        undo_action = QAction(QIcon('resources/images/undo.png'), 'Undo', self)
-        undo_action.triggered.connect(self.undo)
-        toolbar.addAction(undo_action)
-
-        redo_action = QAction(QIcon('resources/images/redo.png'), 'Redo', self)
-        redo_action.triggered.connect(self.redo)
-        toolbar.addAction(redo_action)
-
+        # Set layout
         self.setLayout(layout)
         self.setWindowTitle("Image Editor")
-
-        # Variables for cropping
-        self.drag_start = None
-        self.crop_rect = None
-        self.drawing_shape = False
-        self.shape_start = None
 
     def selectBrushColor(self):
         color = QColorDialog.getColor()
@@ -219,6 +196,7 @@ class ImageEditDialog(QDialog):
 
     def mouseMoveEventHandler(self, event):
         if self.drawing_shape and self.shape_start is not None:
+            self.current_pos = event.pos()  # Update current_pos
             self.updatePreview()
 
     def mouseReleaseEventHandler(self, event):
@@ -303,30 +281,3 @@ class ImageEditDialog(QDialog):
         self.addToHistory(new_image)
         self.current_image = new_image
         self.updatePreview()
-
-    def insertTextOnImage(self):
-        text = self.text_input.text()
-        if text:
-            temp_image = self.current_image.copy()
-            painter = QPainter(temp_image)
-            painter.setPen(QPen(Qt.black))  # Set text color
-            painter.setFont(QFont("Arial", 20))  # Set font and size
-            painter.drawText(QRectF(50, 50, temp_image.width(), temp_image.height()), Qt.AlignLeft | Qt.AlignTop,
-                             text)  # Draw text at position (50, 50)
-            painter.end()
-            self.addToHistory(temp_image)
-            self.current_image = temp_image
-            self.modified_image = temp_image  # Update modified_image to reflect the most recent state including text
-            self.updatePreview()
-
-    def mouseMoveEventHandler(self, event):
-        if self.drawing_shape:
-            self.current_pos = event.pos()
-            if self.shape_start is not None:
-                self.updatePreview()
-        else:
-            if event.buttons() == Qt.LeftButton:
-                self.drawBrush(event.pos())
-
-
-
