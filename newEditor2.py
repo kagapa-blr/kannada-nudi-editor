@@ -46,11 +46,11 @@ def start_background_exe():
         print(f"Error starting background exe: {e}")
 
 
-
 class NewTextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.total_pages = 0
         self.pages = []
         self.current_page = None
         self.filename = None
@@ -132,6 +132,8 @@ class NewTextEditor(QMainWindow):
         self.pages.append(page)
         self.scroll_layout.addWidget(page)
         self.setActivePage(page)
+        self.total_pages += 1
+        self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
 
     def setActivePage(self, page):
         self.current_page = page
@@ -155,11 +157,9 @@ class NewTextEditor(QMainWindow):
         self.openAction.setStatusTip('Open an existing file')
         self.openAction.triggered.connect(self.openFile)
 
-
         self.openAsciiAction = QAction(QIcon('resources/images/ascii-file-icon.png'), 'Open ASCII file', self)
         self.openAsciiAction.setStatusTip('Open ASCII file')
         self.openAsciiAction.triggered.connect(self.openAsciiFile)
-
 
         self.saveAction = QAction(QIcon('resources/images/stock_save.png'), 'Save', self)
         self.saveAction.setShortcut('Ctrl+S')
@@ -180,9 +180,6 @@ class NewTextEditor(QMainWindow):
         self.printAction.setShortcut('Ctrl+P')
         self.printAction.setStatusTip('Print the current file')
         self.printAction.triggered.connect(self.printHandler)
-
-
-
 
         self.zoomInAction = QAction(QIcon('resources/images/zoom-in.png'), 'Zoom In', self)
         self.zoomInAction.setShortcut('Ctrl++')
@@ -314,7 +311,6 @@ class NewTextEditor(QMainWindow):
 
         ##### ------ format bar ended----------------------------------------------------------------
 
-
     def createMenus(self):
         menubar = self.menuBar()
 
@@ -357,7 +353,6 @@ class NewTextEditor(QMainWindow):
         self.toolbar.addSeparator()
         #self.toolbar.addAction(self.wordCountAction)
         self.toolbar.addAction(self.refresh_action)
-
 
         self.addToolBarBreak()  # Add this line to create a break between toolbars
         self.createFormatbar()  # Add this line to create the format bar below the main toolbar
@@ -432,8 +427,6 @@ class NewTextEditor(QMainWindow):
                 widget.deleteLater()
         self.addNewPage()
 
-
-
     def openFile(self):
         options = QFileDialog.Options()
         self.filename, _ = QFileDialog.getOpenFileName(self,
@@ -497,7 +490,6 @@ class NewTextEditor(QMainWindow):
                     self.error_dialog("Unsupported file format")
                     #raise ValueError("Unsupported file format")
 
-
                 if len(content) > 8000:
                     chunks = [content[i:i + 8000] for i in range(0, len(content), 8000)]
                     for chunk in chunks:
@@ -554,14 +546,22 @@ class NewTextEditor(QMainWindow):
                 doc.print_(printer)
             else:
                 self.error_dialog.showError("Unsupported file format")
+
     def setFontFamily(self, font):
         if self.current_page:
             self.current_page.editor.setCurrentFont(font)
 
     def setFontSize(self, index):
         size = int(self.fontSizeComboBox.currentText())
-        if self.current_page:
-            self.current_page.editor.setFontPointSize(size)
+        if self.current_page and hasattr(self.current_page, 'editor'):
+            try:
+                self.current_page.editor.setFontPointSize(size)
+            except RuntimeError as e:
+                print(f"Error setting font size: {str(e)}")
+                # Handle the error as needed (e.g., log it, notify the user)
+        else:
+            print("Error: No current page or editor not available")
+            # Handle the error as needed (e.g., log it, notify the user)
 
     def toggleBold(self):
         # if self.current_page:
@@ -772,7 +772,9 @@ class NewTextEditor(QMainWindow):
     #----------------------------------------------------------------FORMAT functions ----------------------------------------------------------------
 
     def refresh_recheck(self):
+        self.total_pages = 0
         for page in self.pages:
+            self.total_pages += 1
             if not page or not page.editor:
                 print("Page or editor is not valid.")
                 continue
@@ -793,6 +795,7 @@ class NewTextEditor(QMainWindow):
             # Update the editor with the underlined content
             page.editor.setHtml(highlighted_content)
         self.removeBlankPages()
+        self.statusBar().showMessage("total pages " + str(self.total_pages))
 
     def zoomIn(self):
         if self.current_page:
