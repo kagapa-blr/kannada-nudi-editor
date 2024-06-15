@@ -5,8 +5,12 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QLabel, QComboBox, QHBoxLayo
                              QFileDialog, QFontComboBox, QSlider, QSizePolicy, QMessageBox)
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QAction
 
+from editor.common_Dialogs import CommonDialogs
+from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customize_image import ImageEditDialog
+from editor.components.excel_csv_file_handling import ExcelCsvViewer
 from editor.components.new_editor_components import NewPageLayoutDialog, NewPage
+from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
 from utils import find
 from utils.find import Find
 from utils.sort_by import SortDialog
@@ -20,8 +24,9 @@ class TextEditor(QMainWindow):
         self.pages = []
         self.current_page = None
         self.filename = None
+        self.speech_thread = None
         self.editor_windows = []  # Add this line to keep references to new editor windows
-
+        self.error_dialog = CommonDialogs()
         self.initUI()
 
     def initUI(self):
@@ -175,23 +180,37 @@ class TextEditor(QMainWindow):
         self.imageAction.setShortcut("Ctrl+Shift+I")
         self.imageAction.triggered.connect(self.choose_image)
 
-
         self.bulletAction = QAction(QIcon("resources/images/bullet-list.png"), "Insert bullet List", self)
         self.bulletAction.setStatusTip("Insert bullet list")
         self.bulletAction.setShortcut("Ctrl+Shift+B")
         self.bulletAction.triggered.connect(self.bulletList)
 
         self.numberedAction = QAction(QIcon("resources/images/number-list.png"), "Insert numbered List",
-                                           self)
+                                      self)
         self.numberedAction.setStatusTip("Insert numbered list")
         self.numberedAction.setShortcut("Ctrl+Shift+L")
         self.numberedAction.triggered.connect(self.numberList)
 
         self.sort_by_action = QAction(QIcon("resources/images/sortBy.png"), "Sort By",
-                                           self)
+                                      self)
         self.sort_by_action.setStatusTip("sort by action")
         #self.sort_by_action.setShortcut("Ctrl+Shift+L")
         self.sort_by_action.triggered.connect(self.sortByAction)
+
+        self.speech_to_text = QAction(QIcon('resources/images/mic-speecch-to-text.png'), 'speech to Text', self)
+        self.speech_to_text.setStatusTip("speech to text")
+        self.speech_to_text.setCheckable(True)
+        self.speech_to_text.triggered.connect(self.toggle_speech_to_text)
+
+        self.ascii_to_unicode = QAction(QIcon('resources/images/convert.png'), 'ASCII to Unicode vs converter', self)
+        self.ascii_to_unicode.setStatusTip("ASCII to Unicode vs converter")
+        self.ascii_to_unicode.setCheckable(True)
+        self.ascii_to_unicode.triggered.connect(self.ascii_to_unicode_converter)
+
+        self.excel_csv = QAction(QIcon('resources/images/excel_csv.png'), 'Excel and CSV file operations', self)
+        self.excel_csv.setStatusTip("Excel File Handling")
+        self.excel_csv.setCheckable(True)
+        self.excel_csv.triggered.connect(self.excel_csv_file)
 
     def createMenus(self):
         menubar = self.menuBar()
@@ -226,6 +245,9 @@ class TextEditor(QMainWindow):
         self.toolbar.addAction(self.bulletAction)
         self.toolbar.addAction(self.numberedAction)
         self.toolbar.addAction(self.sort_by_action)
+        self.toolbar.addAction(self.speech_to_text)
+        self.toolbar.addAction(self.ascii_to_unicode)
+        self.toolbar.addAction(self.excel_csv)
 
     def createFormatbar(self):
         self.formatbar = self.addToolBar('Format Toolbar')
@@ -264,9 +286,16 @@ class TextEditor(QMainWindow):
 
     # Override the closeEvent method
     def closeEvent(self, event):
+        try:
+            if self.speech_thread:
+                self.speech_thread.stop()
+            event.accept()
+        except Exception as e:
+            self.error_dialog.show_error_popup(str(e))
+
         if any(page.is_changed for page in self.pages):
-            reply = QMessageBox.question(self, 'Message',
-                                         "You have unsaved changes. Do you want to save your changes?",
+            reply = QMessageBox.question(self, 'ಸಂದೇಶ',
+                                         "ನೀವು ಉಳಿಸದ ಬದಲಾವಣೆಗಳನ್ನು ಹೊಂದಿರುವಿರಿ. ನಿಮ್ಮ ಬದಲಾವಣೆಗಳನ್ನು ನೀವು ಉಳಿಸಲು ಬಯಸುವಿರಾ?",
                                          QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
                                          QMessageBox.Cancel)
             if reply == QMessageBox.Yes:
@@ -421,14 +450,12 @@ class TextEditor(QMainWindow):
                 cursor = self.current_page.editor.textCursor()
                 cursor.insertImage(modified_image)
 
-
     def bulletList(self):
 
         cursor = self.current_page.editor.textCursor()
 
         # Insert bulleted list
         cursor.insertList(QTextListFormat.ListDisc)
-
 
     def numberList(self):
 
@@ -468,9 +495,36 @@ class TextEditor(QMainWindow):
             sorted_text = '\n'.join(lines)
             self.current_page.editor.setPlainText(sorted_text)
 
-    # Example method to set current_page
-    def setCurrentPage(self, page):
-        self.current_page = page
+    def toggle_speech_to_text(self):
+        sender = self.sender()
+        if sender.isChecked():
+            popup = LanguageSelectionPopup()
+            if popup.exec_() == QDialog.Accepted:
+                selected_language = popup.selectedLanguage
+                if selected_language is None:
+                    QMessageBox.critical(None, 'Error', 'No language selected')
+                    sender.setChecked(False)
+                    return
+
+                sender.setText("Stop Speech to Text")
+                self.speech_thread = SpeechToTextThread(self.current_page.editor, selected_language)
+                self.speech_thread.start()
+            else:
+                sender.setChecked(False)
+        else:
+            sender.setText("Speech to Text")
+            if self.speech_thread:
+                self.speech_thread.stop()
+                self.speech_thread = None
+
+    def ascii_to_unicode_converter(self):
+        dialog = ConversionDialog(self)
+        dialog.exec_()
+
+    def excel_csv_file(self):
+        self.viewer = ExcelCsvViewer()
+        self.viewer.show()
+
 
 if __name__ == "__main__":
     import sys
