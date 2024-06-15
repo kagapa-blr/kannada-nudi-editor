@@ -33,7 +33,7 @@ class TextEditor(QMainWindow):
         self.createActions()
         self.createMenus()
         self.createToolbars()
-        self.createFormatbar()
+        #self.createFormatbar()
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -239,22 +239,28 @@ class TextEditor(QMainWindow):
         self.toolbar.addAction(self.pageLayoutAction)
         self.toolbar.addAction(self.undoAction)
         self.toolbar.addAction(self.redoAction)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(self.insertTableAction)
         self.toolbar.addAction(self.findAction)
         self.toolbar.addAction(self.imageAction)
         self.toolbar.addAction(self.bulletAction)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(self.numberedAction)
         self.toolbar.addAction(self.sort_by_action)
         self.toolbar.addAction(self.speech_to_text)
         self.toolbar.addAction(self.ascii_to_unicode)
         self.toolbar.addAction(self.excel_csv)
+        self.toolbar.addSeparator()
+
+        self.addToolBarBreak()  # Add this line to create a break between toolbars
+        self.createFormatbar()  # Add this line to create the format bar below the main toolbar
 
     def createFormatbar(self):
         self.formatbar = self.addToolBar('Format Toolbar')
         self.formatbar.addAction(self.boldAction)
         self.formatbar.addAction(self.italicAction)
         self.formatbar.addAction(self.underlineAction)
-
+        self.formatbar.addSeparator()
         self.fontComboBox = QFontComboBox(self)
         self.fontComboBox.currentFontChanged.connect(self.setFontFamily)
         self.formatbar.addWidget(self.fontComboBox)
