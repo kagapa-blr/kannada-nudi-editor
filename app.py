@@ -2,7 +2,8 @@ import sys
 
 import psutil
 from PyQt5.QtWidgets import QApplication
-from editor.nudi_editor import TextEditor
+#from editor.nudi_editor import TextEditor
+from newEditor2 import NewTextEditor
 
 
 #from editor.nudi_editor_backup import TextEditorBackup
@@ -19,7 +20,7 @@ def stop_background_exe():
 
 def editor():
     app = QApplication(sys.argv)
-    editor = TextEditor()
+    editor = NewTextEditor()
     #editor = TextEditorBackup()
     editor.show()
     app.aboutToQuit.connect(stop_background_exe)

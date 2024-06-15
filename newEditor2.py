@@ -1,23 +1,48 @@
+import os
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QFontDatabase, QImage, QTextListFormat
+from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QDialog, QLabel, QComboBox, QHBoxLayout, QMainWindow, QScrollArea,
-                             QFileDialog, QFontComboBox, QSlider, QSizePolicy, QMessageBox)
+                             QFileDialog, QFontComboBox, QSlider, QSizePolicy, QMessageBox, QColorDialog)
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QAction
 
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customize_image import ImageEditDialog
 from editor.components.excel_csv_file_handling import ExcelCsvViewer
+from editor.components.format_content import SpacingDialog
 from editor.components.new_editor_components import NewPageLayoutDialog, NewPage
 from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
-from utils import find
+from logger import setup_logger
+from spellcheck.bloom_filter import reload_bloom_filter, start_bloom
+from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.find import Find
 from utils.sort_by import SortDialog
 from utils.table import Table
+from utils.wordcount import WordCount
+import subprocess
+filename = os.path.splitext(os.path.basename(__file__))[0]
+
+# Set up logger
+logger = setup_logger(filename)
 
 
-class TextEditor(QMainWindow):
+def start_background_exe():
+    exe_path = r"resources\keyboardDriver\kannadaKeyboard.exe"  # Path to your executable relative to the current directory
+    #exe_path = r"resources\keyboardDriver\testing.exe"
+    try:
+        # Use subprocess.Popen to start the executable in the background
+        print("kannada Nudi Keyboard loaded and running in background")
+        subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         start_new_session=True)
+
+    except Exception as e:
+        print(f"Error starting background exe: {e}")
+
+
+
+class NewTextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -30,6 +55,7 @@ class TextEditor(QMainWindow):
         self.initUI()
 
     def initUI(self):
+        start_background_exe()
         self.createActions()
         self.createMenus()
         self.createToolbars()
@@ -137,21 +163,6 @@ class TextEditor(QMainWindow):
         self.printAction.setShortcut('Ctrl+P')
         self.printAction.setStatusTip('Print the current file')
 
-        self.boldAction = QAction(QIcon('resources/images/bold.png'), 'Bold', self)
-        self.boldAction.setShortcut('Ctrl+B')
-        self.boldAction.setStatusTip('Make selected text bold')
-        self.boldAction.triggered.connect(self.toggleBold)
-
-        self.italicAction = QAction(QIcon('resources/images/italic.png'), 'Italic', self)
-        self.italicAction.setShortcut('Ctrl+I')
-        self.italicAction.setStatusTip('Make selected text italic')
-        self.italicAction.triggered.connect(self.toggleItalic)
-
-        self.underlineAction = QAction(QIcon('resources/images/underline.png'), 'Underline', self)
-        self.underlineAction.setShortcut('Ctrl+U')
-        self.underlineAction.setStatusTip('Underline selected text')
-        self.underlineAction.triggered.connect(self.toggleUnderline)
-
         self.zoomInAction = QAction(QIcon('resources/images/zoom-in.png'), 'Zoom In', self)
         self.zoomInAction.setShortcut('Ctrl++')
         self.zoomInAction.setStatusTip('Zoom in')
@@ -194,7 +205,7 @@ class TextEditor(QMainWindow):
         self.sort_by_action = QAction(QIcon("resources/images/sortBy.png"), "Sort By",
                                       self)
         self.sort_by_action.setStatusTip("sort by action")
-        #self.sort_by_action.setShortcut("Ctrl+Shift+L")
+        # self.sort_by_action.setShortcut("Ctrl+Shift+L")
         self.sort_by_action.triggered.connect(self.sortByAction)
 
         self.speech_to_text = QAction(QIcon('resources/images/mic-speecch-to-text.png'), 'speech to Text', self)
@@ -211,6 +222,77 @@ class TextEditor(QMainWindow):
         self.excel_csv.setStatusTip("Excel File Handling")
         self.excel_csv.setCheckable(True)
         self.excel_csv.triggered.connect(self.excel_csv_file)
+
+        self.wordCountAction = QAction(QIcon("resources/images/count.png"), "See word/symbol count", self)
+        self.wordCountAction.setStatusTip("See word/symbol count")
+        self.wordCountAction.setShortcut("Ctrl+W")
+        self.wordCountAction.triggered.connect(self.wordCount)
+
+        self.refresh_action = QAction(QIcon('resources/images/refresh.png'), 'Refresh and spellcheck', self)
+        self.refresh_action.setStatusTip("spellcheck")
+        self.refresh_action.triggered.connect(self.refresh_recheck)
+
+        ####------format bar stated ----------------------------------------------------------
+
+        self.fontColor = QAction(QIcon("resources/images/font-color.png"), "Change font color", self)
+        self.fontColor.setStatusTip("change font color")
+        self.fontColor.triggered.connect(self.fontColorChanged)
+
+        self.boldAction = QAction(QIcon('resources/images/bold.png'), 'Bold', self)
+        self.boldAction.setShortcut('Ctrl+B')
+        self.boldAction.setStatusTip('Make selected text bold')
+        self.boldAction.triggered.connect(self.toggleBold)
+
+        self.italicAction = QAction(QIcon('resources/images/italic.png'), 'Italic', self)
+        self.italicAction.setShortcut('Ctrl+I')
+        self.italicAction.setStatusTip('Make selected text italic')
+        self.italicAction.triggered.connect(self.toggleItalic)
+
+        self.underlineAction = QAction(QIcon('resources/images/underline.png'), 'Underline', self)
+        self.underlineAction.setShortcut('Ctrl+U')
+        self.underlineAction.setStatusTip('Underline selected text')
+        self.underlineAction.triggered.connect(self.toggleUnderline)
+
+        self.strikeAction = QAction(QIcon("resources/images/strike.png"), "Strike-out", self)
+        self.underlineAction.setStatusTip('Strike-outt')
+        self.strikeAction.triggered.connect(self.strike)
+
+        self.superAction = QAction(QIcon("resources/images/superscript.png"), "Superscript", self)
+        self.superAction.triggered.connect(self.superScript)
+
+        self.subAction = QAction(QIcon("resources/images/subscript.png"), "Subscript", self)
+        self.subAction.triggered.connect(self.subScript)
+
+        self.alignLeftAction = QAction(QIcon("resources/images/align-left.png"), "Align left", self)
+        self.alignLeftAction.triggered.connect(self.alignLeft)
+
+        self.alignCenterAction = QAction(QIcon("resources/images/align-center.png"), "Align center", self)
+        self.alignCenterAction.triggered.connect(self.alignCenter)
+
+        self.alignRightAction = QAction(QIcon("resources/images/align-right.png"), "Align right", self)
+        self.alignRightAction.triggered.connect(self.alignRight)
+
+        self.alignJustifyAction = QAction(QIcon("resources/images/align-justify.png"), "Align justify", self)
+        self.alignJustifyAction.triggered.connect(self.alignJustify)
+
+        self.indentAction = QAction(QIcon("resources/images/indent.png"), "Indent Area", self)
+        self.indentAction.setShortcut("Ctrl+Tab")
+        self.indentAction.triggered.connect(self.indent)
+
+        self.dedentAction = QAction(QIcon("resources/images/dedent.png"), "Dedent Area", self)
+        self.dedentAction.setShortcut("Shift+Tab")
+        self.dedentAction.triggered.connect(self.dedent)
+
+        self.fontbackColor = QAction(QIcon("resources/images/highlight.png"), "Change background color", self)
+        self.fontbackColor.triggered.connect(self.highlight)
+
+        self.line_para_spacing = QAction(QIcon("resources/images/line-paragraph-spacing.png"),
+                                         "line and Paragraph spacing", self)
+        self.line_para_spacing.setStatusTip("line and paragraph spacing.")
+        self.line_para_spacing.triggered.connect(self.setSpacing)
+
+        ##### ------ format bar ended----------------------------------------------------------------
+
 
     def createMenus(self):
         menubar = self.menuBar()
@@ -251,15 +333,16 @@ class TextEditor(QMainWindow):
         self.toolbar.addAction(self.ascii_to_unicode)
         self.toolbar.addAction(self.excel_csv)
         self.toolbar.addSeparator()
+        self.toolbar.addAction(self.wordCountAction)
+        self.toolbar.addAction(self.refresh_action)
+
 
         self.addToolBarBreak()  # Add this line to create a break between toolbars
         self.createFormatbar()  # Add this line to create the format bar below the main toolbar
 
     def createFormatbar(self):
         self.formatbar = self.addToolBar('Format Toolbar')
-        self.formatbar.addAction(self.boldAction)
-        self.formatbar.addAction(self.italicAction)
-        self.formatbar.addAction(self.underlineAction)
+
         self.formatbar.addSeparator()
         self.fontComboBox = QFontComboBox(self)
         self.fontComboBox.currentFontChanged.connect(self.setFontFamily)
@@ -279,16 +362,21 @@ class TextEditor(QMainWindow):
         # Set the default font size to 12
         self.fontSizeComboBox.setCurrentText("12")
 
-    def addNewPage(self):
-        page = NewPage(self)
-        page.textOverflow.connect(self.addNewPage)
-        page.clicked.connect(self.setActivePage)
-        self.pages.append(page)
-        self.scroll_layout.addWidget(page)
-        self.setActivePage(page)
-
-    def setActivePage(self, page):
-        self.current_page = page
+        self.formatbar.addAction(self.fontColor)
+        self.formatbar.addAction(self.boldAction)
+        self.formatbar.addAction(self.italicAction)
+        self.formatbar.addAction(self.underlineAction)
+        self.formatbar.addAction(self.fontbackColor)
+        self.formatbar.addAction(self.strikeAction)
+        self.formatbar.addAction(self.superAction)
+        self.formatbar.addAction(self.subAction)
+        self.formatbar.addAction(self.alignLeftAction)
+        self.formatbar.addAction(self.alignCenterAction)
+        self.formatbar.addAction(self.alignRightAction)
+        self.formatbar.addAction(self.alignJustifyAction)
+        self.formatbar.addAction(self.indentAction)
+        self.formatbar.addAction(self.dedentAction)
+        self.formatbar.addAction(self.line_para_spacing)
 
     # Override the closeEvent method
     def closeEvent(self, event):
@@ -396,6 +484,215 @@ class TextEditor(QMainWindow):
             state = self.current_page.editor.fontUnderline()
             self.current_page.editor.setFontUnderline(not state)
 
+    def strike(self):
+
+        # Grab the text's format
+        fmt = self.current_page.editor.currentCharFormat()
+
+        # Set the fontStrikeOut property to its opposite
+        fmt.setFontStrikeOut(not fmt.fontStrikeOut())
+
+        # And set the next char format
+        self.current_page.editor.setCurrentCharFormat(fmt)
+
+    def fontColorChanged(self):
+
+        # Get a color from the text dialog
+        color = QColorDialog.getColor()
+
+        # Set it as the new text color
+        self.current_page.editor.setTextColor(color)
+
+    def superScript(self):
+
+        # Grab the current format
+        fmt = self.current_page.editor.currentCharFormat()
+
+        # And get the vertical alignment property
+        align = fmt.verticalAlignment()
+
+        # Toggle the state
+        if align == QTextCharFormat.AlignNormal:
+
+            fmt.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
+
+        else:
+
+            fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
+
+        # Set the new format
+        self.current_page.editor.setCurrentCharFormat(fmt)
+
+    def subScript(self):
+
+        # Grab the current format
+        fmt = self.current_page.editor.currentCharFormat()
+
+        # And get the vertical alignment property
+        align = fmt.verticalAlignment()
+
+        # Toggle the state
+        if align == QTextCharFormat.AlignNormal:
+
+            fmt.setVerticalAlignment(QTextCharFormat.AlignSubScript)
+
+        else:
+
+            fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
+
+        # Set the new format
+        self.current_page.editor.setCurrentCharFormat(fmt)
+
+    def alignLeft(self):
+        self.current_page.editor.setAlignment(Qt.AlignLeft)
+
+    def alignRight(self):
+        self.current_page.editor.setAlignment(Qt.AlignRight)
+
+    def alignCenter(self):
+        self.current_page.editor.setAlignment(Qt.AlignCenter)
+
+    def alignJustify(self):
+        self.current_page.editor.setAlignment(Qt.AlignJustify)
+
+    def indent(self):
+
+        # Grab the cursor
+        cursor = self.current_page.editor.textCursor()
+
+        if cursor.hasSelection():
+
+            # Store the current line/block number
+            temp = cursor.blockNumber()
+
+            # Move to the selection's end
+            cursor.setPosition(cursor.anchor())
+
+            # Calculate range of selection
+            diff = cursor.blockNumber() - temp
+
+            direction = QTextCursor.Up if diff > 0 else QTextCursor.Down
+
+            # Iterate over lines (diff absolute value)
+            for n in range(abs(diff) + 1):
+                # Move to start of each line
+                cursor.movePosition(QTextCursor.StartOfLine)
+
+                # Insert tabbing
+                cursor.insertText("\t")
+
+                # And move back up
+                cursor.movePosition(direction)
+
+        # If there is no selection, just insert a tab
+        else:
+
+            cursor.insertText("\t")
+
+    def handleDedent(self, cursor):
+
+        cursor.movePosition(QTextCursor.StartOfLine)
+
+        # Grab the current line
+        line = cursor.block().text()
+
+        # If the line starts with a tab character, delete it
+        if line.startswith("\t"):
+
+            # Delete next character
+            cursor.deleteChar()
+
+        # Otherwise, delete all spaces until a non-space character is met
+        else:
+            for char in line[:8]:
+
+                if char != " ":
+                    break
+
+                cursor.deleteChar()
+
+    def dedent(self):
+
+        cursor = self.current_page.editor.textCursor()
+
+        if cursor.hasSelection():
+
+            # Store the current line/block number
+            temp = cursor.blockNumber()
+
+            # Move to the selection's last line
+            cursor.setPosition(cursor.anchor())
+
+            # Calculate range of selection
+            diff = cursor.blockNumber() - temp
+
+            direction = QTextCursor.Up if diff > 0 else QTextCursor.Down
+
+            # Iterate over lines
+            for n in range(abs(diff) + 1):
+                self.handleDedent(cursor)
+
+                # Move up
+                cursor.movePosition(direction)
+
+        else:
+            self.handleDedent(cursor)
+
+    def bulletList(self):
+
+        cursor = self.current_page.editor.textCursor()
+
+        # Insert bulleted list
+        cursor.insertList(QTextListFormat.ListDisc)
+
+    def numberList(self):
+
+        cursor = self.current_page.editor.textCursor()
+
+        # Insert list with numbers
+        cursor.insertList(QTextListFormat.ListDecimal)
+
+    def highlight(self):
+
+        color = QColorDialog.getColor()
+
+        self.current_page.editor.setTextBackgroundColor(color)
+
+    def setSpacing(self):
+        dialog = SpacingDialog(self)
+        dialog.setWindowTitle('Line & Paragraph Spacing')
+        dialog.lineSpacingLabel.setText('Line Spacing (pixels):')
+        dialog.customLineSpacingSpinBox.setValue(self.current_page.editor.currentFont().pixelSize())
+        dialog.beforeParagraphSpinBox.setValue(0)
+        dialog.afterParagraphSpinBox.setValue(0)
+        dialog.exec_()
+        dialog.applySettings()
+
+    #----------------------------------------------------------------FORMAT functions ----------------------------------------------------------------
+
+    def refresh_recheck(self):
+        for page in self.pages:
+            if not page or not page.editor:
+                print("Page or editor is not valid.")
+                continue
+
+            # Retrieve plain text from current page's editor
+            plain_text = page.editor.toPlainText()
+
+            # Process text content for spell checking
+            content_for_bloom = [get_clean_words_for_dictionary(word) for word in plain_text.split() if len(word) > 1]
+            wrong_words = start_bloom(content_for_bloom)
+
+            # Underline incorrect words in the editor
+            highlighted_content = plain_text
+            for word in wrong_words:
+                highlighted_content = highlighted_content.replace(word,
+                                                                  f'<span style="text-decoration: underline;">{word}</span>')
+
+            # Update the editor with the underlined content
+            page.editor.setHtml(highlighted_content)
+        self.removeBlankPages()
+
     def zoomIn(self):
         if self.current_page:
             self.current_page.editor.zoomIn()
@@ -408,7 +705,7 @@ class TextEditor(QMainWindow):
         return self.filename if self.filename is not None else "Untitled"
 
     def new(self):
-        new_editor = TextEditor()
+        new_editor = NewTextEditor()
         new_editor.show()
         self.editor_windows.append(new_editor)  # Keep a reference to the new editor window
 
@@ -531,11 +828,18 @@ class TextEditor(QMainWindow):
         self.viewer = ExcelCsvViewer()
         self.viewer.show()
 
+    def wordCount(self):
+        wc = WordCount(self.current_page)
+
+        wc.getText()
+
+        wc.show()
+
 
 if __name__ == "__main__":
     import sys
 
     app = QApplication(sys.argv)
-    editor = TextEditor()
+    editor = NewTextEditor()
     editor.show()
     sys.exit(app.exec_())
