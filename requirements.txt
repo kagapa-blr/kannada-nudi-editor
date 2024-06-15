@@ -1,14 +1,11 @@
 docx
 python-docx
-textract
 symspellpy
-openpyxl
-bitarray
-mmh3
-pyxdameraulevenshtein
 pyqt5
 pyinstaller
 pybloom_live
 psutil
 PyAudio
 pypandoc
+openpyxl
+SpeechRecognition
