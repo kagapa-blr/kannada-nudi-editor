@@ -3,7 +3,8 @@ import os
 import pypandoc
 from PyQt5 import QtPrintSupport
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument
+from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument, \
+    QTextBlockFormat
 from PyQt5.QtGui import QIcon
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import (QApplication, QDialog, QLabel, QComboBox, QHBoxLayout, QMainWindow, QScrollArea,
@@ -304,8 +305,7 @@ class NewTextEditor(QMainWindow):
         self.fontbackColor = QAction(QIcon("resources/images/highlight.png"), "Change background color", self)
         self.fontbackColor.triggered.connect(self.highlight)
 
-        self.line_para_spacing = QAction(QIcon("resources/images/line-paragraph-spacing.png"),
-                                         "line and Paragraph spacing", self)
+        self.line_para_spacing = QAction(QIcon("resources/images/line-paragraph-spacing.png"),"line and Paragraph spacing", self)
         self.line_para_spacing.setStatusTip("line and paragraph spacing.")
         self.line_para_spacing.triggered.connect(self.setSpacing)
 
@@ -560,6 +560,7 @@ class NewTextEditor(QMainWindow):
                 print(f"Error setting font size: {str(e)}")
                 # Handle the error as needed (e.g., log it, notify the user)
         else:
+            self.setActivePage(self.current_page)
             print("Error: No current page or editor not available")
             # Handle the error as needed (e.g., log it, notify the user)
 
@@ -760,14 +761,29 @@ class NewTextEditor(QMainWindow):
         self.current_page.editor.setTextBackgroundColor(color)
 
     def setSpacing(self):
+        if not self.current_page or not self.current_page.editor:
+            print("Error: current_page or editor is not valid.")
+            return
+
         dialog = SpacingDialog(self)
         dialog.setWindowTitle('Line & Paragraph Spacing')
-        dialog.lineSpacingLabel.setText('Line Spacing (pixels):')
-        dialog.customLineSpacingSpinBox.setValue(self.current_page.editor.currentFont().pixelSize())
+
+        # Retrieve current font pixel size if available
+        current_font = self.current_page.editor.currentFont()
+        if current_font:
+            dialog.customLineSpacingSpinBox.setValue(current_font.pixelSize())
+
         dialog.beforeParagraphSpinBox.setValue(0)
         dialog.afterParagraphSpinBox.setValue(0)
-        dialog.exec_()
-        dialog.applySettings()
+
+        if dialog.exec_() == QDialog.Accepted:
+            dialog.applySettings()
+
+    def setLineSpacing(self, value):
+        cursor = self.current_page.editor.textCursor()
+        fmt = cursor.blockFormat()
+        fmt.setLineHeight(value, QTextBlockFormat.LineDistanceHeight)
+        cursor.setBlockFormat(fmt)
 
     #----------------------------------------------------------------FORMAT functions ----------------------------------------------------------------
 
@@ -872,7 +888,9 @@ class NewTextEditor(QMainWindow):
         cursor.insertList(QTextListFormat.ListDisc)
 
     def numberList(self):
-
+        if not self.current_page or not self.current_page.editor:
+            print("Error: current_page or editor is not valid.")
+            return
         cursor = self.current_page.editor.textCursor()
 
         # Insert list with numbers
@@ -880,9 +898,10 @@ class NewTextEditor(QMainWindow):
 
     def sortByAction(self):
         if not self.current_page or not self.current_page.editor:
-            # Handle case where current_page or editor is not valid
+            print("Error: current_page or editor is not valid.")
             return
 
+        # Create and execute the SortDialog
         sort_dialog = SortDialog(self)
         if sort_dialog.exec_():
             sort_by = sort_dialog.combo_sort_by.currentText()
@@ -893,10 +912,31 @@ class NewTextEditor(QMainWindow):
             separator = sort_dialog.line_separator.text()
             sort_options = sort_dialog.combo_sort_options.currentText()
 
+            # Retrieve text from QTextEdit
             text = self.current_page.editor.toPlainText()
             lines = text.split('\n')
 
             # Implement sorting based on user input
+            if sort_by == "Paragraph":
+                # Implement sorting logic for Paragraph sorting
+                pass
+            elif sort_by == "Headings":
+                # Implement sorting logic for Headings sorting
+                pass
+            elif sort_by == "Fields":
+                # Implement sorting logic for Fields sorting
+                pass
+            elif sort_by == "Header Name":
+                # Implement sorting logic for Header Name sorting
+                pass
+            elif sort_by == "Column Number":
+                # Implement sorting logic for Column Number sorting
+                pass
+            else:
+                print("Unknown sort_by option:", sort_by)
+                return
+
+            # Example sorting for different types
             if type_ == "Text":
                 lines.sort(key=str.lower if not sort_options == "Case sensitive" else str, reverse=not ascending)
             elif type_ == "Number":
@@ -907,7 +947,11 @@ class NewTextEditor(QMainWindow):
                 lines.sort(key=lambda x: datetime.strptime(x, '%Y-%m-%d'), reverse=not ascending)
 
             sorted_text = '\n'.join(lines)
+
+            # Update QTextEdit with sorted text
             self.current_page.editor.setPlainText(sorted_text)
+
+
 
     def toggle_speech_to_text(self):
         sender = self.sender()
