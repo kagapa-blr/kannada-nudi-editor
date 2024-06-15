@@ -92,6 +92,12 @@ class NewTextEditor(QMainWindow):
         self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
         self.showMaximized()
+        self.setFocusToEditor()
+
+    def setFocusToEditor(self):
+        # Ensure focus is set to the editor of the current page
+        if self.current_page and hasattr(self.current_page, 'editor'):
+            self.current_page.editor.setFocus()
 
     def initZoomSlider(self):
         zoom_label = QLabel("Zoom:", self)
