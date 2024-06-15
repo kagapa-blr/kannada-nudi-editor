@@ -11,3 +11,4 @@ pyinstaller
 pybloom_live
 psutil
 PyAudio
+pypandoc

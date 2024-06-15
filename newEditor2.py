@@ -1,11 +1,13 @@
 import os
 
+import pypandoc
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QDialog, QLabel, QComboBox, QHBoxLayout, QMainWindow, QScrollArea,
                              QFileDialog, QFontComboBox, QSlider, QSizePolicy, QMessageBox, QColorDialog)
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QAction
+from docx import Document
 
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
@@ -410,23 +412,44 @@ class NewTextEditor(QMainWindow):
                 widget.deleteLater()
         self.addNewPage()
 
+    from docx import Document
+    import pypandoc
+
     def openFile(self):
         options = QFileDialog.Options()
-        self.filename, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*);;Text Files (*.txt)",
+        self.filename, _ = QFileDialog.getOpenFileName(self,
+                                                       "Open File",
+                                                       "",
+                                                       "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
                                                        options=options)
         if self.filename:
-            with open(self.filename, 'r', encoding="utf-8") as file:
-                content = file.read()
+            content = ""
+            file_extension = self.filename.split('.')[-1].lower()
+
+            try:
+                if file_extension == 'txt':
+                    with open(self.filename, 'r', encoding="utf-8") as file:
+                        content = file.read()
+                elif file_extension == 'docx':
+                    doc = Document(self.filename)
+                    content = "\n".join([para.text for para in doc.paragraphs])
+                elif file_extension == 'rtf':
+                    content = pypandoc.convert_file(self.filename, 'plain', format='rtf')
+                else:
+                    raise ValueError("Unsupported file format")
+
                 if len(content) > 8000:
                     chunks = [content[i:i + 8000] for i in range(0, len(content), 8000)]
                     for chunk in chunks:
                         self.addPageWithContent(chunk)
                 else:
                     self.addPageWithContent(content)
+            except Exception as e:
+                self.error_dialog.showError(str(e))
 
-        # Remove blank pages
-        self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
-        self.removeBlankPages()
+            # Update window title and remove blank pages
+            self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
+            self.removeBlankPages()
 
     def removeBlankPages(self):
         for i in reversed(range(len(self.pages))):
