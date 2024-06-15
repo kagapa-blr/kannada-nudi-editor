@@ -1,6 +1,7 @@
 import os
 
 import pypandoc
+from PyQt5 import QtPrintSupport
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument
 from PyQt5.QtGui import QIcon
@@ -19,6 +20,7 @@ from editor.components.new_editor_components import NewPageLayoutDialog, NewPage
 from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
 from logger import setup_logger
 from spellcheck.bloom_filter import reload_bloom_filter, start_bloom
+from utils.asciitounicode import process_line
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.find import Find
 from utils.sort_by import SortDialog
@@ -147,6 +149,12 @@ class NewTextEditor(QMainWindow):
         self.openAction.setStatusTip('Open an existing file')
         self.openAction.triggered.connect(self.openFile)
 
+
+        self.openAsciiAction = QAction(QIcon('resources/images/ascii-file-icon.png'), 'Open ASCII file', self)
+        self.openAsciiAction.setStatusTip('Open ASCII file')
+        self.openAsciiAction.triggered.connect(self.openAsciiFile)
+
+
         self.saveAction = QAction(QIcon('resources/images/stock_save.png'), 'Save', self)
         self.saveAction.setShortcut('Ctrl+S')
         self.saveAction.setStatusTip('Save the current file')
@@ -165,6 +173,10 @@ class NewTextEditor(QMainWindow):
         self.printAction = QAction(QIcon('resources/images/print.png'), 'Print', self)
         self.printAction.setShortcut('Ctrl+P')
         self.printAction.setStatusTip('Print the current file')
+        self.printAction.triggered.connect(self.printHandler)
+
+
+
 
         self.zoomInAction = QAction(QIcon('resources/images/zoom-in.png'), 'Zoom In', self)
         self.zoomInAction.setShortcut('Ctrl++')
@@ -226,10 +238,10 @@ class NewTextEditor(QMainWindow):
         self.excel_csv.setCheckable(True)
         self.excel_csv.triggered.connect(self.excel_csv_file)
 
-        self.wordCountAction = QAction(QIcon("resources/images/count.png"), "See word/symbol count", self)
-        self.wordCountAction.setStatusTip("See word/symbol count")
-        self.wordCountAction.setShortcut("Ctrl+W")
-        self.wordCountAction.triggered.connect(self.wordCount)
+        # self.wordCountAction = QAction(QIcon("resources/images/count.png"), "See word/symbol count", self)
+        # self.wordCountAction.setStatusTip("See word/symbol count")
+        # self.wordCountAction.setShortcut("Ctrl+W")
+        # self.wordCountAction.triggered.connect(self.wordCount)
 
         self.refresh_action = QAction(QIcon('resources/images/refresh.png'), 'Refresh and spellcheck', self)
         self.refresh_action.setStatusTip("spellcheck")
@@ -319,6 +331,7 @@ class NewTextEditor(QMainWindow):
         self.toolbar = self.addToolBar('Main Toolbar')
         self.toolbar.addAction(self.newAction)
         self.toolbar.addAction(self.openAction)
+        self.toolbar.addAction(self.openAsciiAction)
         self.toolbar.addAction(self.saveAction)
         self.toolbar.addAction(self.printAction)
         self.toolbar.addAction(self.pageLayoutAction)
@@ -336,7 +349,7 @@ class NewTextEditor(QMainWindow):
         self.toolbar.addAction(self.ascii_to_unicode)
         self.toolbar.addAction(self.excel_csv)
         self.toolbar.addSeparator()
-        self.toolbar.addAction(self.wordCountAction)
+        #self.toolbar.addAction(self.wordCountAction)
         self.toolbar.addAction(self.refresh_action)
 
 
@@ -437,6 +450,47 @@ class NewTextEditor(QMainWindow):
                     content = pypandoc.convert_file(self.filename, 'plain', format='rtf')
                 else:
                     raise ValueError("Unsupported file format")
+
+                if len(content) > 8000:
+                    chunks = [content[i:i + 8000] for i in range(0, len(content), 8000)]
+                    for chunk in chunks:
+                        self.addPageWithContent(chunk)
+                else:
+                    self.addPageWithContent(content)
+            except Exception as e:
+                self.error_dialog.showError(str(e))
+
+            # Update window title and remove blank pages
+            self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
+            self.removeBlankPages()
+
+    def openAsciiFile(self):
+        options = QFileDialog.Options()
+        self.filename, _ = QFileDialog.getOpenFileName(
+            self, "Open File", "",
+            "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
+            options=options)
+        if self.filename:
+            content = ""
+            file_extension = self.filename.split('.')[-1].lower()
+
+            try:
+                if file_extension == 'txt':
+                    with open(self.filename, 'r', encoding="utf-8") as file:
+                        unicode_lines = [process_line(line) for line in file]
+                        content = ''.join(unicode_lines)
+                elif file_extension == 'docx':
+                    doc = Document(self.filename)
+                    paragraphs = [process_line(para.text) for para in doc.paragraphs]
+                    content = "\n".join(paragraphs)
+                elif file_extension == 'rtf':
+                    plain_text = pypandoc.convert_file(self.filename, 'plain', format='rtf')
+                    unicode_lines = [process_line(line) for line in plain_text.splitlines()]
+                    content = '\n'.join(unicode_lines)
+                else:
+                    self.error_dialog("Unsupported file format")
+                    #raise ValueError("Unsupported file format")
+
 
                 if len(content) > 8000:
                     chunks = [content[i:i + 8000] for i in range(0, len(content), 8000)]
@@ -745,6 +799,13 @@ class NewTextEditor(QMainWindow):
     def access_filename(self):
         return self.filename if self.filename is not None else "Untitled"
 
+    def printHandler(self):
+
+        # Open printing dialog
+        dialog = QtPrintSupport.QPrintDialog()
+
+        if dialog.exec_() == QDialog.Accepted:
+            self.current_page.editor.document().print_(dialog.printer())
     def new(self):
         new_editor = NewTextEditor()
         new_editor.show()
