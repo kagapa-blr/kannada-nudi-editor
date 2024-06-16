@@ -329,23 +329,3 @@ class NewPage(QWidget):
         except Exception as e:
             print("Error replacing word:", str(e))
 
-    def refresh_recheck(self):
-        try:
-            reload_bloom_filter()
-            cursor_position = self.editor.textCursor()
-            text_content = self.editor.toHtml()
-            plain_text = self.editor.toPlainText()
-            content_for_bloom = [get_clean_words_for_dictionary(word) for word in plain_text.split() if word if
-                                 len(word) > 1]
-            wrong_words = start_bloom(content_for_bloom)
-            # Highlight incorrect words in the editor
-            highlighted_content = text_content
-            for word in wrong_words:
-                highlighted_content = highlighted_content.replace(word,
-                                                                  f'<span style="text-decoration: underline;">{word}</span>')
-            # Update the editor with the highlighted content
-            self.editor.setHtml(highlighted_content)
-            # Restore the cursor position
-            self.editor.setTextCursor(cursor_position)
-        except Exception as e:
-            print("Error refreshing recheck:", str(e))

@@ -1,8 +1,10 @@
 import os
+import subprocess
+import time
 
 import pypandoc
 from PyQt5 import QtPrintSupport
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument, \
     QTextBlockFormat
 from PyQt5.QtGui import QIcon
@@ -20,14 +22,13 @@ from editor.components.format_content import SpacingDialog
 from editor.components.new_editor_components import NewPageLayoutDialog, NewPage
 from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
 from logger import setup_logger
-from spellcheck.bloom_filter import reload_bloom_filter, start_bloom
+from spellcheck.bloom_filter import start_bloom
 from utils.asciitounicode import process_line
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.find import Find
 from utils.sort_by import SortDialog
 from utils.table import Table
 from utils.wordcount import WordCount
-import subprocess
 
 filename = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -818,6 +819,10 @@ class NewTextEditor(QMainWindow):
 
     def refresh_recheck(self):
         self.total_pages = 0
+        total_words = 0
+        total_incorrect_words = 0
+        start_time = time.time()
+
         for page in self.pages:
             self.total_pages += 1
             if not page or not page.editor:
@@ -827,9 +832,16 @@ class NewTextEditor(QMainWindow):
             # Retrieve plain text from current page's editor
             plain_text = page.editor.toPlainText()
 
+            # Count total words
+            words = plain_text.split()
+            total_words += len(words)
+
             # Process text content for spell checking
-            content_for_bloom = [get_clean_words_for_dictionary(word) for word in plain_text.split() if len(word) > 1]
+            content_for_bloom = [get_clean_words_for_dictionary(word) for word in words if len(word) > 1]
             wrong_words = start_bloom(content_for_bloom)
+
+            # Count total incorrect words
+            total_incorrect_words += len(wrong_words)
 
             # Underline incorrect words in the editor
             highlighted_content = plain_text
@@ -839,8 +851,33 @@ class NewTextEditor(QMainWindow):
 
             # Update the editor with the underlined content
             page.editor.setHtml(highlighted_content)
+
+        end_time = time.time()
+        spellcheck_time = end_time - start_time
+
+        # Show info dialog with the requested information and parent window's logo
+        info_msg = QMessageBox()
+        info_msg.setWindowTitle("ವರದಿ ಪರೀಕ್ಷೆ ಮಾಹಿತಿ")
+        info_msg.setText(f"ಒಟ್ಟು ಪದಗಳ ಸಂಖ್ಯೆ : {total_words}\n"
+                         f"ತಪ್ಪು ಪದಗಳ ಸಂಖ್ಯೆ : {total_incorrect_words}\n"
+                         f"ಕಾಗುಣಿತ ಪರಿಶೀಲನೆಗಾಗಿ ತೆಗೆದುಕೊಂಡ ಒಟ್ಟು ಸಮಯ : {spellcheck_time:.2f} ಸೆಕೆಂಡುಗಳು")
+        info_msg.setIcon(QMessageBox.Information)
+
+        # Set the parent window's icon for the message box
+        parent_icon = self.windowIcon()
+        if parent_icon:
+            info_msg.setWindowIcon(parent_icon)
+
+        info_msg.exec_()
+
         self.removeBlankPages()
-        self.statusBar().showMessage("total pages " + str(self.total_pages))
+        self.statusBar().showMessage("ಒಟ್ಟು ಪುಟಗಳು: " + str(self.total_pages))
+
+        # Automatically close the message box after 5 seconds
+        QTimer.singleShot(5000, info_msg.close)
+
+        # Ensure the application processes the event loop to display the message box
+        QApplication.processEvents()
 
     def zoomIn(self):
         if self.current_page:
