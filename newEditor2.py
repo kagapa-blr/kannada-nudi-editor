@@ -28,6 +28,7 @@ from utils.sort_by import SortDialog
 from utils.table import Table
 from utils.wordcount import WordCount
 import subprocess
+
 filename = os.path.splitext(os.path.basename(__file__))[0]
 
 # Set up logger
@@ -88,7 +89,7 @@ class NewTextEditor(QMainWindow):
         self.statusbar = self.statusBar()
         self.initZoomSlider()  # Add the zoom slider
         self.addNewPage()
-
+        self.current_page.editor.installEventFilter(self)
         self.setGeometry(100, 100, 1030, 800)
         self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
@@ -132,6 +133,7 @@ class NewTextEditor(QMainWindow):
         page.clicked.connect(self.setActivePage)
         self.pages.append(page)
         self.scroll_layout.addWidget(page)
+
         self.setActivePage(page)
         self.total_pages += 1
         self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
@@ -305,7 +307,8 @@ class NewTextEditor(QMainWindow):
         self.fontbackColor = QAction(QIcon("resources/images/highlight.png"), "Change background color", self)
         self.fontbackColor.triggered.connect(self.highlight)
 
-        self.line_para_spacing = QAction(QIcon("resources/images/line-paragraph-spacing.png"),"line and Paragraph spacing", self)
+        self.line_para_spacing = QAction(QIcon("resources/images/line-paragraph-spacing.png"),
+                                         "line and Paragraph spacing", self)
         self.line_para_spacing.setStatusTip("line and paragraph spacing.")
         self.line_para_spacing.triggered.connect(self.setSpacing)
 
@@ -450,12 +453,23 @@ class NewTextEditor(QMainWindow):
                 else:
                     raise ValueError("Unsupported file format")
 
-                if len(content) > 8000:
-                    chunks = [content[i:i + 8000] for i in range(0, len(content), 8000)]
-                    for chunk in chunks:
-                        self.addPageWithContent(chunk)
-                else:
-                    self.addPageWithContent(content)
+                # Split content into chunks of approximately 490 words
+                words = content.split()
+                word_limit = 490
+                current_word_count = 0
+                current_page_content = []
+                for word in words:
+                    current_page_content.append(word)
+                    current_word_count += 1
+                    if current_word_count >= word_limit:
+                        self.addPageWithContent(' '.join(current_page_content))
+                        current_page_content = []
+                        current_word_count = 0
+
+                # Add any remaining content to a new page if not empty
+                if current_page_content:
+                    self.addPageWithContent(' '.join(current_page_content))
+
             except Exception as e:
                 self.error_dialog.showError(str(e))
 
@@ -488,14 +502,25 @@ class NewTextEditor(QMainWindow):
                     content = '\n'.join(unicode_lines)
                 else:
                     self.error_dialog("Unsupported file format")
-                    #raise ValueError("Unsupported file format")
+                    # raise ValueError("Unsupported file format")
 
-                if len(content) > 8000:
-                    chunks = [content[i:i + 8000] for i in range(0, len(content), 8000)]
-                    for chunk in chunks:
-                        self.addPageWithContent(chunk)
-                else:
-                    self.addPageWithContent(content)
+                # Split content into chunks of approximately 490 words
+                words = content.split()
+                word_limit = 490
+                current_word_count = 0
+                current_page_content = []
+                for word in words:
+                    current_page_content.append(word)
+                    current_word_count += 1
+                    if current_word_count >= word_limit:
+                        self.addPageWithContent(' '.join(current_page_content))
+                        current_page_content = []
+                        current_word_count = 0
+
+                # Add any remaining content to a new page if not empty
+                if current_page_content:
+                    self.addPageWithContent(' '.join(current_page_content))
+
             except Exception as e:
                 self.error_dialog.showError(str(e))
 
@@ -565,16 +590,20 @@ class NewTextEditor(QMainWindow):
             # Handle the error as needed (e.g., log it, notify the user)
 
     def toggleBold(self):
-        # if self.current_page:
-        #     self.current_page.editor.setFontWeight(
-        #         QFont.Bold if self.current_page.editor.fontWeight() != QFont.Bold else QFont.Normal)
-        if self.current_page.editor.fontWeight() == QFont.Bold:
+        if self.current_page:
+            editor = self.current_page.editor
+            cursor = editor.textCursor()
 
-            self.current_page.editor.setFontWeight(QFont.Normal)
+            # Print the current selected text
+            selected_text = cursor.selectedText()
+            print(f"Selected Text: '{selected_text}'")
 
-        else:
+            # Check the current font weight
+            current_weight = editor.fontWeight()
 
-            self.current_page.editor.setFontWeight(QFont.Bold)
+            # Toggle the font weight
+            new_weight = QFont.Normal if current_weight == QFont.Bold else QFont.Bold
+            editor.setFontWeight(new_weight)
 
     def toggleItalic(self):
         if self.current_page:
@@ -831,6 +860,7 @@ class NewTextEditor(QMainWindow):
 
         if dialog.exec_() == QDialog.Accepted:
             self.current_page.editor.document().print_(dialog.printer())
+
     def new(self):
         new_editor = NewTextEditor()
         new_editor.show()
@@ -950,8 +980,6 @@ class NewTextEditor(QMainWindow):
 
             # Update QTextEdit with sorted text
             self.current_page.editor.setPlainText(sorted_text)
-
-
 
     def toggle_speech_to_text(self):
         sender = self.sender()
