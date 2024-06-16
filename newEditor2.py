@@ -472,7 +472,7 @@ class NewTextEditor(QMainWindow):
                     self.addPageWithContent(' '.join(current_page_content))
 
             except Exception as e:
-                self.error_dialog.showError(str(e))
+                self.error_dialog.show_error_popup(str(e))
 
             # Update window title and remove blank pages
             self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
