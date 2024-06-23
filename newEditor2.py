@@ -937,15 +937,12 @@ class NewTextEditor(QMainWindow):
             if image_dialog.exec_() == QDialog.Accepted:
                 modified_image = image_dialog.getModifiedImage()
                 if not modified_image.isNull():
-                    self.editAndInsertImage(modified_image)
+                    self.insertEditedImage(modified_image)
 
-    def editAndInsertImage(self, image_path):
-        image_dialog = ImageEditDialog(image_path, self)
-        if image_dialog.exec_() == QDialog.Accepted:
-            modified_image = image_dialog.getModifiedImage()
-            if not modified_image.isNull() and self.current_page:
-                cursor = self.current_page.editor.textCursor()
-                cursor.insertImage(modified_image)
+    def insertEditedImage(self, edited_image):
+        if self.current_page:
+            cursor = self.current_page.editor.textCursor()
+            cursor.insertImage(edited_image)
 
     def bulletList(self):
 

@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import zipfile
 
+
 def remove(path):
     try:
         if os.path.isfile(path) or os.path.islink(path):
@@ -14,7 +15,8 @@ def remove(path):
         else:
             raise ValueError("File {} is not a file or directory.".format(path))
     except Exception as e:
-        print("Permission denied! Please close other applications.")
+        print(f"Permission denied! Please close other applications {str(e)}")
+
 
 # Define your application script and other parameters
 app_script = "app.py"
