@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 
+import mammoth
 import pypandoc
 from PyQt5 import QtPrintSupport
 from PyQt5.QtCore import Qt, QTimer
@@ -53,6 +54,7 @@ class NewTextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.current_file_path = None
         self.total_pages = 0
         self.pages = []
         self.current_page = None
@@ -96,6 +98,7 @@ class NewTextEditor(QMainWindow):
         self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
         self.showMaximized()
         self.setFocusToEditor()
+        self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
 
     def setFocusToEditor(self):
         # Ensure focus is set to the editor of the current page
@@ -137,7 +140,6 @@ class NewTextEditor(QMainWindow):
 
         self.setActivePage(page)
         self.total_pages += 1
-        self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
 
     def setActivePage(self, page):
         self.current_page = page
@@ -169,6 +171,10 @@ class NewTextEditor(QMainWindow):
         self.saveAction.setShortcut('Ctrl+S')
         self.saveAction.setStatusTip('Save the current file')
         self.saveAction.triggered.connect(self.saveFile)
+
+        self.saveAsAction = QAction(QIcon('resources/images/stock_save.png'), 'Save As', self)
+        self.saveAsAction.setStatusTip('SaveAs')
+        self.saveAsAction.triggered.connect(self.saveAsFile)
 
         self.undoAction = QAction(QIcon('resources/images/undo.png'), 'Undo', self)
         self.undoAction.setShortcut('Ctrl+Z')
@@ -322,6 +328,7 @@ class NewTextEditor(QMainWindow):
         fileMenu.addAction(self.newAction)
         fileMenu.addAction(self.openAction)
         fileMenu.addAction(self.saveAction)
+        fileMenu.addAction(self.saveAsAction)
         fileMenu.addAction(self.printAction)
 
         editMenu = menubar.addMenu('Edit')
@@ -433,11 +440,13 @@ class NewTextEditor(QMainWindow):
 
     def openFile(self):
         options = QFileDialog.Options()
-        self.filename, _ = QFileDialog.getOpenFileName(self,
-                                                       "Open File",
-                                                       "",
-                                                       "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
-                                                       options=options)
+        self.filename, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open File",
+            "",
+            "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
+            options=options
+        )
         if self.filename:
             content = ""
             file_extension = self.filename.split('.')[-1].lower()
@@ -447,8 +456,9 @@ class NewTextEditor(QMainWindow):
                     with open(self.filename, 'r', encoding="utf-8") as file:
                         content = file.read()
                 elif file_extension == 'docx':
-                    doc = Document(self.filename)
-                    content = "\n".join([para.text for para in doc.paragraphs])
+                    with open(self.filename, "rb") as docx_file:
+                        result = mammoth.convert_to_html(docx_file)
+                        content = result.value  # The converted HTML
                 elif file_extension == 'rtf':
                     content = pypandoc.convert_file(self.filename, 'plain', format='rtf')
                 else:
@@ -477,6 +487,76 @@ class NewTextEditor(QMainWindow):
             # Update window title and remove blank pages
             self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
             self.removeBlankPages()
+            self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
+
+            # Set the current file path
+            self.current_file_path = self.filename
+
+    def saveFile(self):
+        if not self.current_file_path:
+            options = QFileDialog.Options()
+            self.current_file_path, _ = QFileDialog.getSaveFileName(
+                self, "Save File", "",
+                "Text Files (*.txt);;Word Files (*.docx);;Rich Text Format (*.rtf);;PDF Files (*.pdf);;All Files (*)",
+                options=options
+            )
+
+        if self.current_file_path:
+            content = self.pages[0].editor.toPlainText()
+            try:
+                if self.current_file_path.endswith('.txt'):
+                    with open(self.current_file_path, 'w', encoding='utf-8') as file:
+                        file.write(content)
+                elif self.current_file_path.endswith('.docx'):
+                    doc = Document()
+                    doc.add_paragraph(content)
+                    doc.save(self.current_file_path)
+                elif self.current_file_path.endswith('.rtf'):
+                    pypandoc.convert_text(content, 'rtf', format='md', outputfile=self.current_file_path,
+                                          encoding='utf-8')
+                elif self.current_file_path.endswith('.pdf'):
+                    printer = QPrinter(QPrinter.HighResolution)
+                    printer.setOutputFormat(QPrinter.PdfFormat)
+                    printer.setOutputFileName(self.current_file_path)
+                    doc = QTextDocument()
+                    doc.setPlainText(content)
+                    doc.print_(printer)
+                else:
+                    self.error_dialog.showError("Unsupported file format")
+            except Exception as e:
+                self.error_dialog.show_error_popup(str(e))
+
+    def saveAsFile(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save File", "",
+            "Text Files (*.txt);;Word Files (*.docx);;Rich Text Format (*.rtf);;PDF Files (*.pdf);;All Files (*)",
+            options=options
+        )
+
+        if file_path:
+            content = self.pages[0].editor.toPlainText()
+            try:
+                if file_path.endswith('.txt'):
+                    with open(file_path, 'w', encoding='utf-8') as file:
+                        file.write(content)
+                elif file_path.endswith('.docx'):
+                    doc = Document()
+                    doc.add_paragraph(content)
+                    doc.save(file_path)
+                elif file_path.endswith('.rtf'):
+                    pypandoc.convert_text(content, 'rtf', format='md', outputfile=file_path, encoding='utf-8')
+                elif file_path.endswith('.pdf'):
+                    printer = QPrinter(QPrinter.HighResolution)
+                    printer.setOutputFormat(QPrinter.PdfFormat)
+                    printer.setOutputFileName(file_path)
+                    doc = QTextDocument()
+                    doc.setPlainText(content)
+                    doc.print_(printer)
+                else:
+                    self.error_dialog.showError("Unsupported file format")
+            except Exception as e:
+                self.error_dialog.show_error_popup(str(e))
 
     def openAsciiFile(self):
         options = QFileDialog.Options()
@@ -537,41 +617,14 @@ class NewTextEditor(QMainWindow):
                 self.scroll_layout.removeWidget(page)
                 page.deleteLater()
                 self.pages.pop(i)
+                self.total_pages -= 1
 
     def addPageWithContent(self, content):
         if not content:
-            return
+            return self.addNewPage()
         self.addNewPage()
-        self.current_page.editor.insertPlainText(content)
+        self.current_page.editor.setHtml(content)
         self.handleTextOverflow()
-
-    def saveFile(self):
-        options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getSaveFileName(
-            self, "Save File", "",
-            "Text Files (*.txt);;Word Files (*.docx);;Rich Text Format (*.rtf);;PDF Files (*.pdf);;All Files (*)",
-            options=options
-        )
-        if fileName:
-            content = self.pages[0].editor.toPlainText()
-            if fileName.endswith('.txt'):
-                with open(fileName, 'w', encoding='utf-8') as file:
-                    file.write(content)
-            elif fileName.endswith('.docx'):
-                doc = Document()
-                doc.add_paragraph(content)
-                doc.save(fileName)
-            elif fileName.endswith('.rtf'):
-                pypandoc.convert_text(content, 'rtf', format='md', outputfile=fileName, encoding='utf-8')
-            elif fileName.endswith('.pdf'):
-                printer = QPrinter(QPrinter.HighResolution)
-                printer.setOutputFormat(QPrinter.PdfFormat)
-                printer.setOutputFileName(fileName)
-                doc = QTextDocument()
-                doc.setPlainText(content)
-                doc.print_(printer)
-            else:
-                self.error_dialog.showError("Unsupported file format")
 
     def setFontFamily(self, font):
         if self.current_page:

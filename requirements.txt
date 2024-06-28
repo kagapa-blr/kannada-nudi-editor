@@ -9,3 +9,5 @@ PyAudio
 pypandoc
 openpyxl
 SpeechRecognition
+setuptools
+mammoth
