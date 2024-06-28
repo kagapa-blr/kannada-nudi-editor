@@ -127,9 +127,9 @@ class NewTextEditor(QMainWindow):
         central_layout.setAlignment(slider_layout, Qt.AlignBottom | Qt.AlignRight)
 
     def updateZoom(self, value):
-        if self.current_page:
-            factor = value / 100
-            self.current_page.setZoomFactor(factor)
+        factor = value / 100
+        for page in self.pages:
+            page.setZoomFactor(factor)
 
     def addNewPage(self):
         page = NewPage(self)
