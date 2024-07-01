@@ -650,7 +650,7 @@ class NewTextEditor(QMainWindow):
 
             # Print the current selected text
             selected_text = cursor.selectedText()
-            print(f"Selected Text: '{selected_text}'")
+            #print(f"Selected Text: '{selected_text}'")
 
             # Check the current font weight
             current_weight = editor.fontWeight()

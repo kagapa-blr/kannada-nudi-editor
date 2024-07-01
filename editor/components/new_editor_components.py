@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy, QActio
 
 from config import file_path as fp
 from editor.components.table_functionality import TableFunctionality
-from spellcheck.bloom_filter import bloom_lookup, reload_bloom_filter, start_bloom
+from spellcheck.bloom_filter import bloom_lookup
 from spellcheck.symspell_suggestions import suggestionReturner
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.util import has_letters_or_digits
