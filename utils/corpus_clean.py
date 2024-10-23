@@ -5,7 +5,7 @@ import docx
 
 
 def cleanWords(word_):
-    p = """pmg k:-B}u!8&9‘೭_೮r೯MQ೪6lJ\IqLfKy'VWD%~OwH2s೧…x*c`C“–X5@E#n|)ʼPe+Y[j47v’/UhFRS$೨T”;GiA,=೫>.೦3೩"<Na(^bt•Z1?]0z೬do{"""
+    p = r"""pmg k:-B}u!8&9‘೭_೮r೯MQ೪6lJ\IqLfKy'VWD%~OwH2s೧…x*c`C“–X5@E#n|)ʼPe+Y[j47v’/UhFRS$೨T”;GiA,=೫>.೦3೩"<Na(^bt•Z1?]0z೬do{"""
     for i in p:
         word_ = word_.replace(i.strip(), "")
     return word_
