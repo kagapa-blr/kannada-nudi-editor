@@ -55,6 +55,10 @@ def start_background_exe():
 class NewTextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.statusbar = None
+        self.scroll_layout = None
+        self.scroll_content = None
+        self.scroll_area = None
         self.actions = EditorActions(self)
         self.current_file_path = None
         self.total_pages = 0
@@ -70,7 +74,6 @@ class NewTextEditor(QMainWindow):
         self.zoom_slider.initZoomSlider(self)
     def initUI(self):
         # start_background_exe()
-
         self.actions.createActions()
         self.actions.createMenus()
         self.actions.createToolbars()
