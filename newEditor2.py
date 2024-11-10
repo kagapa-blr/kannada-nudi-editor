@@ -6,15 +6,16 @@ import mammoth
 import pypandoc
 from PyQt5 import QtPrintSupport, QtGui
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument, \
+from PyQt5.QtGui import QFont, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument, \
     QTextBlockFormat
 from PyQt5.QtGui import QIcon
 from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import (QApplication, QDialog, QLabel, QComboBox, QHBoxLayout, QMainWindow, QScrollArea,
-                             QFileDialog, QFontComboBox, QSlider, QSizePolicy, QMessageBox, QColorDialog)
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QAction
+from PyQt5.QtWidgets import (QApplication, QDialog, QMainWindow, QScrollArea,
+                             QFileDialog, QSizePolicy, QMessageBox, QColorDialog)
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from docx import Document
 
+from editor.actions.editor_actions import EditorActions
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customize_image import ImageEditDialog
@@ -54,7 +55,7 @@ def start_background_exe():
 class NewTextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.actions = EditorActions(self)
         self.current_file_path = None
         self.total_pages = 0
         self.pages = []
@@ -69,10 +70,11 @@ class NewTextEditor(QMainWindow):
         self.zoom_slider.initZoomSlider(self)
     def initUI(self):
         # start_background_exe()
-        self.createActions()
-        self.createMenus()
-        self.createToolbars()
-        # self.createFormatbar()
+
+        self.actions.createActions()
+        self.actions.createMenus()
+        self.actions.createToolbars()
+        self.actions.createFormatbar()
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -150,260 +152,6 @@ class NewTextEditor(QMainWindow):
 
             # Optional: Scroll to ensure the new page is visible
             self.scroll_layout.addWidget(new_page)  # Adjust this based on your scrolling logic
-
-    def createActions(self):
-        self.newAction = QAction(QIcon('resources/images/new-file.png'), 'New', self)
-        self.newAction.setShortcut('Ctrl+N')
-        self.newAction.setStatusTip('Create a new file')
-        self.newAction.triggered.connect(self.new)
-
-        self.openAction = QAction(QIcon('resources/images/open-file.png'), 'Open', self)
-        self.openAction.setShortcut('Ctrl+O')
-        self.openAction.setStatusTip('Open an existing file')
-        self.openAction.triggered.connect(self.openFile)
-
-        self.openAsciiAction = QAction(QIcon('resources/images/ascii-file-icon.png'), 'Open ASCII file', self)
-        self.openAsciiAction.setStatusTip('Open ASCII file')
-        self.openAsciiAction.triggered.connect(self.openAsciiFile)
-
-        self.saveAction = QAction(QIcon('resources/images/stock_save.png'), 'Save', self)
-        self.saveAction.setShortcut('Ctrl+S')
-        self.saveAction.setStatusTip('Save the current file')
-        self.saveAction.triggered.connect(self.saveFile)
-
-        self.saveAsAction = QAction(QIcon('resources/images/stock_save.png'), 'Save As', self)
-        self.saveAsAction.setStatusTip('SaveAs')
-        self.saveAsAction.triggered.connect(self.saveAsFile)
-
-        self.undoAction = QAction(QIcon('resources/images/undo.png'), 'Undo', self)
-        self.undoAction.setShortcut('Ctrl+Z')
-        self.undoAction.setStatusTip('Undo the last action')
-        self.undoAction.triggered.connect(self.undo)
-
-        self.redoAction = QAction(QIcon('resources/images/redo.png'), 'Redo', self)
-        self.redoAction.setShortcut('Ctrl+Y')
-        self.redoAction.setStatusTip('Redo the last undone action')
-        self.redoAction.triggered.connect(self.redo)
-
-        self.printAction = QAction(QIcon('resources/images/print.png'), 'Print', self)
-        self.printAction.setShortcut('Ctrl+P')
-        self.printAction.setStatusTip('Print the current file')
-        self.printAction.triggered.connect(self.printHandler)
-
-        self.zoomInAction = QAction(QIcon('resources/images/zoom-in.png'), 'Zoom In', self)
-        self.zoomInAction.setShortcut('Ctrl++')
-        self.zoomInAction.setStatusTip('Zoom in')
-        self.zoomInAction.triggered.connect(self.zoomIn)
-
-        self.zoomOutAction = QAction(QIcon('resources/images/zoom-out.png'), 'Zoom Out', self)
-        self.zoomOutAction.setShortcut('Ctrl+-')
-        self.zoomOutAction.setStatusTip('Zoom out')
-        self.zoomOutAction.triggered.connect(self.zoomOut)
-
-        self.pageLayoutAction = QAction(QIcon('resources/images/page-layout.png'), 'Page Layout', self)
-        self.pageLayoutAction.setStatusTip('Set page layout and size')
-        self.pageLayoutAction.triggered.connect(self.page_layout_size)
-
-        self.insertTableAction = QAction(QIcon('resources/images/insert-table.png'), 'Insert Table', self)
-        self.insertTableAction.setStatusTip('Insert a table into the document')
-        self.insertTableAction.triggered.connect(self.insertTable)
-
-        self.findAction = QAction(QIcon("resources/images/find.png"), "Find and replace", self)
-        self.findAction.setStatusTip("Find and replace words in your document")
-        self.findAction.setShortcut("Ctrl+F")
-        self.findAction.triggered.connect(self.find_replace)
-
-        self.imageAction = QAction(QIcon("resources/images/add-image.png"), "Insert image", self)
-        self.imageAction.setStatusTip("Insert image")
-        self.imageAction.setShortcut("Ctrl+Shift+I")
-        self.imageAction.triggered.connect(self.choose_image)
-
-        self.bulletAction = QAction(QIcon("resources/images/bullet-list.png"), "Insert bullet List", self)
-        self.bulletAction.setStatusTip("Insert bullet list")
-        self.bulletAction.setShortcut("Ctrl+Shift+B")
-        self.bulletAction.triggered.connect(self.bulletList)
-
-        self.numberedAction = QAction(QIcon("resources/images/number-list.png"), "Insert numbered List",
-                                      self)
-        self.numberedAction.setStatusTip("Insert numbered list")
-        self.numberedAction.setShortcut("Ctrl+Shift+L")
-        self.numberedAction.triggered.connect(self.numberList)
-
-        self.sort_by_action = QAction(QIcon("resources/images/sortBy.png"), "Sort By",
-                                      self)
-        self.sort_by_action.setStatusTip("sort by action")
-        # self.sort_by_action.setShortcut("Ctrl+Shift+L")
-        self.sort_by_action.triggered.connect(self.sortByAction)
-
-        self.speech_to_text = QAction(QIcon('resources/images/mic-speecch-to-text.png'), 'speech to Text', self)
-        self.speech_to_text.setStatusTip("speech to text")
-        self.speech_to_text.setCheckable(True)
-        self.speech_to_text.triggered.connect(self.toggle_speech_to_text)
-
-        self.ascii_to_unicode = QAction(QIcon('resources/images/convert.png'), 'ASCII to Unicode vs converter', self)
-        self.ascii_to_unicode.setStatusTip("ASCII to Unicode vs converter")
-        self.ascii_to_unicode.setCheckable(True)
-        self.ascii_to_unicode.triggered.connect(self.ascii_to_unicode_converter)
-
-        self.excel_csv = QAction(QIcon('resources/images/excel_csv.png'), 'Excel and CSV file operations', self)
-        self.excel_csv.setStatusTip("Excel File Handling")
-        self.excel_csv.setCheckable(True)
-        self.excel_csv.triggered.connect(self.excel_csv_file)
-
-        # self.wordCountAction = QAction(QIcon("resources/images/count.png"), "See word/symbol count", self)
-        # self.wordCountAction.setStatusTip("See word/symbol count")
-        # self.wordCountAction.setShortcut("Ctrl+W")
-        # self.wordCountAction.triggered.connect(self.wordCount)
-
-        self.refresh_action = QAction(QIcon('resources/images/refresh.png'), 'Refresh and spellcheck', self)
-        self.refresh_action.setStatusTip("spellcheck")
-        self.refresh_action.triggered.connect(self.refresh_recheck)
-
-        ####------format bar stated ----------------------------------------------------------
-
-        self.fontColor = QAction(QIcon("resources/images/font-color.png"), "Change font color", self)
-        self.fontColor.setStatusTip("change font color")
-        self.fontColor.triggered.connect(self.fontColorChanged)
-
-        self.boldAction = QAction(QIcon('resources/images/bold.png'), 'Bold', self)
-        self.boldAction.setShortcut('Ctrl+B')
-        self.boldAction.setStatusTip('Make selected text bold')
-        self.boldAction.triggered.connect(self.toggleBold)
-
-        self.italicAction = QAction(QIcon('resources/images/italic.png'), 'Italic', self)
-        self.italicAction.setShortcut('Ctrl+I')
-        self.italicAction.setStatusTip('Make selected text italic')
-        self.italicAction.triggered.connect(self.toggleItalic)
-
-        self.underlineAction = QAction(QIcon('resources/images/underline.png'), 'Underline', self)
-        self.underlineAction.setShortcut('Ctrl+U')
-        self.underlineAction.setStatusTip('Underline selected text')
-        self.underlineAction.triggered.connect(self.toggleUnderline)
-
-        self.strikeAction = QAction(QIcon("resources/images/strike.png"), "Strike-out", self)
-        self.underlineAction.setStatusTip('Strike-outt')
-        self.strikeAction.triggered.connect(self.strike)
-
-        self.superAction = QAction(QIcon("resources/images/superscript.png"), "Superscript", self)
-        self.superAction.triggered.connect(self.superScript)
-
-        self.subAction = QAction(QIcon("resources/images/subscript.png"), "Subscript", self)
-        self.subAction.triggered.connect(self.subScript)
-
-        self.alignLeftAction = QAction(QIcon("resources/images/align-left.png"), "Align left", self)
-        self.alignLeftAction.triggered.connect(self.alignLeft)
-
-        self.alignCenterAction = QAction(QIcon("resources/images/align-center.png"), "Align center", self)
-        self.alignCenterAction.triggered.connect(self.alignCenter)
-
-        self.alignRightAction = QAction(QIcon("resources/images/align-right.png"), "Align right", self)
-        self.alignRightAction.triggered.connect(self.alignRight)
-
-        self.alignJustifyAction = QAction(QIcon("resources/images/align-justify.png"), "Align justify", self)
-        self.alignJustifyAction.triggered.connect(self.alignJustify)
-
-        self.indentAction = QAction(QIcon("resources/images/indent.png"), "Indent Area", self)
-        self.indentAction.setShortcut("Ctrl+Tab")
-        self.indentAction.triggered.connect(self.indent)
-
-        self.dedentAction = QAction(QIcon("resources/images/dedent.png"), "Dedent Area", self)
-        self.dedentAction.setShortcut("Shift+Tab")
-        self.dedentAction.triggered.connect(self.dedent)
-
-        self.fontbackColor = QAction(QIcon("resources/images/highlight.png"), "Change background color", self)
-        self.fontbackColor.triggered.connect(self.highlight)
-
-        self.line_para_spacing = QAction(QIcon("resources/images/line-paragraph-spacing.png"),
-                                         "line and Paragraph spacing", self)
-        self.line_para_spacing.setStatusTip("line and paragraph spacing.")
-        self.line_para_spacing.triggered.connect(self.setSpacing)
-
-        ##### ------ format bar ended----------------------------------------------------------------
-
-    def createMenus(self):
-        menubar = self.menuBar()
-
-        fileMenu = menubar.addMenu('File')
-        fileMenu.addAction(self.newAction)
-        fileMenu.addAction(self.openAction)
-        fileMenu.addAction(self.saveAction)
-        fileMenu.addAction(self.saveAsAction)
-        fileMenu.addAction(self.printAction)
-
-        editMenu = menubar.addMenu('Edit')
-        editMenu.addAction(self.boldAction)
-        editMenu.addAction(self.italicAction)
-        editMenu.addAction(self.underlineAction)
-
-        viewMenu = menubar.addMenu('View')
-        viewMenu.addAction(self.zoomInAction)
-        viewMenu.addAction(self.zoomOutAction)
-
-    def createToolbars(self):
-        self.toolbar = self.addToolBar('Main Toolbar')
-        self.toolbar.addAction(self.newAction)
-        self.toolbar.addAction(self.openAction)
-        self.toolbar.addAction(self.openAsciiAction)
-        self.toolbar.addAction(self.saveAction)
-        self.toolbar.addAction(self.printAction)
-        self.toolbar.addAction(self.pageLayoutAction)
-        self.toolbar.addAction(self.undoAction)
-        self.toolbar.addAction(self.redoAction)
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(self.insertTableAction)
-        self.toolbar.addAction(self.findAction)
-        self.toolbar.addAction(self.imageAction)
-        self.toolbar.addAction(self.bulletAction)
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(self.numberedAction)
-        self.toolbar.addAction(self.sort_by_action)
-        self.toolbar.addAction(self.speech_to_text)
-        self.toolbar.addAction(self.ascii_to_unicode)
-        self.toolbar.addAction(self.excel_csv)
-        self.toolbar.addSeparator()
-        # self.toolbar.addAction(self.wordCountAction)
-        self.toolbar.addAction(self.refresh_action)
-
-        self.addToolBarBreak()  # Add this line to create a break between toolbars
-        self.createFormatbar()  # Add this line to create the format bar below the main toolbar
-
-    def createFormatbar(self):
-        self.formatbar = self.addToolBar('Format Toolbar')
-
-        self.formatbar.addSeparator()
-        self.fontComboBox = QFontComboBox(self)
-        self.fontComboBox.currentFontChanged.connect(self.setFontFamily)
-        self.formatbar.addWidget(self.fontComboBox)
-
-        # Set the default font to NudiParijatha
-        font_id = QFontDatabase.addApplicationFont("resources/static/Nudi_fonts/NudiParijatha.ttf")
-        if font_id != -1:
-            font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-            self.fontComboBox.setCurrentFont(QFont(font_family))
-
-        self.fontSizeComboBox = QComboBox(self)
-        self.fontSizeComboBox.addItems([str(size) for size in range(8, 49, 2)])
-        self.fontSizeComboBox.currentIndexChanged.connect(self.setFontSize)
-        self.formatbar.addWidget(self.fontSizeComboBox)
-
-        # Set the default font size to 12
-        self.fontSizeComboBox.setCurrentText("12")
-
-        self.formatbar.addAction(self.fontColor)
-        self.formatbar.addAction(self.boldAction)
-        self.formatbar.addAction(self.italicAction)
-        self.formatbar.addAction(self.underlineAction)
-        self.formatbar.addAction(self.fontbackColor)
-        self.formatbar.addAction(self.strikeAction)
-        self.formatbar.addAction(self.superAction)
-        self.formatbar.addAction(self.subAction)
-        self.formatbar.addAction(self.alignLeftAction)
-        self.formatbar.addAction(self.alignCenterAction)
-        self.formatbar.addAction(self.alignRightAction)
-        self.formatbar.addAction(self.alignJustifyAction)
-        self.formatbar.addAction(self.indentAction)
-        self.formatbar.addAction(self.dedentAction)
-        self.formatbar.addAction(self.line_para_spacing)
 
     # Override the closeEvent method
     def closeEvent(self, event):
@@ -630,7 +378,7 @@ class NewTextEditor(QMainWindow):
             self.current_page.editor.setCurrentFont(font)
 
     def setFontSize(self, index):
-        size = int(self.fontSizeComboBox.currentText())
+        size = int(self.actions.fontSizeComboBox.currentText())
         if self.current_page and hasattr(self.current_page, 'editor'):
             try:
                 self.current_page.editor.setFontPointSize(size)
