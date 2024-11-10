@@ -4,7 +4,7 @@ import time
 
 import mammoth
 import pypandoc
-from PyQt5 import QtPrintSupport
+from PyQt5 import QtPrintSupport, QtGui
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont, QFontDatabase, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument, \
     QTextBlockFormat
@@ -22,6 +22,7 @@ from editor.components.excel_csv_file_handling import ExcelCsvViewer
 from editor.components.format_content import SpacingDialog
 from editor.components.new_editor_components import NewPageLayoutDialog, NewPage
 from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
+from editor.widgets.zoom_slider import ZoomSlider
 from logger import setup_logger
 from spellcheck.bloom_filter import start_bloom
 from utils.asciitounicode import process_line
@@ -39,7 +40,7 @@ logger = setup_logger(filename)
 
 def start_background_exe():
     exe_path = r"resources\keyboardDriver\kannadaKeyboard.exe"  # Path to your executable relative to the current directory
-    #exe_path = r"resources\keyboardDriver\testing.exe"
+    # exe_path = r"resources\keyboardDriver\testing.exe"
     try:
         # Use subprocess.Popen to start the executable in the background
         print("kannada Nudi Keyboard loaded and running in background")
@@ -63,13 +64,15 @@ class NewTextEditor(QMainWindow):
         self.editor_windows = []  # Add this line to keep references to new editor windows
         self.error_dialog = CommonDialogs()
         self.initUI()
-
+        # Initialize and add ZoomSlider
+        self.zoom_slider = ZoomSlider()
+        self.zoom_slider.initZoomSlider(self)
     def initUI(self):
-        #start_background_exe()
+        # start_background_exe()
         self.createActions()
         self.createMenus()
         self.createToolbars()
-        #self.createFormatbar()
+        # self.createFormatbar()
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -90,7 +93,7 @@ class NewTextEditor(QMainWindow):
         layout.addWidget(self.scroll_area)
 
         self.statusbar = self.statusBar()
-        self.initZoomSlider()  # Add the zoom slider
+
         self.addNewPage()
         self.current_page.editor.installEventFilter(self)
         self.setGeometry(100, 100, 1030, 800)
@@ -105,27 +108,6 @@ class NewTextEditor(QMainWindow):
         if self.current_page and hasattr(self.current_page, 'editor'):
             self.current_page.editor.setFocus()
 
-    def initZoomSlider(self):
-        zoom_label = QLabel("Zoom:", self)
-        self.zoom_slider = QSlider(Qt.Horizontal, self)
-        self.zoom_slider.setRange(10, 300)  # Zoom range from 10% to 300%
-        self.zoom_slider.setValue(100)  # Default zoom level at 100%
-        self.zoom_slider.setTickInterval(10)
-        self.zoom_slider.setTickPosition(QSlider.TicksBelow)
-        self.zoom_slider.setFixedWidth(150)  # Set a fixed width for the slider
-        self.zoom_slider.valueChanged.connect(self.updateZoom)
-
-        slider_layout = QHBoxLayout()
-        slider_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
-        slider_layout.setSpacing(0)  # Remove spacing
-        slider_layout.addStretch(1)  # Add stretchable space to push slider to the right
-        slider_layout.addWidget(zoom_label)
-        slider_layout.addWidget(self.zoom_slider)
-
-        central_layout = self.centralWidget().layout()
-        central_layout.addLayout(slider_layout)
-        central_layout.setAlignment(slider_layout, Qt.AlignBottom | Qt.AlignRight)
-
     def updateZoom(self, value):
         factor = value / 100
         for page in self.pages:
@@ -137,20 +119,37 @@ class NewTextEditor(QMainWindow):
         page.clicked.connect(self.setActivePage)
         self.pages.append(page)
         self.scroll_layout.addWidget(page)
-
         self.setActivePage(page)
         self.total_pages += 1
+
+        # Return the page so we can further customize it if needed
+        return page
 
     def setActivePage(self, page):
         self.current_page = page
 
     def handleTextOverflow(self):
         if self.current_page:
-            self.addNewPage()
-            # Move overflowed content to the new page
+            # Step 1: Create the new page and get a reference to it
+            new_page = self.addNewPage()
+
+            # Step 2: Move the overflowed content to the new page
             remaining_text = self.current_page.editor.toPlainText()
+
+            # Clear the current page's editor
             self.current_page.editor.clear()
-            self.current_page.editor.insertPlainText(remaining_text)
+
+            # Set the text in the new page's editor
+            new_page.editor.insertPlainText(remaining_text)
+
+            # Step 3: Move the cursor to the new page and set focus there
+            new_page.editor.setFocus()  # Focus the editor of the new page
+            cursor = new_page.editor.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.Start)  # Move cursor to the start of the new page
+            new_page.editor.setTextCursor(cursor)
+
+            # Optional: Scroll to ensure the new page is visible
+            self.scroll_layout.addWidget(new_page)  # Adjust this based on your scrolling logic
 
     def createActions(self):
         self.newAction = QAction(QIcon('resources/images/new-file.png'), 'New', self)
@@ -362,7 +361,7 @@ class NewTextEditor(QMainWindow):
         self.toolbar.addAction(self.ascii_to_unicode)
         self.toolbar.addAction(self.excel_csv)
         self.toolbar.addSeparator()
-        #self.toolbar.addAction(self.wordCountAction)
+        # self.toolbar.addAction(self.wordCountAction)
         self.toolbar.addAction(self.refresh_action)
 
         self.addToolBarBreak()  # Add this line to create a break between toolbars
@@ -650,7 +649,7 @@ class NewTextEditor(QMainWindow):
 
             # Print the current selected text
             selected_text = cursor.selectedText()
-            #print(f"Selected Text: '{selected_text}'")
+            # print(f"Selected Text: '{selected_text}'")
 
             # Check the current font weight
             current_weight = editor.fontWeight()
@@ -868,7 +867,7 @@ class NewTextEditor(QMainWindow):
         fmt.setLineHeight(value, QTextBlockFormat.LineDistanceHeight)
         cursor.setBlockFormat(fmt)
 
-    #----------------------------------------------------------------FORMAT functions ----------------------------------------------------------------
+    # ----------------------------------------------------------------FORMAT functions ----------------------------------------------------------------
 
     def refresh_recheck(self):
         self.total_pages = 0
