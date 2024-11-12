@@ -51,7 +51,6 @@ def start_background_exe():
     except Exception as e:
         print(f"Error starting background exe: {e}")
 
-
 class NewTextEditor(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -66,12 +65,15 @@ class NewTextEditor(QMainWindow):
         self.current_page = None
         self.filename = None
         self.speech_thread = None
-        self.editor_windows = []  # Add this line to keep references to new editor windows
+        self.editor_windows = []  # Keep references to new editor windows
         self.error_dialog = CommonDialogs()
+        self.current_zoom_factor = 1.0  # Default zoom factor
         self.initUI()
+
         # Initialize and add ZoomSlider
         self.zoom_slider = ZoomSlider()
         self.zoom_slider.initZoomSlider(self)
+
     def initUI(self):
         # start_background_exe()
         self.actions.createActions()
@@ -99,6 +101,7 @@ class NewTextEditor(QMainWindow):
 
         self.statusbar = self.statusBar()
 
+        # Add the first page on initialization
         self.addNewPage()
         self.current_page.editor.installEventFilter(self)
         self.setGeometry(100, 100, 1030, 800)
@@ -114,14 +117,24 @@ class NewTextEditor(QMainWindow):
             self.current_page.editor.setFocus()
 
     def updateZoom(self, value):
-        factor = value / 100
+        # Update the zoom factor
+        self.current_zoom_factor = value / 100.0
+        # Apply zoom to all existing pages
         for page in self.pages:
-            page.setZoomFactor(factor)
+            page.setZoomFactor(self.current_zoom_factor)
 
     def addNewPage(self):
+        # Check if the last page is blank and avoid adding another blank page
+        if self.pages and self.pages[-1].editor.toPlainText().strip() == "":
+            return self.pages[-1]  # Return the existing blank page if it exists
+
         page = NewPage(self)
         page.textOverflow.connect(self.handleTextOverflow)  # Connect the textOverflow signal
         page.clicked.connect(self.setActivePage)
+
+        # Set the zoom factor for the new page
+        page.setZoomFactor(self.current_zoom_factor)
+
         self.pages.append(page)
         self.scroll_layout.addWidget(page)
         self.setActivePage(page)
@@ -152,9 +165,6 @@ class NewTextEditor(QMainWindow):
             cursor = new_page.editor.textCursor()
             cursor.movePosition(QtGui.QTextCursor.Start)  # Move cursor to the start of the new page
             new_page.editor.setTextCursor(cursor)
-
-            # Optional: Scroll to ensure the new page is visible
-            self.scroll_layout.addWidget(new_page)  # Adjust this based on your scrolling logic
 
     # Override the closeEvent method
     def closeEvent(self, event):
@@ -646,13 +656,16 @@ class NewTextEditor(QMainWindow):
             # Count total incorrect words
             total_incorrect_words += len(wrong_words)
 
-            # Underline incorrect words in the editor
-            highlighted_content = plain_text
-            for word in wrong_words:
-                highlighted_content = highlighted_content.replace(word,
-                                                                  f'<span style="text-decoration: underline;">{word}</span>')
+            # Get the existing HTML content to preserve formatting and alignment
+            highlighted_content = page.editor.toHtml()
 
-            # Update the editor with the underlined content
+            # Wrap the incorrect words with an inline style for red underline
+            for word in wrong_words:
+                # Use inline styling for red underline
+                highlighted_content = highlighted_content.replace(word,
+                                                                  f'<span style="text-decoration: underline; text-decoration-color: red;">{word}</span>')
+
+            # Update the editor with the highlighted content
             page.editor.setHtml(highlighted_content)
 
         end_time = time.time()
@@ -660,7 +673,7 @@ class NewTextEditor(QMainWindow):
 
         # Show info dialog with the requested information and parent window's logo
         info_msg = QMessageBox()
-        info_msg.setWindowTitle("ವರದಿ ಪರೀಕ್ಷೆ ಮಾಹಿತಿ")
+        info_msg.setWindowTitle("ವರದಿ ಪರಿಶೀಲನೆ ಮಾಹಿತಿ")
         info_msg.setText(f"ಒಟ್ಟು ಪದಗಳ ಸಂಖ್ಯೆ : {total_words}\n"
                          f"ತಪ್ಪು ಪದಗಳ ಸಂಖ್ಯೆ : {total_incorrect_words}\n"
                          f"ಕಾಗುಣಿತ ಪರಿಶೀಲನೆಗಾಗಿ ತೆಗೆದುಕೊಂಡ ಒಟ್ಟು ಸಮಯ : {spellcheck_time:.2f} ಸೆಕೆಂಡುಗಳು")
