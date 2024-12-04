@@ -1,0 +1,18 @@
+/* Styling for pages */
+.page {
+  width: 800px;
+  height: 1120px; /* A4 aspect ratio */
+  margin: 16px auto;
+  padding: 20px;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.editor-container {
+  overflow-y: auto;
+  max-height: calc(100vh - 120px); /* Full height minus header and toolbar */
+  background: #f4f4f4;
+  padding: 16px;
+}
