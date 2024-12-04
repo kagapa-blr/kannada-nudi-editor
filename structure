@@ -1,0 +1,29 @@
+kannada-editor/
+├── assets/
+│   ├── app-icon.png         # Example app icon
+│   ├── tailwind.css         # Tailwind CSS file for styling
+│   ├── material-icons.css   # Material Design Icons
+├── src/
+│   ├── renderer/
+│   │   ├── index.html       # Main HTML UI file
+│   │   ├── index.js         # Frontend JavaScript (Renderer process)
+│   │   ├── styles.css       # Renderer-specific styles
+│   ├── main/
+│   │   ├── main.js          # Electron main process entry point
+│   │   ├── preload.js       # Preload script
+│   ├── components/
+│   │   ├── editor.js        # Editor logic for handling text, pages
+│   │   ├── toolbar.js       # Toolbar component logic
+│   │   ├── page.js          # Page component logic
+│   └── utils/
+│       ├── helpers.js       # Utility functions for various tasks
+│       └── validators.js    # Validation functions (e.g., for text)
+├── assets/
+│   ├── app-icon.png         # Example app icon
+│   ├── tailwind.css         # Tailwind CSS file for styling
+│   ├── material-icons.css   # Material Design Icons
+├── package.json             # Project setup and metadata
+├── tailwind.config.js       # Tailwind CSS configuration
+├── package-lock.json        # Dependency lock file
+├── node_modules/            # Dependencies
+└── dist/                    # Build output directory

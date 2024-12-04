@@ -1,0 +1,36 @@
+{
+  "name": "kannada-editor",
+  "version": "1.0.0",
+  "description": "Kannada Text Editor",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.kannada.editor",
+    "productName": "Kannada Editor",
+    "files": [
+      "**/*",
+      "!node_modules/.cache"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/app-icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Office"
+    }
+  },
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
