@@ -1,51 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kannada Editor</title>
   <!-- Tailwind CSS -->
-  <link rel="stylesheet" href="./assets/output.css">
+  <link rel="stylesheet" href="../../assets/tailwind.css">
   <link rel="stylesheet" href="./styles.css">
   <!-- Material Design Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="../../assets/icon.css" rel="stylesheet">
+  <link rel="stylesheet" href="../../dist/output.css">
 
 </head>
+
 <body class="bg-gray-100 text-gray-900 h-screen flex flex-col">
   <!-- Header -->
   <!-- Toolbar -->
   <div class="bg-gray-200 p-2 flex items-center">
     <!-- Bold, Italic, Underline -->
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('bold')">format_bold</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('italic')">format_italic</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('underline')">format_underlined</button>
-  
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('bold')">format_bold</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('italic')">format_italic</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('underline')">format_underlined</button>
+
     <!-- Alignment -->
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('justifyLeft')">format_align_left</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('justifyCenter')">format_align_center</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('justifyRight')">format_align_right</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('justifyFull')">format_align_justify</button>
-  
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('justifyLeft')">format_align_left</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('justifyCenter')">format_align_center</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('justifyRight')">format_align_right</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('justifyFull')">format_align_justify</button>
+
     <!-- Lists -->
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('insertUnorderedList')">format_list_bulleted</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('insertOrderedList')">format_list_numbered</button>
-  
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('insertUnorderedList')">format_list_bulleted</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('insertOrderedList')">format_list_numbered</button>
+
     <!-- Indentation -->
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('indent')">format_indent_increase</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('outdent')">format_indent_decrease</button>
-  
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('indent')">format_indent_increase</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('outdent')">format_indent_decrease</button>
+
     <!-- Text Formatting -->
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('fontSize', false, 5)">text_fields</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('fontName', false, 'NudiParijatha')">font_download</button>
-  
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('fontSize', false, 5)">text_fields</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('fontName', false, 'NudiParijatha')">font_download</button>
+
     <!-- Undo, Redo -->
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('undo')">undo</button>
-    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="document.execCommand('redo')">redo</button>
-  
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('undo')">undo</button>
+    <button class="material-icons text-gray-600 hover:text-blue-500 mx-2"
+      onclick="document.execCommand('redo')">redo</button>
+
     <!-- Page Add -->
     <button class="material-icons text-gray-600 hover:text-blue-500 mx-2" onclick="addPage()">note_add</button>
   </div>
-  
+
 
   <!-- Editor (Scrollable Container with Pages) -->
   <main class="editor-container" id="editor-container">
@@ -54,4 +72,5 @@
 
   <script src="../main/preload.js"></script>
 </body>
+
 </html>
