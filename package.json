@@ -1,0 +1,36 @@
+{
+  "name": "kannada-nudi",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron": "electron ./public/electron.js"
+  },
+  "dependencies": {
+    "@syncfusion/ej2-base": "^28.1.33",
+    "@syncfusion/ej2-buttons": "^28.1.33",
+    "@syncfusion/ej2-react-buttons": "^28.1.33",
+    "@syncfusion/ej2-react-documenteditor": "^28.1.33",
+    "@syncfusion/ej2-react-dropdowns": "^28.1.33",
+    "@syncfusion/ej2-splitbuttons": "^28.1.33",
+    "electron": "^33.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
+    "vite": "^6.0.1"
+  }
+}
