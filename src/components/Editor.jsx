@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   DocumentEditorContainerComponent,
   Toolbar,
@@ -6,6 +6,7 @@ import {
 import { TitleBar } from "./TitleBar";
 import { L10n, setCulture } from "@syncfusion/ej2-base";
 import * as EJ2_LOCALE from "../../src/assets/kn.json"; // Localization (optional, if you want Kannada locale)
+import ContextMenu from "./ContextMenu";
 
 DocumentEditorContainerComponent.Inject(Toolbar);
 
@@ -20,6 +21,7 @@ const Editor = () => {
   const hostUrl =
     "https://services.syncfusion.com/react/production/api/documenteditor/";
 
+  // This function is called once the document editor is loaded
   const onLoadDefault = () => {
     container.current.documentEditor.documentName = "Getting Started";
     if (titleBar) {
@@ -85,6 +87,8 @@ const Editor = () => {
             created={created} // Add created function here
             showPropertiesPane={false}
           />
+          {/* Pass container to ContextMenu */}
+          <ContextMenu container={container} />
         </div>
       </div>
     </div>
