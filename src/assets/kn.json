@@ -2020,6 +2020,10 @@
       "PictureContentControl": "ಚಿತ್ರವಿಷಯ ನಿಯಂತ್ರಣ",
       "Upload from computer": "ಕಂಪ್ಯೂಟರ್‌ನಿಂದ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
       "Picture": "ಚಿತ್ರ",
+      "Replace": "ಬದಲಿಗೆ",
+      "Find": "ಹುಡುಕು",
+      "Fit page width":"ಪುಟದ ಅಗಲವನ್ನು ಹೊಂದಿಸಿ",
+      "Replace All":"ಎಲ್ಲವನ್ನೂ ಬದಲಾಯಿಸಿ",
       "Choose an item": "ಒಂದು ಐಟಂ ಆಯ್ಕೆಮಾಡಿ",
       "Paste CheckBox Content Dialog": "ಮತ್ತೆ ತೋರಿಸಬೇಡಿ",
       "Left and right margins": "ನೀವು ಆಯ್ಕೆ ಮಾಡಿದ ಎಡ ಮತ್ತು ಬಲ ಅಂಚು, ಕಾಲಮ್ ಅಂತರ, ಅಥವಾ ಪ್ಯಾರಾಗ್ರಾಫ್ ಇಡ್ಲು ಪುಟದ ಅಗಲಕ್ಕಿಂತ ದೊಡ್ಡದಾಗಿದೆ.",
@@ -2143,7 +2147,8 @@
       "TrackChanges": "ಬದಲಾವಣೆಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
       "Form Fields": "ರೂಪ ಕ್ಷೇತ್ರಗಳು",
       "Update Fields": "ಕ್ಷೇತ್ರಗಳನ್ನು ನವೀಕರಿಸಿ",
-      "XML Mapping Pane": "XML ಮ್ಯಾಪಿಂಗ್ ಪೇನ್"
+      "XML Mapping Pane": "XML ಮ್ಯಾಪಿಂಗ್ ಪೇನ್",
+      "REPLACE": "ಬದಲಿಗೆ"
     },
 
     "carousel": {
