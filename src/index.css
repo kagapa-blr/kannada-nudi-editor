@@ -3,3 +3,52 @@
 @tailwind utilities;
 
 /* Add this in your global CSS file or component CSS */
+.App-header {
+  background-color: #282c34;
+  min-height: 5vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  margin-bottom: 5vh;
+  text-align: center;
+  padding: 12px;
+}
+/* 
+.wrapper-class {
+  padding: 1rem;
+  border: 1px solid #ccc;
+}
+.editor-class {
+  background-color: lightgray;
+  padding: 1rem;
+  border: 1px solid #ccc;
+}
+.toolbar-class {
+  border: 1px solid #ccc;
+} */
+
+.word-like-editor {
+  max-width: 800px;
+  margin: auto;
+}
+
+.wrapper-class {
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.editor-class {
+  min-height: 400px;
+  padding: 10px;
+}
+
+.toolbar-class {
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  background-color: #f1f1f1;
+}
