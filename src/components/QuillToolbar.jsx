@@ -1,6 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { Quill } from "react-quill-new";
-import { Select, MenuItem, InputLabel, FormControl } from "@mui/material";
+import {
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  TextField,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
 
 // Define available page sizes
 const PAGE_SIZES = {
@@ -118,9 +129,41 @@ export const formats = [
 
 // Quill Toolbar component with Material-UI integration
 export const QuillToolbar = ({ setPageSize }) => {
+  const [customSize, setCustomSize] = useState({ width: "", height: "" });
+  const [pageSizeOption, setPageSizeOption] = useState("A4"); // Default page size
+  const [openModal, setOpenModal] = useState(false); // Control the modal visibility
+
   const handlePageSizeChange = (e) => {
-    const selectedSize = PAGE_SIZES[e.target.value];
-    setPageSize(selectedSize); // Set the page size from the dropdown selection
+    const selectedSize = e.target.value;
+    setPageSizeOption(selectedSize); // Update the selected page size option
+    if (selectedSize === "Custom") {
+      setOpenModal(true); // Open the modal when "Custom" is selected
+    } else {
+      const size = PAGE_SIZES[selectedSize];
+      setPageSize(size); // Apply the selected predefined page size
+    }
+  };
+
+  const handleCustomWidthChange = (e) => {
+    setCustomSize((prev) => ({ ...prev, width: e.target.value }));
+  };
+
+  const handleCustomHeightChange = (e) => {
+    setCustomSize((prev) => ({ ...prev, height: e.target.value }));
+  };
+
+  const applyCustomSize = () => {
+    if (customSize.width && customSize.height) {
+      setPageSize({
+        width: parseInt(customSize.width),
+        height: parseInt(customSize.height),
+      });
+      setOpenModal(false); // Close the modal after applying custom size
+    }
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false); // Close the modal without applying changes
   };
 
   return (
@@ -195,15 +238,47 @@ export const QuillToolbar = ({ setPageSize }) => {
           <Select
             label="Page Size"
             className="ql-page-size"
-            defaultValue="A4"
+            value={pageSizeOption}
             onChange={handlePageSizeChange}
           >
             <MenuItem value="A4">A4</MenuItem>
             <MenuItem value="Letter">Letter</MenuItem>
             <MenuItem value="Legal">Legal</MenuItem>
+            <MenuItem value="Custom">Custom</MenuItem>
           </Select>
         </FormControl>
       </span>
+
+      {/* Modal for Custom Size */}
+      <Dialog open={openModal} onClose={handleCloseModal}>
+        <DialogTitle>Enter Custom Page Size</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Width (px)"
+            type="number"
+            fullWidth
+            value={customSize.width}
+            onChange={handleCustomWidthChange}
+            margin="normal"
+          />
+          <TextField
+            label="Height (px)"
+            type="number"
+            fullWidth
+            value={customSize.height}
+            onChange={handleCustomHeightChange}
+            margin="normal"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={applyCustomSize} color="primary">
+            Apply
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
