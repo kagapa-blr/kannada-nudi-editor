@@ -2,23 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add this to your main CSS or index.css */
-.page-break {
-  page-break-before: always;
-  break-before: page;
-  margin-top: 30px;
+.editor-container {
+  @apply flex flex-col items-center w-full max-w-3xl mx-auto p-5 relative;
 }
 
-@media print {
-  .page-break {
-    page-break-before: always;
-    break-before: page;
-    margin-top: 30px;
-  }
+.editor-toolbar-container {
+  @apply fixed top-0 left-0 w-full bg-white p-3 z-10 border-b border-gray-200 shadow-md;
 }
 
-/* Additional Styles for Spellcheck Disable */
-.se-wrapper-inner[contenteditable="true"] {
-  -webkit-user-modify: read-write-plaintext-only;
-  user-modify: read-write-plaintext-only;
+.editor-wrapper {
+  @apply w-full relative mt-20;
+}
+
+.editor-pages {
+  @apply w-full max-h-[calc(100vh-80px)] overflow-y-auto;
+}
+
+.quill-editor {
+  @apply w-full bg-white shadow-md mb-5;
+}
+
+.ql-container {
+  @apply border-0;
+}
+
+.ql-editor {
+  @apply border-0;
+  min-height: calc(100vh - 80px);
+  padding: 0;
+}
+
+.ql-editor p:empty {
+  display: none;
+}
+
+.page-separator {
+  @apply w-full h-[4px] bg-blue-700 my-10;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.page {
+  @apply w-full border-4 border-blue-600 bg-white shadow-xl p-5 mb-10 relative;
+}
+
+.page-shadow {
+  @apply w-full border-4 border-blue-600 bg-white shadow-lg p-5 mb-10 relative;
 }

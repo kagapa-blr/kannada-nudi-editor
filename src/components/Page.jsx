@@ -7,14 +7,14 @@ export default function Page({ pageIndex, isLast }) {
   return (
     <>
       <div
-        className="absolute left-0 right-0 bg-white shadow-md border border-gray-300"
+        className="absolute left-0 right-0 bg-white shadow-lg border-2 border-gray-300 rounded-lg"
         style={{
           top: `${pageIndex * PAGE_HEIGHT}px`,
           width: `${PAGE_WIDTH}px`,
           height: `${PAGE_HEIGHT}px`,
         }}
       >
-        <div className="absolute bottom-4 right-4 text-gray-400">
+        <div className="absolute bottom-4 right-4 text-sm text-gray-500">
           Page {pageIndex + 1}
         </div>
       </div>
@@ -22,7 +22,7 @@ export default function Page({ pageIndex, isLast }) {
       {/* Separation line between pages */}
       {!isLast && (
         <div
-          className="absolute left-0 right-0 border-t border-gray-400"
+          className="absolute left-0 right-0 border-t-8 border-blue-600"
           style={{
             top: `${(pageIndex + 1) * PAGE_HEIGHT - 1}px`,
           }}
