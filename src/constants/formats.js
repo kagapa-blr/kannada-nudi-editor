@@ -1,0 +1,20 @@
+// Formats objects for setting up the Quill editor
+export const formats = [
+    "header",
+    "font",
+    "size",
+    "bold",
+    "italic",
+    "underline",
+    "align",
+    "strike",
+    "script",
+    "blockquote",
+    "background",
+    "list",
+    "indent",
+    "link",
+    "image",
+    "color",
+    "code-block",
+];

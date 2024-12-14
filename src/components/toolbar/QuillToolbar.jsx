@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Quill } from "react-quill-new";
+import React, { useState, useEffect } from "react";
+import { PAGE_SIZES } from "../../constants/pageSizes";
 import {
   Select,
   MenuItem,
@@ -12,49 +12,20 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
+import UndoIcon from "@mui/icons-material/Undo";
+import RedoIcon from "@mui/icons-material/Redo";
+import { Quill } from "react-quill-new"; // Import Quill for font and size handling
+import { FONT_SIZES, FONTS } from "../../constants/Nudifonts"; // Import font sizes and font names
 
-// Define available page sizes
-const PAGE_SIZES = {
-  A0: { width: 2384, height: 3370 },
-  A1: { width: 1684, height: 2384 },
-  A2: { width: 1191, height: 1684 },
-  A3: { width: 842, height: 1191 },
-  A4: { width: 816, height: 1056 }, // Default A4 size
-  A5: { width: 578, height: 816 },
-  A6: { width: 408, height: 578 },
-  Letter: { width: 816, height: 1056 },
-  Legal: { width: 816, height: 1296 },
-  Executive: { width: 672, height: 936 },
-  Tabloid: { width: 1056, height: 1680 },
-  USLedger: { width: 1056, height: 1680 },
-  B4: { width: 918, height: 1296 },
-  B5: { width: 648, height: 918 },
-  B6: { width: 459, height: 648 },
-  B7: { width: 324, height: 459 },
-  B8: { width: 234, height: 324 },
-};
+// Add sizes to whitelist and register them
+const Size = Quill.import("formats/size");
+Size.whitelist = FONT_SIZES;
+Quill.register(Size, true);
 
-// Custom Undo button icon component for Quill editor
-const CustomUndo = () => (
-  <svg viewBox="0 0 18 18">
-    <polygon className="ql-fill ql-stroke" points="6 10 4 12 2 10 6 10" />
-    <path
-      className="ql-stroke"
-      d="M8.09,13.91A4.6,4.6,0,0,0,9,14,5,5,0,1,0,4,9"
-    />
-  </svg>
-);
-
-// Redo button icon component for Quill editor
-const CustomRedo = () => (
-  <svg viewBox="0 0 18 18">
-    <polygon className="ql-fill ql-stroke" points="12 10 14 12 16 10 12 10" />
-    <path
-      className="ql-stroke"
-      d="M9.91,13.91A4.6,4.6,0,0,1,9,14a5,5,0,1,1,5-5"
-    />
-  </svg>
-);
+// Add fonts to whitelist and register them
+export const Font = Quill.import("formats/font");
+Font.whitelist = FONTS;
+Quill.register(Font, true);
 
 // Undo and redo functions for Custom Toolbar
 function undoChange() {
@@ -63,23 +34,6 @@ function undoChange() {
 function redoChange() {
   this.quill.history.redo();
 }
-
-// Add sizes to whitelist and register them
-const Size = Quill.import("formats/size");
-Size.whitelist = ["extra-small", "small", "medium", "large"];
-Quill.register(Size, true);
-
-// Add fonts to whitelist and register them
-const Font = Quill.import("formats/font");
-Font.whitelist = [
-  "arial",
-  "comic-sans",
-  "courier-new",
-  "georgia",
-  "helvetica",
-  "lucida",
-];
-Quill.register(Font, true);
 
 // Modules object for setting up the Quill editor
 export const modules = {
@@ -96,6 +50,17 @@ export const modules = {
           this.quill.root.style.minHeight = `${selectedSize.height}px`;
         }
       },
+      // Add custom handlers for font and size
+      font: function (value) {
+        if (value) {
+          this.quill.format("font", value);
+        }
+      },
+      size: function (value) {
+        if (value) {
+          this.quill.format("size", value);
+        }
+      },
     },
   },
   history: {
@@ -105,32 +70,13 @@ export const modules = {
   },
 };
 
-// Formats objects for setting up the Quill editor
-export const formats = [
-  "header",
-  "font",
-  "size",
-  "bold",
-  "italic",
-  "underline",
-  "align",
-  "strike",
-  "script",
-  "blockquote",
-  "background",
-  "list",
-  "indent",
-  "link",
-  "image",
-  "color",
-  "code-block",
-];
-
 // Quill Toolbar component with Material-UI integration
 export const QuillToolbar = ({ setPageSize }) => {
   const [customSize, setCustomSize] = useState({ width: "", height: "" });
   const [pageSizeOption, setPageSizeOption] = useState("A4"); // Default page size
   const [openModal, setOpenModal] = useState(false); // Control the modal visibility
+  const [fontOption, setFontOption] = useState(FONTS[0]); // Font option state
+  const [sizeOption, setSizeOption] = useState(FONT_SIZES[2]); // Size option state
 
   const handlePageSizeChange = (e) => {
     const selectedSize = e.target.value;
@@ -165,23 +111,51 @@ export const QuillToolbar = ({ setPageSize }) => {
     setOpenModal(false); // Close the modal without applying changes
   };
 
+  const handleFontChange = (e) => {
+    const selectedFont = e.target.value;
+    setFontOption(selectedFont);
+    if (this.quill) {
+      this.quill.format("font", selectedFont);
+    }
+  };
+
+  const handleSizeChange = (e) => {
+    const selectedSize = e.target.value;
+    setSizeOption(selectedSize);
+    if (this.quill) {
+      this.quill.format("size", selectedSize);
+    }
+  };
+
   return (
     <div id="toolbar" className="flex flex-wrap gap-4 p-4">
       <span className="ql-formats">
-        <select className="ql-font" defaultValue="arial">
-          <option value="arial">Arial</option>
-          <option value="comic-sans">Comic Sans</option>
-          <option value="courier-new">Courier New</option>
-          <option value="georgia">Georgia</option>
-          <option value="helvetica">Helvetica</option>
-          <option value="lucida">Lucida</option>
+        {/* Font selection */}
+        <select
+          className="ql-font"
+          value={fontOption}
+          onChange={handleFontChange}
+        >
+          {FONTS.map((font, index) => (
+            <option key={index} value={font}>
+              {font}
+            </option>
+          ))}
         </select>
-        <select className="ql-size" defaultValue="medium">
-          <option value="extra-small">Size 1</option>
-          <option value="small">Size 2</option>
-          <option value="medium">Size 3</option>
-          <option value="large">Size 4</option>
+
+        {/* Size selection */}
+        <select
+          className="ql-size"
+          value={sizeOption}
+          onChange={handleSizeChange}
+        >
+          {FONT_SIZES.map((size, index) => (
+            <option key={index} value={size}>
+              {size}
+            </option>
+          ))}
         </select>
+
         <select className="ql-header" defaultValue="3">
           <option value="1">Heading</option>
           <option value="2">Subheading</option>
@@ -223,10 +197,10 @@ export const QuillToolbar = ({ setPageSize }) => {
       </span>
       <span className="ql-formats">
         <button className="ql-undo">
-          <CustomUndo />
+          <UndoIcon />
         </button>
         <button className="ql-redo">
-          <CustomRedo />
+          <RedoIcon />
         </button>
       </span>
 

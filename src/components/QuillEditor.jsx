@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import Page from "./Page";
-import EditorToolbar, { modules, formats } from "./QuillToolbar";
-
+import EditorToolbar, { modules } from "./toolbar/QuillToolbar";
+import { formats } from "../constants/formats";
 const QuillEditor = () => {
   const [content, setContent] = useState("");
   const [pages, setPages] = useState([0]);
