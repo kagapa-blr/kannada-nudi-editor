@@ -16,7 +16,7 @@ export default defineConfig({
         chunkFileNames: 'js/[name]-[hash].js',
         // Place CSS assets in the "css" folder with a hash for cache busting
         assetFileNames: 'css/[name]-[hash][extname]',
-
+        
         // Manual chunking to separate dependencies from application code
         manualChunks(id) {
           if (id.includes('node_modules')) {
