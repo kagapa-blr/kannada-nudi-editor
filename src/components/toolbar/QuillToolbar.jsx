@@ -19,51 +19,8 @@ export const Font = Quill.import("formats/font");
 Font.whitelist = FONTS;
 Quill.register(Font, true);
 
-// // Undo and redo functions for Custom Toolbar
-// function undoChange() {
-//   this.quill.history.undo();
-// }
-// function redoChange() {
-//   this.quill.history.redo();
-// }
-
-// // Modules object for setting up the Quill editor
-// export const modules = {
-//   toolbar: {
-//     container: "#toolbar",
-//     handlers: {
-//       undo: undoChange,
-//       redo: redoChange,
-//       // Custom handler for page size
-//       "page-size": function (value) {
-//         const selectedSize = PAGE_SIZES[value];
-//         if (selectedSize) {
-//           this.quill.root.style.width = `${selectedSize.width}px`;
-//           this.quill.root.style.minHeight = `${selectedSize.height}px`;
-//         }
-//       },
-//       // Add custom handlers for font and size
-//       font: function (value) {
-//         if (value) {
-//           this.quill.format("font", value);
-//         }
-//       },
-//       size: function (value) {
-//         if (value) {
-//           this.quill.format("size", value);
-//         }
-//       },
-//     },
-//   },
-//   history: {
-//     delay: 500,
-//     maxStack: 100,
-//     userOnly: true,
-//   },
-// };
-
 // Quill Toolbar component with Material-UI integration
-export const QuillToolbar = ({ setPageSize }) => {
+export const QuillToolbar = ({ quillRef, setPageSize }) => {
   const [pageSizeOption, setPageSizeOption] = useState("A4"); // Default page size
   const [prevPageSize, setPrevPageSize] = useState("A4"); // Store previous page size
   const [openModal, setOpenModal] = useState(false); // Control the modal visibility
@@ -85,16 +42,18 @@ export const QuillToolbar = ({ setPageSize }) => {
   const handleFontChange = (e) => {
     const selectedFont = e.target.value;
     setFontOption(selectedFont);
-    if (this.quill) {
-      this.quill.format("font", selectedFont);
+    const editor = quillRef?.current.getEditor();
+    if (editor) {
+      editor.format("font", selectedFont);
     }
   };
 
   const handleSizeChange = (e) => {
     const selectedSize = e.target.value;
     setSizeOption(selectedSize);
-    if (this.quill) {
-      this.quill.format("size", selectedSize);
+    const editor = quillRef?.current?.getEditor();
+    if (editor) {
+      editor.format("size", selectedSize);
     }
   };
 

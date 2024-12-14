@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import  { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import Page from "./Page";
@@ -10,7 +10,7 @@ const QuillEditor = () => {
   const [content, setContent] = useState("");
   const [pages, setPages] = useState([0]);
   const [pageSize, setPageSize] = useState({ width: 816, height: 1056 }); // Default A4 size
-  const editorRef = useRef(null);
+  const quillRef = useRef(null);
 
   useEffect(() => {
     paginateContent();
@@ -21,10 +21,8 @@ const QuillEditor = () => {
   };
 
   const paginateContent = () => {
-    const editor = editorRef?.current?.getEditor();
-
+    const editor = quillRef?.current?.getEditor();
     const editorContent = editor.root;
-
     const contentHeight = editorContent.scrollHeight;
     const requiredPages = Math.ceil(contentHeight / pageSize.height);
 
@@ -35,7 +33,7 @@ const QuillEditor = () => {
     <div className="editor-container">
       <div className="editor-toolbar-container">
         <EditorToolbar
-          quillRef={editorRef} // Pass the quill reference to the toolbar
+          quillRef={quillRef} // Pass the quill reference to the toolbar
           setPageSize={setPageSize}
         />
       </div>
@@ -51,7 +49,7 @@ const QuillEditor = () => {
           ))}
         </div>
         <ReactQuill
-          ref={editorRef}
+          ref={quillRef}
           theme="snow"
           value={content}
           onChange={handleChange}
