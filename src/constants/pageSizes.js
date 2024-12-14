@@ -1,4 +1,4 @@
-// PAGE_SIZES.js
+// src/constants/pageSizes.js
 export const PAGE_SIZES = {
   A0: { width: 2384, height: 3370 },
   A1: { width: 1684, height: 2384 },

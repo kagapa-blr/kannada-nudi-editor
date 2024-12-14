@@ -198,9 +198,12 @@ export const QuillToolbar = ({ setPageSize }) => {
             value={pageSizeOption}
             onChange={handlePageSizeChange}
           >
-            <MenuItem value="A4">A4</MenuItem>
-            <MenuItem value="Letter">Letter</MenuItem>
-            <MenuItem value="Legal">Legal</MenuItem>
+            {/* Dynamically render the page sizes from the PAGE_SIZES object */}
+            {Object.keys(PAGE_SIZES).map((key) => (
+              <MenuItem key={key} value={key}>
+                {key}
+              </MenuItem>
+            ))}
             <MenuItem value="Custom">Custom</MenuItem>
           </Select>
         </FormControl>
