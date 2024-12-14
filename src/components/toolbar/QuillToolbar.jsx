@@ -3,6 +3,8 @@ import { PAGE_SIZES } from "../../constants/pageSizes";
 import { Select, MenuItem, InputLabel, FormControl } from "@mui/material";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
+import FolderOpenIcon from "@mui/icons-material/FolderOpen";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import { Quill } from "react-quill-new"; // Import Quill for font and size handling
 import { FONT_SIZES, FONTS } from "../../constants/Nudifonts"; // Import font sizes and font names
 import CustomSizeDialog from "./CustomSizeDialog"; // Import the custom size dialog component
@@ -17,48 +19,48 @@ export const Font = Quill.import("formats/font");
 Font.whitelist = FONTS;
 Quill.register(Font, true);
 
-// Undo and redo functions for Custom Toolbar
-function undoChange() {
-  this.quill.history.undo();
-}
-function redoChange() {
-  this.quill.history.redo();
-}
+// // Undo and redo functions for Custom Toolbar
+// function undoChange() {
+//   this.quill.history.undo();
+// }
+// function redoChange() {
+//   this.quill.history.redo();
+// }
 
-// Modules object for setting up the Quill editor
-export const modules = {
-  toolbar: {
-    container: "#toolbar",
-    handlers: {
-      undo: undoChange,
-      redo: redoChange,
-      // Custom handler for page size
-      "page-size": function (value) {
-        const selectedSize = PAGE_SIZES[value];
-        if (selectedSize) {
-          this.quill.root.style.width = `${selectedSize.width}px`;
-          this.quill.root.style.minHeight = `${selectedSize.height}px`;
-        }
-      },
-      // Add custom handlers for font and size
-      font: function (value) {
-        if (value) {
-          this.quill.format("font", value);
-        }
-      },
-      size: function (value) {
-        if (value) {
-          this.quill.format("size", value);
-        }
-      },
-    },
-  },
-  history: {
-    delay: 500,
-    maxStack: 100,
-    userOnly: true,
-  },
-};
+// // Modules object for setting up the Quill editor
+// export const modules = {
+//   toolbar: {
+//     container: "#toolbar",
+//     handlers: {
+//       undo: undoChange,
+//       redo: redoChange,
+//       // Custom handler for page size
+//       "page-size": function (value) {
+//         const selectedSize = PAGE_SIZES[value];
+//         if (selectedSize) {
+//           this.quill.root.style.width = `${selectedSize.width}px`;
+//           this.quill.root.style.minHeight = `${selectedSize.height}px`;
+//         }
+//       },
+//       // Add custom handlers for font and size
+//       font: function (value) {
+//         if (value) {
+//           this.quill.format("font", value);
+//         }
+//       },
+//       size: function (value) {
+//         if (value) {
+//           this.quill.format("size", value);
+//         }
+//       },
+//     },
+//   },
+//   history: {
+//     delay: 500,
+//     maxStack: 100,
+//     userOnly: true,
+//   },
+// };
 
 // Quill Toolbar component with Material-UI integration
 export const QuillToolbar = ({ setPageSize }) => {
@@ -185,6 +187,14 @@ export const QuillToolbar = ({ setPageSize }) => {
         </button>
         <button className="ql-redo">
           <RedoIcon />
+        </button>
+        {/* Open File Button */}
+        <button className="ql-open">
+          <FolderOpenIcon />
+        </button>
+        {/* Save File Button */}
+        <button className="ql-save">
+          <SaveAltIcon />
         </button>
       </span>
 

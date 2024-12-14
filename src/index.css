@@ -13,7 +13,10 @@
 }
 
 .editor-wrapper {
-  @apply w-full relative mt-24; /* Increased margin-top for space between toolbar and editor */
+  @apply w-full flex-1 mt-24; /* Use flex-1 to allow the editor to take up the remaining space */
+  min-height: calc(100vh - 80px); /* Ensures enough height for the editor */
+  padding-top: 80px; /* Adds space for the fixed toolbar */
+  position: relative;
 }
 
 .editor-pages {
@@ -55,3 +58,4 @@
 .ql-snow .ql-editor {
   @apply border-0 !important;
 }
+

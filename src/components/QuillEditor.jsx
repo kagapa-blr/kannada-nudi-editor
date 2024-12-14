@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import Page from "./Page";
-import EditorToolbar, { modules } from "./toolbar/QuillToolbar";
+import EditorToolbar from "./toolbar/QuillToolbar";
 import { formats } from "../constants/formats";
+import { modules } from "../constants/editorModules";
+
 const QuillEditor = () => {
   const [content, setContent] = useState("");
   const [pages, setPages] = useState([0]);
@@ -19,7 +21,8 @@ const QuillEditor = () => {
   };
 
   const paginateContent = () => {
-    const editor = editorRef.current.getEditor();
+    const editor = editorRef?.current?.getEditor();
+
     const editorContent = editor.root;
 
     const contentHeight = editorContent.scrollHeight;
@@ -31,7 +34,10 @@ const QuillEditor = () => {
   return (
     <div className="editor-container">
       <div className="editor-toolbar-container">
-        <EditorToolbar setPageSize={setPageSize} />
+        <EditorToolbar
+          quillRef={editorRef} // Pass the quill reference to the toolbar
+          setPageSize={setPageSize}
+        />
       </div>
       <div className="editor-wrapper">
         <div className="relative">
