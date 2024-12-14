@@ -1,21 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { PAGE_SIZES } from "../../constants/pageSizes";
-import {
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  TextField,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-} from "@mui/material";
+import { Select, MenuItem, InputLabel, FormControl } from "@mui/material";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import { Quill } from "react-quill-new"; // Import Quill for font and size handling
 import { FONT_SIZES, FONTS } from "../../constants/Nudifonts"; // Import font sizes and font names
+import CustomSizeDialog from "./CustomSizeDialog"; // Import the custom size dialog component
 
 // Add sizes to whitelist and register them
 const Size = Quill.import("formats/size");
@@ -72,8 +62,8 @@ export const modules = {
 
 // Quill Toolbar component with Material-UI integration
 export const QuillToolbar = ({ setPageSize }) => {
-  const [customSize, setCustomSize] = useState({ width: "", height: "" });
   const [pageSizeOption, setPageSizeOption] = useState("A4"); // Default page size
+  const [prevPageSize, setPrevPageSize] = useState("A4"); // Store previous page size
   const [openModal, setOpenModal] = useState(false); // Control the modal visibility
   const [fontOption, setFontOption] = useState(FONTS[0]); // Font option state
   const [sizeOption, setSizeOption] = useState(FONT_SIZES[2]); // Size option state
@@ -82,33 +72,12 @@ export const QuillToolbar = ({ setPageSize }) => {
     const selectedSize = e.target.value;
     setPageSizeOption(selectedSize); // Update the selected page size option
     if (selectedSize === "Custom") {
+      setPrevPageSize(pageSizeOption); // Store the previous page size
       setOpenModal(true); // Open the modal when "Custom" is selected
     } else {
       const size = PAGE_SIZES[selectedSize];
       setPageSize(size); // Apply the selected predefined page size
     }
-  };
-
-  const handleCustomWidthChange = (e) => {
-    setCustomSize((prev) => ({ ...prev, width: e.target.value }));
-  };
-
-  const handleCustomHeightChange = (e) => {
-    setCustomSize((prev) => ({ ...prev, height: e.target.value }));
-  };
-
-  const applyCustomSize = () => {
-    if (customSize.width && customSize.height) {
-      setPageSize({
-        width: parseInt(customSize.width),
-        height: parseInt(customSize.height),
-      });
-      setOpenModal(false); // Close the modal after applying custom size
-    }
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false); // Close the modal without applying changes
   };
 
   const handleFontChange = (e) => {
@@ -125,6 +94,21 @@ export const QuillToolbar = ({ setPageSize }) => {
     if (this.quill) {
       this.quill.format("size", selectedSize);
     }
+  };
+
+  const applyCustomSize = (customSize) => {
+    if (customSize.width && customSize.height) {
+      setPageSize({
+        width: customSize.width,
+        height: customSize.height,
+      });
+      setOpenModal(false); // Close the modal after applying custom size
+    }
+  };
+
+  const handleCloseModal = () => {
+    setPageSizeOption(prevPageSize); // Restore the previous page size if canceled
+    setOpenModal(false); // Close the modal without applying changes
   };
 
   return (
@@ -222,36 +206,12 @@ export const QuillToolbar = ({ setPageSize }) => {
         </FormControl>
       </span>
 
-      {/* Modal for Custom Size */}
-      <Dialog open={openModal} onClose={handleCloseModal}>
-        <DialogTitle>Enter Custom Page Size</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Width (px)"
-            type="number"
-            fullWidth
-            value={customSize.width}
-            onChange={handleCustomWidthChange}
-            margin="normal"
-          />
-          <TextField
-            label="Height (px)"
-            type="number"
-            fullWidth
-            value={customSize.height}
-            onChange={handleCustomHeightChange}
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={applyCustomSize} color="primary">
-            Apply
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Custom Size Dialog */}
+      <CustomSizeDialog
+        open={openModal}
+        onClose={handleCloseModal}
+        onApply={applyCustomSize}
+      />
     </div>
   );
 };
