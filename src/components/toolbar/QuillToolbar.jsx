@@ -8,7 +8,7 @@ import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import { Quill } from "react-quill-new"; // Import Quill for font and size handling
 import { FONT_SIZES, FONTS } from "../../constants/Nudifonts"; // Import font sizes and font names
 import CustomSizeDialog from "./CustomSizeDialog"; // Import the custom size dialog component
-
+import QuillResizeImage from 'quill-resize-image';
 // Add sizes to whitelist and register them
 const Size = Quill.import("formats/size");
 Size.whitelist = FONT_SIZES;
@@ -18,6 +18,11 @@ Quill.register(Size, true);
 export const Font = Quill.import("formats/font");
 Font.whitelist = FONTS;
 Quill.register(Font, true);
+
+
+// Register the resize module
+Quill.register("modules/resize", QuillResizeImage);
+
 
 // Quill Toolbar component with Material-UI integration
 export const QuillToolbar = ({ quillRef, setPageSize }) => {

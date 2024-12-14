@@ -79,4 +79,6 @@ export const modules = {
         maxStack: 100,
         userOnly: true,
     },
+      // Add the resize module here
+  resize: {},
 };
