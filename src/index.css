@@ -1,3 +1,5 @@
+/* src/index.css */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,7 +13,7 @@
 }
 
 .editor-wrapper {
-  @apply w-full relative mt-20;
+  @apply w-full relative mt-24; /* Increased margin-top for space between toolbar and editor */
 }
 
 .editor-pages {
@@ -23,12 +25,12 @@
 }
 
 .ql-container {
-  @apply border-0;
+  @apply border-0 !important; /* Remove the border from the container */
 }
 
 .ql-editor {
-  @apply border-0;
-  min-height: calc(100vh - 80px);
+  @apply border-0 !important;
+  min-height: calc(100vh - 80px); /* Ensure enough height for the editor */
   padding: 0;
 }
 
@@ -47,4 +49,9 @@
 
 .page-shadow {
   @apply w-full border-4 border-blue-600 bg-white shadow-lg p-5 mb-10 relative;
+}
+
+/* Remove border and extra styles from the snow theme (ql-snow) */
+.ql-snow .ql-editor {
+  @apply border-0 !important;
 }

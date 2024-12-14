@@ -21,7 +21,7 @@ export default function Page({ pageIndex, isLast, pageSize }) {
       {/* Separation line between pages */}
       {!isLast && (
         <div
-          className="absolute left-0 right-0 border-t-8 border-blue-600"
+          className="absolute left-0 right-0 border-t-16 border-blue-600" // Increased border thickness
           style={{
             top: `${(pageIndex + 1) * height - 1}px`,
           }}
