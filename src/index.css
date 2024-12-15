@@ -58,3 +58,13 @@
 .ql-snow .ql-editor {
   @apply border-0 !important;
 }
+
+/* You can add more custom fonts here as needed */
+.ql-redunderline {
+  text-decoration: 3px solid red underline;
+}
+/* Set the default font for the Quill editor */
+.ql-editor {
+  font-family: "NudiParijatha", sans-serif; /* Fallback to sans-serif */
+  font-size: 16px; /* Set default font size */
+}

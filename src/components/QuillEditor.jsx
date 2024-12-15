@@ -1,4 +1,4 @@
-import  { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import Page from "./Page";
@@ -15,7 +15,11 @@ const QuillEditor = () => {
   useEffect(() => {
     paginateContent();
   }, [content, pageSize]);
-
+  useEffect(() => {
+    if (quillRef.current) {
+      quillRef.current.getEditor().root.setAttribute("spellcheck", "false");
+    }
+  }, []);
   const handleChange = (value) => {
     setContent(value);
   };
