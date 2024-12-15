@@ -5,42 +5,38 @@ import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import { Quill } from "react-quill-new"; // Import Quill for font and size handling
-import { FONT_SIZES, FONTS } from "../../constants/Nudifonts"; // Import font sizes and font names
-import CustomSizeDialog from "./CustomSizeDialog"; // Import the custom size dialog component
-import QuillResizeImage from 'quill-resize-image';
-// Add sizes to whitelist and register them
+import { Quill } from "react-quill-new";
+import { FONT_SIZES, FONTS } from "../../constants/Nudifonts";
+import CustomSizeDialog from "./CustomSizeDialog";
+import QuillResizeImage from "quill-resize-image";
+
 const Size = Quill.import("formats/size");
 Size.whitelist = FONT_SIZES;
 Quill.register(Size, true);
+import { ICON_LABELS_KANNADA } from "../../constants/formats";
 
-// Add fonts to whitelist and register them
 export const Font = Quill.import("formats/font");
 Font.whitelist = FONTS;
 Quill.register(Font, true);
 
-
-// Register the resize module
 Quill.register("modules/resize", QuillResizeImage);
 
-
-// Quill Toolbar component with Material-UI integration
 export const QuillToolbar = ({ quillRef, setPageSize }) => {
-  const [pageSizeOption, setPageSizeOption] = useState("A4"); // Default page size
-  const [prevPageSize, setPrevPageSize] = useState("A4"); // Store previous page size
-  const [openModal, setOpenModal] = useState(false); // Control the modal visibility
-  const [fontOption, setFontOption] = useState(FONTS[0]); // Font option state
-  const [sizeOption, setSizeOption] = useState(FONT_SIZES[2]); // Size option state
+  const [pageSizeOption, setPageSizeOption] = useState("A4");
+  const [prevPageSize, setPrevPageSize] = useState("A4");
+  const [openModal, setOpenModal] = useState(false);
+  const [fontOption, setFontOption] = useState(FONTS[0]);
+  const [sizeOption, setSizeOption] = useState(FONT_SIZES[2]);
 
   const handlePageSizeChange = (e) => {
     const selectedSize = e.target.value;
-    setPageSizeOption(selectedSize); // Update the selected page size option
+    setPageSizeOption(selectedSize);
     if (selectedSize === "Custom") {
-      setPrevPageSize(pageSizeOption); // Store the previous page size
-      setOpenModal(true); // Open the modal when "Custom" is selected
+      setPrevPageSize(pageSizeOption);
+      setOpenModal(true);
     } else {
       const size = PAGE_SIZES[selectedSize];
-      setPageSize(size); // Apply the selected predefined page size
+      setPageSize(size);
     }
   };
 
@@ -68,23 +64,32 @@ export const QuillToolbar = ({ quillRef, setPageSize }) => {
         width: customSize.width,
         height: customSize.height,
       });
-      setOpenModal(false); // Close the modal after applying custom size
+      setOpenModal(false);
     }
   };
 
   const handleCloseModal = () => {
-    setPageSizeOption(prevPageSize); // Restore the previous page size if canceled
-    setOpenModal(false); // Close the modal without applying changes
+    setPageSizeOption(prevPageSize);
+    setOpenModal(false);
   };
 
   return (
     <div id="toolbar" className="flex flex-wrap gap-4 p-4">
       <span className="ql-formats">
-        {/* Font selection */}
+        <button className="ql-open" title={ICON_LABELS_KANNADA.open}>
+          <FolderOpenIcon />
+        </button>
+        <button className="ql-save" title={ICON_LABELS_KANNADA.save}>
+          <SaveAltIcon />
+        </button>
+      </span>
+
+      <span className="ql-formats">
         <select
           className="ql-font"
           value={fontOption}
           onChange={handleFontChange}
+          title={ICON_LABELS_KANNADA.font}
         >
           {FONTS.map((font, index) => (
             <option key={index} value={font}>
@@ -93,11 +98,11 @@ export const QuillToolbar = ({ quillRef, setPageSize }) => {
           ))}
         </select>
 
-        {/* Size selection */}
         <select
           className="ql-size"
           value={sizeOption}
           onChange={handleSizeChange}
+          title={ICON_LABELS_KANNADA.fontSize}
         >
           {FONT_SIZES.map((size, index) => (
             <option key={index} value={size}>
@@ -106,73 +111,103 @@ export const QuillToolbar = ({ quillRef, setPageSize }) => {
           ))}
         </select>
 
-        <select className="ql-header" defaultValue="3">
+        <select
+          className="ql-header"
+          defaultValue="3"
+          title={ICON_LABELS_KANNADA.headline}
+        >
           <option value="1">Heading</option>
           <option value="2">Subheading</option>
           <option value="3">Normal</option>
         </select>
       </span>
       <span className="ql-formats">
-        <button className="ql-bold" />
-        <button className="ql-italic" />
-        <button className="ql-underline" />
-        <button className="ql-strike" />
+        <button className="ql-bold" title={ICON_LABELS_KANNADA.bold} />
+        <button className="ql-italic" title={ICON_LABELS_KANNADA.italic} />
+        <button
+          className="ql-underline"
+          title={ICON_LABELS_KANNADA.underline}
+        />
+        <button className="ql-strike" title={ICON_LABELS_KANNADA.strike} />
       </span>
       <span className="ql-formats">
-        <button className="ql-list" value="ordered" />
-        <button className="ql-list" value="bullet" />
-        <button className="ql-indent" value="-1" />
-        <button className="ql-indent" value="+1" />
+        <button
+          className="ql-list"
+          value="ordered"
+          title={ICON_LABELS_KANNADA.listOrdered}
+        />
+        <button
+          className="ql-list"
+          value="bullet"
+          title={ICON_LABELS_KANNADA.listBullet}
+        />
+        <button
+          className="ql-indent"
+          value="-1"
+          title={ICON_LABELS_KANNADA.indentDecrease}
+        />
+        <button
+          className="ql-indent"
+          value="+1"
+          title={ICON_LABELS_KANNADA.indentIncrease}
+        />
       </span>
       <span className="ql-formats">
-        <button className="ql-script" value="super" />
-        <button className="ql-script" value="sub" />
-        <button className="ql-blockquote" />
-        <button className="ql-direction" />
+        <button
+          className="ql-script"
+          value="super"
+          title={ICON_LABELS_KANNADA.superscript}
+        />
+        <button
+          className="ql-script"
+          value="sub"
+          title={ICON_LABELS_KANNADA.subscript}
+        />
+        <button
+          className="ql-blockquote"
+          title={ICON_LABELS_KANNADA.blockquote}
+        />
+        <button
+          className="ql-direction"
+          title={ICON_LABELS_KANNADA.direction}
+        />
       </span>
       <span className="ql-formats">
-        <select className="ql-align" />
-        <select className="ql-color" />
-        <select className="ql-background" />
+        <select className="ql-align" title={ICON_LABELS_KANNADA.align} />
+        <select className="ql-color" title={ICON_LABELS_KANNADA.color} />
+        <select
+          className="ql-background"
+          title={ICON_LABELS_KANNADA.background}
+        />
       </span>
       <span className="ql-formats">
-        <button className="ql-link" />
-        <button className="ql-image" />
-        <button className="ql-video" />
+        <button className="ql-link" title={ICON_LABELS_KANNADA.link} />
+        <button className="ql-image" title={ICON_LABELS_KANNADA.image} />
+        <button className="ql-video" title={ICON_LABELS_KANNADA.video} />
       </span>
       <span className="ql-formats">
-        <button className="ql-formula" />
-        <button className="ql-code-block" />
-        <button className="ql-clean" />
+        <button className="ql-formula" title={ICON_LABELS_KANNADA.formula} />
+        <button className="ql-code-block" title={ICON_LABELS_KANNADA.block} />
+        <button className="ql-clean" title={ICON_LABELS_KANNADA.clean} />
       </span>
       <span className="ql-formats">
-        <button className="ql-undo">
+        <button className="ql-undo" title={ICON_LABELS_KANNADA.undo}>
           <UndoIcon />
         </button>
-        <button className="ql-redo">
+        <button className="ql-redo" title={ICON_LABELS_KANNADA.redo}>
           <RedoIcon />
-        </button>
-        {/* Open File Button */}
-        <button className="ql-open">
-          <FolderOpenIcon />
-        </button>
-        {/* Save File Button */}
-        <button className="ql-save">
-          <SaveAltIcon />
         </button>
       </span>
 
-      {/* Page Size Dropdown using Material-UI */}
       <span className="ql-formats">
         <FormControl>
-          <InputLabel>Page Size</InputLabel>
+          <InputLabel>ಪುಟದ ಗಾತ್ರ</InputLabel>
           <Select
-            label="Page Size"
+            label="ಪುಟದ ಗಾತ್ರ"
             className="ql-page-size"
             value={pageSizeOption}
             onChange={handlePageSizeChange}
           >
-            {/* Dynamically render the page sizes from the PAGE_SIZES object */}
             {Object.keys(PAGE_SIZES).map((key) => (
               <MenuItem key={key} value={key}>
                 {key}
@@ -183,7 +218,6 @@ export const QuillToolbar = ({ quillRef, setPageSize }) => {
         </FormControl>
       </span>
 
-      {/* Custom Size Dialog */}
       <CustomSizeDialog
         open={openModal}
         onClose={handleCloseModal}
