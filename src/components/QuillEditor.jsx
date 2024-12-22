@@ -16,6 +16,8 @@ import LoadingComponent from "./utils/LoadingComponent";
 import { ignoreSingleChars, isSingleCharacter } from "../services/editorUtils";
 //import SymSpell from "node-symspell-new";
 import { getSuggestions } from "../spellcheck/symspell";
+import { getWrongWords } from "../spellcheck/bloomFilter";
+
 const QuillEditor = () => {
   const [content, setContent] = useState("");
   const [pages, setPages] = useState([0]);
@@ -38,14 +40,10 @@ const QuillEditor = () => {
   // Load BloomFilter from a file when the component mounts
   useEffect(() => {
     const filePath = "assets/collection.txt";
-
     const loadBloomFilter = async () => {
       try {
         const filter = await BloomFilter.fromFile(filePath, 100000, 0.001);
         setBloomFilter(filter);
-        // Load the dictionary via IPC as well
-        //const dictionaryPath = "../assets/word_frequency.txt";
-        //await symSpell.loadDictionary(dictionaryPath, 0, 1); // Load dictionary from the file content
       } catch (error) {
         console.error("Error loading Bloom Filter:", error);
       }
@@ -70,11 +68,13 @@ const QuillEditor = () => {
   useEffect(() => {
     paginateContent();
   }, [content, pageSize]);
+
   useEffect(() => {
     if (quillRef.current) {
       quillRef.current.getEditor().root.setAttribute("spellcheck", "false");
     }
   }, []);
+
   const handleChange = (value) => {
     setContent(value);
   };
@@ -87,6 +87,31 @@ const QuillEditor = () => {
 
     setPages(Array.from({ length: requiredPages }, (_, i) => i));
   };
+
+  useEffect(() => {
+    const fetchWrongWords = async () => {
+      const quill = quillRef.current?.getEditor();
+      if (quill && bloomFilter) {
+        try {
+          const wrongWordList = await getWrongWords(quill, bloomFilter);
+          console.log("wrongwords", wrongWordList);
+          if (wrongWordList) {
+            const removedSinglechar = ignoreSingleChars(wrongWordList);
+            // Underline new errors in the editor
+            removedSinglechar.forEach((word) =>
+              underlineWordInEditor(quill, word)
+            );
+            // Update the errors state
+            setErrors(removedSinglechar);
+          }
+        } catch (error) {
+          console.error("Error fetching wrong words:", error);
+        }
+      }
+    };
+
+    fetchWrongWords();
+  }, [content]); // Add dependencies as needed
 
   useEffect(() => {
     const quill = quillRef.current?.getEditor();
@@ -332,6 +357,7 @@ const QuillEditor = () => {
 
     setIsLoading(false);
   };
+
   const handleInputClick = (e) => {
     e.target.focus(); // Focus the input when clicked
   };
