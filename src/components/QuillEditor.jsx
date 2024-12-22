@@ -12,7 +12,7 @@ import {
 } from "../services/editorService";
 import Tooltip from "../components/editor/Tooltip";
 import BloomFilter from "bloom-filter-new";
-
+import { ignoreSingleChars, isSingleCharacter } from "../services/editorUtils";
 //import SymSpell from "node-symspell-new";
 
 const QuillEditor = () => {
@@ -36,17 +36,20 @@ const QuillEditor = () => {
   const maxEditDistance = 3;
   const prefixLength = 7;
 
+  //const values
+  const specialChars = "!@#$%^&*()_+[]{}|;:',.<>/?~-=\\\"";
+
   // Load BloomFilter from a file when the component mounts
   useEffect(() => {
     const filePath = "assets/collection.txt";
-    const dictionaryPath = "src/assets/word_frequency.txt";
+
     const loadBloomFilter = async () => {
       try {
         const filter = await BloomFilter.fromFile(filePath, 100000, 0.001);
         setBloomFilter(filter);
         // Load the dictionary via IPC as well
-        //const dictionaryData = await window.electron.readFile(dictionaryPath);
-        //await symSpell.loadDictionary(dictionaryData, 0, 1); // Load dictionary from the file content
+        //const dictionaryPath = "../assets/word_frequency.txt";
+        //await symSpell.loadDictionary(dictionaryPath, 0, 1); // Load dictionary from the file content
       } catch (error) {
         console.error("Error loading Bloom Filter:", error);
       }
@@ -54,6 +57,7 @@ const QuillEditor = () => {
 
     loadBloomFilter();
   }, []);
+
   const handleCheckWord = (word) => {
     if (bloomFilter) {
       const isContained = bloomFilter.contains(word);
@@ -62,7 +66,9 @@ const QuillEditor = () => {
           ? `${word} is in the filter`
           : `${word} is NOT in the filter`
       );
+      //const quill = quillRef.current?.getEditor();
       //console.log("suggestions: ", symSpell.lookup(word, maxEditDistance));
+      //underlineWordInEditor(quill, word);
     }
   };
   useEffect(() => {
@@ -127,6 +133,39 @@ const QuillEditor = () => {
     };
   }, [errors, mouseDown]);
 
+  const handleKeyDown = async (e) => {
+    if (e.key === " ") {
+      // Debounce logic
+      clearTimeout(window.debounceTimer);
+      window.debounceTimer = setTimeout(async () => {
+        const quill = quillRef.current.getEditor();
+        const range = quill.getSelection();
+
+        if (range) {
+          const currentText = quill.getText(0, range.index).trim();
+          const words = currentText.split(/\s+/);
+          let lastWord = words[words.length - 1]
+            .split("")
+            .filter((char) => !specialChars.includes(char))
+            .join("");
+          if (isSingleCharacter(lastWord)) return;
+
+          if (errors.includes(cleanWord(lastWord))) {
+            underlineWordInEditor(quill, lastWord);
+          } else if (lastWord && !/^[a-zA-Z0-9]+$/.test(lastWord)) {
+            const isContained = await bloomFilter.contains(lastWord); //returns true or false
+
+            //if flase then underline
+            if (!isContained) {
+              setErrors((prevErrors) => [...prevErrors, lastWord]);
+              const quill = quillRef.current?.getEditor();
+              underlineWordInEditor(quill, lastWord);
+            }
+          }
+        }
+      }, 300); // Adjust the debounce time as needed
+    }
+  };
   return (
     <div className="editor-container">
       <div className="editor-toolbar-container">
@@ -151,6 +190,7 @@ const QuillEditor = () => {
           theme="snow"
           value={content}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
           modules={modules}
           formats={formats}
           style={{
