@@ -11,10 +11,10 @@ import {
   cleanWord,
 } from "../services/editorService";
 import Tooltip from "../components/editor/Tooltip";
-import BloomFilter from "bloom-filter-new";
+import { useBloomFilter } from "../Context/bloom"; // Import the custom hook
+
 import LoadingComponent from "./utils/LoadingComponent";
 import { ignoreSingleChars, isSingleCharacter } from "../services/editorUtils";
-//import SymSpell from "node-symspell-new";
 import { getSuggestions } from "../spellcheck/symspell";
 import { getWrongWords } from "../spellcheck/bloomFilter";
 
@@ -25,7 +25,6 @@ const QuillEditor = () => {
   const quillRef = useRef(null);
   const [mouseDown, setMouseDown] = useState(false); // Track if mouse is down
 
-  //const [text, setText] = useState(""); // Set initial text
   const [errors, setErrors] = useState([]);
   const [suggestions, setSuggestions] = useState({});
   const [clickedWord, setClickedWord] = useState(null);
@@ -33,24 +32,9 @@ const QuillEditor = () => {
   const [replacementWord, setReplacementWord] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [bloomFilter, setBloomFilter] = useState(null);
+  const { bloomFilter, loading, error } = useBloomFilter(); // Use the BloomFilter context
 
   const specialChars = "!@#$%^&*()_+[]{}|;:',.<>/?~-=\\\"";
-
-  // Load BloomFilter from a file when the component mounts
-  useEffect(() => {
-    const filePath = "assets/collection.txt";
-    const loadBloomFilter = async () => {
-      try {
-        const filter = await BloomFilter.fromFile(filePath, 100000, 0.001);
-        setBloomFilter(filter);
-      } catch (error) {
-        console.error("Error loading Bloom Filter:", error);
-      }
-    };
-
-    loadBloomFilter();
-  }, []);
 
   const handleCheckWord = (word) => {
     if (bloomFilter) {
@@ -94,7 +78,7 @@ const QuillEditor = () => {
       if (quill && bloomFilter) {
         try {
           const wrongWordList = await getWrongWords(quill, bloomFilter);
-          console.log("wrongwords", wrongWordList);
+          //console.log("wrongwords", wrongWordList);
           if (wrongWordList) {
             const removedSinglechar = ignoreSingleChars(wrongWordList);
             // Underline new errors in the editor
@@ -104,6 +88,8 @@ const QuillEditor = () => {
             // Update the errors state
             setErrors(removedSinglechar);
           }
+
+        
         } catch (error) {
           console.error("Error fetching wrong words:", error);
         }

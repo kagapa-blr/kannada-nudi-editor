@@ -9,6 +9,10 @@ import { Quill } from "react-quill-new";
 import { FONT_SIZES, FONTS } from "../../constants/Nudifonts";
 import CustomSizeDialog from "./CustomSizeDialog";
 import QuillResizeImage from "quill-resize-image";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import { useBloomFilter } from "../../Context/bloom"; // Import the custom hook
+import { getWrongWords } from "../../spellcheck/bloomFilter";
+import { underlineWordInEditor } from "../../services/editorService";
 
 const Size = Quill.import("formats/size");
 Size.whitelist = FONT_SIZES;
@@ -27,6 +31,7 @@ export const QuillToolbar = ({ quillRef, setPageSize }) => {
   const [openModal, setOpenModal] = useState(false);
   const [fontOption, setFontOption] = useState(FONTS[0]);
   const [sizeOption, setSizeOption] = useState(FONT_SIZES[2]);
+  const { bloomFilter, loading, error } = useBloomFilter(); // Use the BloomFilter context
 
   const handlePageSizeChange = (e) => {
     const selectedSize = e.target.value;
@@ -65,6 +70,28 @@ export const QuillToolbar = ({ quillRef, setPageSize }) => {
         height: customSize.height,
       });
       setOpenModal(false);
+    }
+  };
+
+  const refreshButtonhandle = async () => {
+    if (!bloomFilter) {
+      console.error("BloomFilter not initialized");
+      return;
+    }
+
+    try {
+      const quill = quillRef.current?.getEditor();
+      const wrongWords = await getWrongWords(quill, bloomFilter);
+      if (wrongWords.length == 0) {
+        console.log("No Wrong Words to correct");
+        return;
+      }
+      if (wrongWords) {
+        // Underline the wrong words in the editor
+        wrongWords.forEach((word) => underlineWordInEditor(quill, word));
+      }
+    } catch (error) {
+      console.error("Error during refresh:", error);
     }
   };
 
@@ -216,6 +243,12 @@ export const QuillToolbar = ({ quillRef, setPageSize }) => {
             <MenuItem value="Custom">Custom</MenuItem>
           </Select>
         </FormControl>
+      </span>
+
+      <span className="ql-formats">
+        <button onClick={refreshButtonhandle} className="ql-refresh-button">
+          <RefreshIcon />
+        </button>
       </span>
 
       <CustomSizeDialog

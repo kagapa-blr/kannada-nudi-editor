@@ -1,4 +1,10 @@
 import { PAGE_SIZES } from "./pageSizes";
+import { getWrongWords } from "../spellcheck/bloomFilter";
+import {
+    underlineWordInEditor,
+
+} from "../services/editorService";
+
 
 // Undo and redo functions for Custom Toolbar
 function undoChange() {
@@ -8,9 +14,6 @@ function undoChange() {
 function redoChange() {
     this.quill.history.redo();
 }
-
-
-
 
 
 export const openFile = () => {
@@ -41,6 +44,9 @@ const saveFile = () => {
     link.click();
 };
 
+const refreshButton = () => {
+    console.log('handle function defined separately');
+}
 
 // Modules object for setting up the Quill editor
 export const modules = {
@@ -57,6 +63,7 @@ export const modules = {
                     this.quill.root.style.minHeight = `${selectedSize.height}px`;
                 }
             },
+            "refresh-button": refreshButton,
             // Add custom handlers for font and size
             font: function (value) {
                 if (value) {
@@ -72,6 +79,8 @@ export const modules = {
             open: openFile,
             // Save file handler
             save: saveFile,
+
+
         },
     },
     history: {
@@ -79,6 +88,6 @@ export const modules = {
         maxStack: 100,
         userOnly: true,
     },
-      // Add the resize module here
-  resize: {},
+    // Add the resize module here
+    resize: {},
 };

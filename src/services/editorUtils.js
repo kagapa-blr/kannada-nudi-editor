@@ -66,9 +66,10 @@ function isKannadaCharacter(char) {
 export function isSingleCharacter(word) {
     // Normalize the input to handle any leading/trailing whitespace
     word = word.trim();
-
+    
     // Validate that the word contains only Kannada characters
     if ([...word].every(isKannadaCharacter)) {
+        
         // Directly check if the word is a valid consonant or vowel
         if (validConsonants.has(word) || validVowels.has(word)) {
             return true;
@@ -84,8 +85,6 @@ export function isSingleCharacter(word) {
 
         // Return true if the total character count is 1, false otherwise
         return characterCount === 1;
-    } else {
-        throw new Error("The word is not a valid Kannada word.");
     }
 }
 
