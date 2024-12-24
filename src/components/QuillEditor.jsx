@@ -11,7 +11,7 @@ import {
   cleanWord,
 } from "../services/editorService";
 import Tooltip from "../components/editor/Tooltip";
-import { useBloomFilter } from "../Context/bloom"; // Import the custom hook
+import { loadBloomFilter } from "../spellcheck/bloomFilter";
 
 import LoadingComponent from "./utils/LoadingComponent";
 import { ignoreSingleChars, isSingleCharacter } from "../services/editorUtils";
@@ -25,18 +25,39 @@ const QuillEditor = () => {
   const quillRef = useRef(null);
   const [mouseDown, setMouseDown] = useState(false); // Track if mouse is down
 
-  const [errors, setErrors] = useState([]);
+  const [wrongwords, setWrongWords] = useState([]);
   const [suggestions, setSuggestions] = useState({});
   const [clickedWord, setClickedWord] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({});
   const [replacementWord, setReplacementWord] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { bloomFilter, loading, error } = useBloomFilter(); // Use the BloomFilter context
+  const [bloomFilter, setBloomFilter] = useState(null); // State to store BloomFilter
 
   const specialChars = "!@#$%^&*()_+[]{}|;:',.<>/?~-=\\\"";
-
   const [symSpell, setSymSpell] = useState(null);
+
+  // Load Bloom Filter on mount
+  useEffect(() => {
+    const filePath = "/assets/collection.txt"; // Ensure the file path is correct
+    const size = 100000; // Define the size of the Bloom Filter
+    const errorRate = 0.001; // Define the error rate
+
+    console.log(`Starting to load Bloom Filter from: ${filePath}`);
+    console.log(
+      `Expected Bloom Filter size: ${size}, Error rate: ${errorRate}`
+    );
+
+    loadBloomFilter(filePath, size, errorRate)
+      .then((filter) => {
+        console.log("Bloom Filter loaded successfully.");
+        setBloomFilter(filter); // Set the BloomFilter in state
+      })
+      .catch((err) => {
+        console.error("Failed to load Bloom Filter. Error details:", err);
+        // Optionally handle error state updates here if required
+      });
+  }, []);
 
   useEffect(() => {
     const loadSymSpell = async () => {
@@ -107,7 +128,7 @@ const QuillEditor = () => {
               underlineWordInEditor(quill, word)
             );
             // Update the errors state
-            setErrors(removedSinglechar);
+            setWrongWords(removedSinglechar);
           }
         } catch (error) {
           console.error("Error fetching wrong words:", error);
@@ -136,11 +157,9 @@ const QuillEditor = () => {
         const word = cleanWord(getWordAtPosition(fullText, range.index));
 
         if (word) {
-          if (errors.includes(word)) {
+          if (wrongwords.includes(word)) {
             try {
               const suggestionList = await symSpell.getSuggestions(word);
-
-              console.log("suggestionList", suggestionList);
               setClickedWord(word);
               // Assuming the suggestionList is an array of suggestion objects
               setSuggestions((prevSuggestions) => ({
@@ -175,7 +194,7 @@ const QuillEditor = () => {
       document.removeEventListener("mouseup", handleMouseUp);
       quill.off("selection-change", handleSelectionChange);
     };
-  }, [errors, mouseDown]);
+  }, [wrongwords, mouseDown]);
 
   const handleKeyDown = async (e) => {
     if (e.key === " ") {
@@ -194,14 +213,14 @@ const QuillEditor = () => {
             .join("");
           if (isSingleCharacter(lastWord)) return;
 
-          if (errors.includes(cleanWord(lastWord))) {
+          if (wrongwords.includes(cleanWord(lastWord))) {
             underlineWordInEditor(quill, lastWord);
           } else if (lastWord && !/^[a-zA-Z0-9]+$/.test(lastWord)) {
             const isContained = await bloomFilter.contains(lastWord); //returns true or false
 
             //if flase then underline
             if (!isContained) {
-              setErrors((prevErrors) => [...prevErrors, lastWord]);
+              setWrongWords((prevErrors) => [...prevErrors, lastWord]);
               const quill = quillRef.current?.getEditor();
               underlineWordInEditor(quill, lastWord);
             }
@@ -242,7 +261,7 @@ const QuillEditor = () => {
     }
 
     // Update errors and clickedWord state
-    setErrors(errors.filter((word) => word !== clickedWord));
+    setWrongWords(wrongwords.filter((word) => word !== clickedWord));
     setClickedWord(null);
   };
 
@@ -266,7 +285,7 @@ const QuillEditor = () => {
             }
           }
 
-          setErrors(errors.filter((word) => word !== clickedWord));
+          setWrongWords(wrongwords.filter((word) => word !== clickedWord));
           setClickedWord(null);
           console.log(response);
         } else {
@@ -339,7 +358,7 @@ const QuillEditor = () => {
     }
 
     setClickedWord(null);
-    setErrors(errors.filter((word) => word !== clickedWord));
+    setWrongWords(wrongwords.filter((word) => word !== clickedWord));
   };
 
   const handleRefresh = async () => {
@@ -348,7 +367,7 @@ const QuillEditor = () => {
     const quill = quillRef.current?.getEditor();
 
     // Clear previous errors before refreshing
-    setErrors([]);
+    setWrongWords([]);
 
     // Fetch new wrong words (spellcheck the content again)
     const wrongWordList = await refreshWords(quill);
@@ -359,7 +378,7 @@ const QuillEditor = () => {
       removedSinglechar.forEach((word) => underlineWordInEditor(quill, word));
 
       // Update the errors state
-      setErrors(removedSinglechar);
+      setWrongWords(removedSinglechar);
     }
 
     setIsLoading(false);

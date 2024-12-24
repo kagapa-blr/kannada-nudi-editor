@@ -1,3 +1,5 @@
+import BloomFilter from 'bloom-filter-new';
+
 const specialChars = "೧^l=F–೬B#yJwfz•+2umE<'!CxULvr]8o೦VNd0hH‘_>)- :sYQ7.g9n%W,G`1…\"&?6೯I”೮೨Tb“@೭೫ʼKX4೪[iDScM;*t’{5k/pa(PAeZ~O3R|j}q೩$";
 // Escape special characters for regex
 const escapedSpecialChars = specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
@@ -33,4 +35,15 @@ export const getWrongWords = async (quill, bloomFilter) => {
         console.error('Error checking word correctness:', error);
         return []; // Return an empty list on error
     }
+};
+
+
+export const loadBloomFilter = async (filePath, size, errorRate) => {
+  try {
+    const filter = await BloomFilter.fromFile(filePath, size, errorRate); // Create BloomFilter from file
+    return filter;
+  } catch (error) {
+    console.error('Error loading Bloom Filter:', error);
+    throw error; // Re-throw error for the calling function to handle
+  }
 };
