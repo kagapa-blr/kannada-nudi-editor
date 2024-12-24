@@ -15,7 +15,7 @@ import { useBloomFilter } from "../Context/bloom"; // Import the custom hook
 
 import LoadingComponent from "./utils/LoadingComponent";
 import { ignoreSingleChars, isSingleCharacter } from "../services/editorUtils";
-import { getSuggestions } from "../spellcheck/symspell";
+import SymSpellService from "../spellcheck/symspell";
 import { getWrongWords } from "../spellcheck/bloomFilter";
 
 const QuillEditor = () => {
@@ -35,6 +35,27 @@ const QuillEditor = () => {
   const { bloomFilter, loading, error } = useBloomFilter(); // Use the BloomFilter context
 
   const specialChars = "!@#$%^&*()_+[]{}|;:',.<>/?~-=\\\"";
+
+  const [symSpell, setSymSpell] = useState(null);
+
+  useEffect(() => {
+    const loadSymSpell = async () => {
+      const symSpellService = new SymSpellService();
+      const word_frequency_path = "/assets/word_frequency.txt";
+      try {
+        await symSpellService.loadSymSpell(
+          symSpellService,
+          word_frequency_path
+        );
+        setSymSpell(symSpellService);
+        console.log("Successfully loaded symSpellService");
+      } catch (error) {
+        console.error("Error loading dictionary:", error);
+      }
+    };
+
+    loadSymSpell();
+  }, []);
 
   const handleCheckWord = (word) => {
     if (bloomFilter) {
@@ -88,8 +109,6 @@ const QuillEditor = () => {
             // Update the errors state
             setErrors(removedSinglechar);
           }
-
-        
         } catch (error) {
           console.error("Error fetching wrong words:", error);
         }
@@ -119,12 +138,14 @@ const QuillEditor = () => {
         if (word) {
           if (errors.includes(word)) {
             try {
-              const suggestionList = await getSuggestions(word);
+              const suggestionList = await symSpell.getSuggestions(word);
 
+              console.log("suggestionList", suggestionList);
               setClickedWord(word);
+              // Assuming the suggestionList is an array of suggestion objects
               setSuggestions((prevSuggestions) => ({
                 ...prevSuggestions,
-                [word]: suggestionList,
+                [word]: suggestionList.map((suggestion) => suggestion.term), // Extracting only the 'term' from each suggestion
               }));
 
               const bounds = quill.getBounds(range.index);
