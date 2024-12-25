@@ -39,7 +39,7 @@ const QuillEditor = () => {
 
   // Load Bloom Filter on mount
   useEffect(() => {
-    const filePath = "/assets/collection.txt"; // Ensure the file path is correct
+    const filePath = "./assets/collection.txt"; // Ensure the file path is correct
     const size = 100000; // Define the size of the Bloom Filter
     const errorRate = 0.001; // Define the error rate
 
@@ -62,7 +62,7 @@ const QuillEditor = () => {
   useEffect(() => {
     const loadSymSpell = async () => {
       const symSpellService = new SymSpellService();
-      const word_frequency_path = "/assets/word_frequency.txt";
+      const word_frequency_path = "./assets/word_frequency.txt";
       try {
         await symSpellService.loadSymSpell(
           symSpellService,
