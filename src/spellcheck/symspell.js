@@ -34,12 +34,15 @@ class SymSpellService {
 
     // Get suggestions with maxEditDistance of 2
     const suggestions = this.symSpell.lookup(word, 2);
-    return suggestions.map(suggestion => ({
+
+    // Return the top 5 suggestions
+    return suggestions.slice(0, 5).map(suggestion => ({
       term: suggestion.term,
       distance: suggestion.distance,
       count: suggestion.count,
     }));
   }
+
 
 
 
