@@ -10,8 +10,7 @@ const Tooltip = ({
   replaceAll,
   ignoreAll,
 }) => {
-
-  // Kannada labels
+  // Kannada labels for localized messages
   const labels = {
     addToDictionary: "Add to Dictionary",
     replaceAll: "Replace All",
@@ -20,13 +19,14 @@ const Tooltip = ({
   };
 
   const tooltipRef = useRef(null); // Reference to the tooltip container
-  const isReplaceAllClickedRef = useRef(false); // Track if "Replace All" was clicked
+  const isReplaceAllClickedRef = useRef(false); // Tracks if "Replace All" was clicked
 
+  // Close tooltip when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (tooltipRef.current && !tooltipRef.current.contains(event.target)) {
         if (!isReplaceAllClickedRef.current) {
-          setClickedWord(null); // Close tooltip if "Replace All" was not clicked
+          setClickedWord(null); // Close tooltip only if "Replace All" was not clicked
         }
       }
     };
@@ -38,70 +38,73 @@ const Tooltip = ({
     };
   }, [setClickedWord]);
 
+  // Handle "Replace All" action
   const handleReplaceAll = () => {
-    isReplaceAllClickedRef.current = true; // Indicate "Replace All" was clicked
+    isReplaceAllClickedRef.current = true; // Flag to prevent tooltip closure
     replaceAll(); // Call the replaceAll function
   };
 
+  // Close the tooltip
   const handleCloseTooltip = () => {
-    setClickedWord(null); // Close tooltip on click
+    setClickedWord(null);
   };
 
   return (
     <div
       ref={tooltipRef}
-      className="absolute bg-white border border-green-900 p-2 mt-16 rounded shadow-lg z-40"
+      className="absolute bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-40"
       style={{
         top: tooltipPosition.top + 100,
         left: tooltipPosition.left,
-        minWidth: "150px",
+        minWidth: "200px",
       }}
     >
-      {/* Close button */}
-      <span
-        className="absolute top-0 right-2 cursor-pointer text-red-600 hover:bg-gray-600 text-3xl"
+      {/* Close Button */}
+      <button
+        className="absolute top-2 right-2 text-gray-600 hover:text-red-600"
         onClick={handleCloseTooltip}
-        aria-label="Close"
+        aria-label="Close Tooltip"
       >
         &times;
-      </span>
-      <div className="mt-3 space-y-0.5">
+      </button>
+
+      <div className="space-y-2 mt-4">
+        {/* Suggestions */}
         {suggestions[clickedWord]?.length > 0 ? (
           suggestions[clickedWord].map((suggestion, index) => (
             <div key={suggestion}>
               <div
-                className="cursor-pointer text-green-700 hover:bg-gray-200 text-sm hover:font-bold"
+                className="cursor-pointer text-blue-600 hover:bg-gray-100 text-sm px-2 py-1 rounded"
                 onClick={() => replaceWord(suggestion)}
               >
                 {suggestion}
               </div>
               {index < suggestions[clickedWord].length - 1 && (
-                <hr className="my-0 border-t border-gray-300" />
+                <hr className="border-gray-200" />
               )}
             </div>
           ))
         ) : (
-          <div className="text-gray-500 text-sm">
-            {labels.noSuggestions}
-          </div>
+          <div className="text-gray-500 text-sm">{labels.noSuggestions}</div>
         )}
-        <hr className="my-1 border-t border-gray-300" />
+
+        <hr className="border-gray-200" />
+
+        {/* Additional Actions */}
         <div
-          className="cursor-pointer text-black hover:bg-gray-200 text-sm hover:font-bold"
+          className="cursor-pointer text-gray-800 hover:bg-gray-100 text-sm px-2 py-1 rounded"
           onClick={addDictionary}
         >
           {labels.addToDictionary}
         </div>
-        <hr className="my-1 border-t border-gray-300" />
         <div
-          className="cursor-pointer text-black hover:bg-gray-200 text-sm hover:font-bold"
+          className="cursor-pointer text-gray-800 hover:bg-gray-100 text-sm px-2 py-1 rounded"
           onClick={handleReplaceAll}
         >
           {labels.replaceAll}
         </div>
-        <hr className="my-1 border-t border-gray-300" />
         <div
-          className="cursor-pointer text-black hover:bg-gray-200 text-sm hover:font-bold"
+          className="cursor-pointer text-gray-800 hover:bg-gray-100 text-sm px-2 py-1 rounded"
           onClick={ignoreAll}
         >
           {labels.ignoreAll}
