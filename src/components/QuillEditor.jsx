@@ -36,19 +36,19 @@ const QuillEditor = () => {
 
   const specialChars = "!@#$%^&*()_+[]{}|;:',.<>/?~-=\\\"";
   const [symSpell, setSymSpell] = useState(null);
-
+  const dictionaryPath = "./assets/collection.txt";
+  const word_frequency_path = "./assets/word_frequency.txt";
   // Load Bloom Filter on mount
   useEffect(() => {
-    const filePath = "./assets/collection.txt"; // Ensure the file path is correct
     const size = 100000; // Define the size of the Bloom Filter
     const errorRate = 0.001; // Define the error rate
 
-    console.log(`Starting to load Bloom Filter from: ${filePath}`);
+    console.log(`Starting to load Bloom Filter from: ${dictionaryPath}`);
     console.log(
       `Expected Bloom Filter size: ${size}, Error rate: ${errorRate}`
     );
 
-    loadBloomFilter(filePath, size, errorRate)
+    loadBloomFilter(dictionaryPath, size, errorRate)
       .then((filter) => {
         console.log("Bloom Filter loaded successfully.");
         setBloomFilter(filter); // Set the BloomFilter in state
@@ -62,7 +62,6 @@ const QuillEditor = () => {
   useEffect(() => {
     const loadSymSpell = async () => {
       const symSpellService = new SymSpellService();
-      const word_frequency_path = "./assets/word_frequency.txt";
       try {
         await symSpellService.loadSymSpell(
           symSpellService,
@@ -268,29 +267,30 @@ const QuillEditor = () => {
   const addDictionary = async () => {
     if (clickedWord) {
       try {
-        const response = true; //= await addWordToDictionary(cleanWord(clickedWord));
-        if (response) {
-          const quill = quillRef.current.getEditor();
-          const fullText = quill.getText();
-          let index = fullText.indexOf(clickedWord);
+        // const response = true; //= await addWordToDictionary(cleanWord(clickedWord));
+        // if (response) {
+        //   const quill = quillRef.current.getEditor();
+        //   const fullText = quill.getText();
+        //   let index = fullText.indexOf(clickedWord);
 
-          if (index !== -1) {
-            while (index !== -1) {
-              // Remove underline and reset color
-              quill.formatText(index, clickedWord.length, {
-                underline: false,
-                color: "",
-              });
-              index = fullText.indexOf(clickedWord, index + clickedWord.length);
-            }
-          }
+        //   if (index !== -1) {
+        //     while (index !== -1) {
+        //       // Remove underline and reset color
+        //       quill.formatText(index, clickedWord.length, {
+        //         underline: false,
+        //         color: "",
+        //       });
+        //       index = fullText.indexOf(clickedWord, index + clickedWord.length);
+        //     }
+        //   }
 
-          setWrongWords(wrongwords.filter((word) => word !== clickedWord));
-          setClickedWord(null);
-          console.log(response);
-        } else {
-          console.error("Failed to add the word to the dictionary.");
-        }
+        //   setWrongWords(wrongwords.filter((word) => word !== clickedWord));
+        //   setClickedWord(null);
+        //   console.log(response);
+        // } else {
+        //   console.error("Failed to add the word to the dictionary.");
+        // }
+        console.log("add to dictionary called", clickedWord);
       } catch (error) {
         console.error("Error adding word to dictionary:", error);
       }
@@ -391,10 +391,7 @@ const QuillEditor = () => {
   return (
     <div className="editor-container">
       <div className="editor-toolbar-container">
-        <EditorToolbar
-          quillRef={quillRef} // Pass the quill reference to the toolbar
-          setPageSize={setPageSize}
-        />
+        <EditorToolbar quillRef={quillRef} setPageSize={setPageSize} />
       </div>
       <div className="editor-wrapper">
         <div className="relative">

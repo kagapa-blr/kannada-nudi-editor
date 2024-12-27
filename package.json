@@ -1,14 +1,22 @@
 {
   "name": "kannada-nudi",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A Kannada language tool application.",
+  "author": "ravi.ravipawar17@gmail.com",
+  "license": "MIT",
   "type": "module",
+  "main": "./dist/electron.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron": "electron ./dist/electron.js"
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "electron": "electron ./dist/electron.js",
+    "clean": "rm -rf out dist"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -17,8 +25,7 @@
     "@mui/material": "^6.2.0",
     "@tailwindcss/forms": "^0.5.9",
     "bloom-filter-new": "^1.0.2",
-    "electron": "^33.2.1",
-    "install": "^0.13.0",
+    "electron-squirrel-startup": "^1.0.1",
     "mammoth": "^1.8.0",
     "node-symspell-new": "^0.1.6",
     "quill-resize-image": "^1.0.5",
@@ -27,11 +34,20 @@
     "react-quill-new": "^3.3.3"
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.6.0",
+    "@electron-forge/maker-deb": "^7.6.0",
+    "@electron-forge/maker-rpm": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.6.0",
+    "@electron-forge/maker-zip": "^7.6.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
+    "@electron-forge/plugin-fuses": "^7.6.0",
+    "@electron/fuses": "^1.8.0",
     "@eslint/js": "^9.15.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "electron": "^33.2.1",
     "eslint": "^9.15.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
@@ -40,5 +56,8 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "vite": "^6.0.1"
+  },
+  "config": {
+    "forge": "./forge.config.js"
   }
 }
