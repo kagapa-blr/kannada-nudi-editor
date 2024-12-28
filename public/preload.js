@@ -1,9 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose file operations to the renderer process
+// Expose safe APIs to the renderer
 contextBridge.exposeInMainWorld('electron', {
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
-  readFile: (filePath) => ipcRenderer.invoke('file:read', filePath),
-  saveFile: (filePath, content) => ipcRenderer.invoke('file:save', filePath, content),
-  saveFileAs: (content) => ipcRenderer.invoke('dialog:saveFileAs', content), // New function to handle Save As
+  saveFileAs: (content) => ipcRenderer.invoke('dialog:saveFileAs', content),
+  saveFile: (filePath, content) => ipcRenderer.invoke('dialog:saveFile', filePath, content),
+  readFile: (filePath) => ipcRenderer.invoke('file:readFile', filePath),
+  appendContent: (filePath, content) => ipcRenderer.invoke('file:appendContent', filePath, content), // New append method
 });

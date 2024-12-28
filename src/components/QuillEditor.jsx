@@ -33,11 +33,55 @@ const QuillEditor = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [bloomFilter, setBloomFilter] = useState(null); // State to store BloomFilter
+  const [currentFilePath, setCurrentFilePath] = useState("");
 
   const specialChars = "!@#$%^&*()_+[]{}|;:',.<>/?~-=\\\"";
   const [symSpell, setSymSpell] = useState(null);
-  const dictionaryPath = "./assets/collection.txt";
+  const dictionaryPath = "dist/assets/collection.txt";
   const word_frequency_path = "./assets/word_frequency.txt";
+
+  // Open file handler
+  const openFile = async () => {
+    const filePath = await window.electron.openFile();
+    if (filePath) {
+      setCurrentFilePath(filePath);
+      const content = await window.electron.readFile(filePath);
+      // You can use this content to populate your editor or UI
+    }
+  };
+
+  // Save file handler
+  const saveFile = async () => {
+    if (currentFilePath) {
+      await window.electron.saveFile(currentFilePath, content);
+      alert("File saved successfully!");
+    } else {
+      const filePath = await window.electron.saveFileAs(content);
+      if (filePath) {
+        setCurrentFilePath(filePath);
+        alert("File saved successfully!");
+      }
+    }
+  };
+
+  // Append file handler (takes file path and content to append)
+  const appendToFile = async (filePath, contentToAppend) => {
+    console.log("filepaht: ", filePath, "contentToAppend: ", contentToAppend);
+    if (filePath && contentToAppend) {
+      const success = await window.electron.appendContent(
+        filePath,
+        contentToAppend+"\n"
+      );
+      if (success) {
+        alert("Content appended successfully!");
+      } else {
+        alert("Failed to append content.");
+      }
+    } else {
+      alert("Please provide both the file path and content to append.");
+    }
+  };
+
   // Load Bloom Filter on mount
   useEffect(() => {
     const size = 100000; // Define the size of the Bloom Filter
@@ -291,6 +335,7 @@ const QuillEditor = () => {
         //   console.error("Failed to add the word to the dictionary.");
         // }
         console.log("add to dictionary called", clickedWord);
+        appendToFile(dictionaryPath, clickedWord);
       } catch (error) {
         console.error("Error adding word to dictionary:", error);
       }

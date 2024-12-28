@@ -1,70 +1,94 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const fs = require('fs')
-const path = require('path')
-const url = require('url')
-
+const fs = require('fs');
+const path = require('path');
 
 let win;
 
-// Create a new window
 function createWindow() {
   win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),  // Ensure the correct path for preload.js
-      nodeIntegration: false,
-      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'), // Preload script
+      nodeIntegration: false, // Disable Node.js integration in renderer
+      contextIsolation: true, // Isolate context for security
     },
   });
 
-  // Load the index.html of the app
-  win.loadFile(path.join(__dirname, 'index.html'));  // Use __dirname to load index.html from the correct path
+  win.loadFile(path.join(__dirname, 'index.html'));
 }
 
-// Handle opening a file
+// Open file dialog
 ipcMain.handle('dialog:openFile', async () => {
-  const result = await dialog.showOpenDialog(win, {
+  const result = await dialog.showOpenDialog({
     properties: ['openFile'],
   });
-  return result.filePaths[0];
+  if (result.filePaths.length > 0) {
+    return result.filePaths[0]; // Return the file path
+  }
+  return null;
 });
 
-// Handle reading a file
-ipcMain.handle('file:read', async (event, filePath) => {
-  const data = fs.readFileSync(filePath, 'utf-8');
-  return data;
+// Save file dialog
+ipcMain.handle('dialog:saveFileAs', async (event, content) => {
+  const result = await dialog.showSaveDialog({
+    filters: [{ name: 'Text Files', extensions: ['txt'] }],
+  });
+  if (result.filePath) {
+    fs.writeFileSync(result.filePath, content); // Write content to file
+    return result.filePath;
+  }
+  return null;
 });
 
-// Handle saving a file
-ipcMain.handle('file:save', async (event, filePath, content) => {
-  fs.writeFileSync(filePath, content, 'utf-8');
+// Save existing file
+ipcMain.handle('dialog:saveFile', (event, filePath, content) => {
+  fs.writeFileSync(filePath, content); // Save content to the given file
   return true;
 });
 
-// Handle Save As (Save File Dialog)
-ipcMain.handle('dialog:saveFileAs', async (event, content) => {
-  const result = await dialog.showSaveDialog(win, {
-    defaultPath: 'untitled.txt', // Default filename
-  });
-  if (result.filePath) {
-    // Save the file at the specified location
-    fs.writeFileSync(result.filePath, content, 'utf-8');
-    return result.filePath;  // Return the file path where the content was saved
+// Read file content
+ipcMain.handle('file:readFile', (event, filePath) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return content;
+  } catch (error) {
+    console.error('Error reading file:', error);
+    return null;
   }
-  return null;  // If the user cancels the save dialog
 });
+
+
+
+
+
+// Append content to a file (with directory check)
+ipcMain.handle('file:appendContent', (event, filePath, content) => {
+  try {
+    // Resolve the absolute path for the dictionary file
+    const absolutePath = path.resolve(filePath);
+
+    // Ensure the directory exists before appending to the file
+    const dir = path.dirname(absolutePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true }); // Create the directory if it doesn't exist
+    }
+
+    // Append content to the file
+    fs.appendFileSync(absolutePath, content);
+    return true; // Indicate success
+  } catch (error) {
+    console.error('Error appending to file:', error);
+    return false; // Indicate failure
+  }
+});
+
+
+
+
 
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });
