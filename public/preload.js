@@ -1,13 +1,9 @@
-// preload.js
+const { contextBridge, ipcRenderer } = require('electron');
 
-
-window.addEventListener('DOMContentLoaded', () => {
-  const replaceText = (selector, text) => {
-    const element = document.getElementById(selector)
-    if (element) element.innerText = text
-  }
-
-  for (const dependency of ['chrome', 'node', 'electron']) {
-    replaceText(`${dependency}-version`, process.versions[dependency])
-  }
-})
+// Expose file operations to the renderer process
+contextBridge.exposeInMainWorld('electron', {
+  openFile: () => ipcRenderer.invoke('dialog:openFile'),
+  readFile: (filePath) => ipcRenderer.invoke('file:read', filePath),
+  saveFile: (filePath, content) => ipcRenderer.invoke('file:save', filePath, content),
+  saveFileAs: (content) => ipcRenderer.invoke('dialog:saveFileAs', content), // New function to handle Save As
+});

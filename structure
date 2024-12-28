@@ -1,0 +1,37 @@
+kannada-nudi/
+├── README.md                    # Project description
+├── eslint.config.js              # ESLint configuration file
+├── postcss.config.js             # PostCSS configuration file
+├── tailwind.config.js            # Tailwind CSS configuration file
+├── src/                          # Source code directory
+│   ├── App.jsx                   # Main app component
+│   ├── constants/                # Directory for constants
+│   ├── index.css                 # Global CSS styles
+│   ├── spellcheck/               # Spellcheck related files
+│   │   ├── tooltipfunctions.js   # Functions related to tooltips
+│   │   ├── symspell.js           # Symmetric spell checker logic
+│   │   └── bloomFilter.js        # Bloom filter implementation for spellcheck
+│   ├── components/               # UI components
+│   │   ├── toolbar/              # Toolbar components
+│   │   ├── editor/               # Editor related components
+│   │   ├── utils/                # Utility components
+│   │   ├── Page.jsx              # Page component
+│   │   ├── SpellCheckEditor.jsx  # Spellcheck editor component
+│   │   └── QuillEditor.jsx       # Quill editor component
+│   ├── Context/                  # React context files
+│   ├── main.jsx                  # Main entry point for React app
+│   └── services/                 # Directory for services (e.g., API calls, data handling)
+│       ├── fileOperations.js     # File operation logic
+│       ├── editorService.js      # Editor-related services
+│       └── editorUtils.js        # Utility functions for the editor
+├── public/                       # Public assets and files
+│   ├── vite.svg                  # Vite logo or related asset
+│   ├── assets/                   # Additional static assets (images, icons, etc.)
+│   ├── fileManage.js             # File management related logic
+│   ├── preload.js                # Preload script for Electron
+│   └── electron.js               # Electron main process code
+├── vite.config.js                # Vite build configuration
+├── forge.config.js               # Electron Forge configuration
+├── package.json                  # Project dependencies and scripts
+├── package-lock.json             # Lock file for consistent dependency versions
+└── node_modules/                 # Installed node modules

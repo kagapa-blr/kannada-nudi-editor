@@ -1,18 +1,45 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import fs from 'fs';
+import path from 'path';
+import { dialog } from 'electron';
+// Function to open a file dialog and get the file path
+export const openFile = () => {
+  return new Promise((resolve, reject) => {
 
-/**
- * Read and append content to a file.
- * @param {string} filePath - The file path.
- * @param {string} contentToAppend - Content to append.
- * @returns {string} Success message.
- */
-export function readAndAppendFile(filePath, contentToAppend) {
-  try {
-    const existingContent = existsSync(filePath) ? readFileSync(filePath, 'utf8') : '';
-    const updatedContent = existingContent + contentToAppend;
-    writeFileSync(filePath, updatedContent, 'utf8');
-    return 'File updated successfully!';
-  } catch (error) {
-    throw new Error(`Failed to update the file: ${error.message}`);
-  }
-}
+    dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Text Files', extensions: ['txt'] }],
+    }).then(result => {
+      if (result.canceled) {
+        resolve(null);
+      } else {
+        resolve(result.filePaths[0]);
+      }
+    }).catch(reject);
+  });
+};
+
+// Function to read the file content
+export const readFile = (filePath) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filePath, 'utf-8', (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+// Function to save file content
+export const saveFile = (filePath, content) => {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(filePath, content, 'utf-8', (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(true);
+      }
+    });
+  });
+};

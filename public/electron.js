@@ -1,52 +1,70 @@
-import { app, BrowserWindow } from 'electron';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import path from 'path';
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const fs = require('fs')
+const path = require('path')
+const url = require('url')
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-const createWindow = () => {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
+let win;
+
+// Create a new window
+function createWindow() {
+  win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: join(__dirname, 'preload.js'), // Ensure preload script path is correct
+      preload: path.join(__dirname, 'preload.js'),  // Ensure the correct path for preload.js
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   });
 
-  // Determine the path to the index.html
-  const isDev = !app.isPackaged; // Check if the app is running in development mode
-  let indexPath;
+  // Load the index.html of the app
+  win.loadFile(path.join(__dirname, 'index.html'));  // Use __dirname to load index.html from the correct path
+}
 
-  if (isDev) {
-    // Development mode: use the direct file path
-    indexPath = join(__dirname, '../dist/index.html');
-  } else {
-    // Production mode: use the ASAR archive and resources path
-    indexPath = join(process.resourcesPath, 'app.asar', 'dist', 'index.html');
-  }
-
-  console.log('Index path:', indexPath);
-
-  // Load the index.html file
-  mainWindow.loadURL(`file://${indexPath}`);
-
-  // Uncomment to open Developer Tools in development mode
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
-};
-
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// Handle opening a file
+ipcMain.handle('dialog:openFile', async () => {
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openFile'],
   });
+  return result.filePaths[0];
 });
 
+// Handle reading a file
+ipcMain.handle('file:read', async (event, filePath) => {
+  const data = fs.readFileSync(filePath, 'utf-8');
+  return data;
+});
+
+// Handle saving a file
+ipcMain.handle('file:save', async (event, filePath, content) => {
+  fs.writeFileSync(filePath, content, 'utf-8');
+  return true;
+});
+
+// Handle Save As (Save File Dialog)
+ipcMain.handle('dialog:saveFileAs', async (event, content) => {
+  const result = await dialog.showSaveDialog(win, {
+    defaultPath: 'untitled.txt', // Default filename
+  });
+  if (result.filePath) {
+    // Save the file at the specified location
+    fs.writeFileSync(result.filePath, content, 'utf-8');
+    return result.filePath;  // Return the file path where the content was saved
+  }
+  return null;  // If the user cancels the save dialog
+});
+
+app.whenReady().then(createWindow);
+
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 });

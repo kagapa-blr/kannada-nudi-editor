@@ -5,7 +5,7 @@
   "description": "A Kannada language tool application.",
   "author": "ravi.ravipawar17@gmail.com",
   "license": "MIT",
-  "type": "module",
+
   "main": "./dist/electron.js",
   "scripts": {
     "dev": "vite",
