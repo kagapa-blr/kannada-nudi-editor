@@ -1,6 +1,6 @@
 import os
 import time
-
+import sys
 import mammoth
 import pypandoc
 from PyQt5 import QtPrintSupport, QtGui

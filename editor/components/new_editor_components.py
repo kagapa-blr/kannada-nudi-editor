@@ -24,16 +24,55 @@ class NewPageLayoutDialog(QDialog):
 
         size_label = QLabel("Page Size:", self)
         self.size_combo = QComboBox(self)
-        self.size_combo.addItems(["A4: 210 x 297 mm",
-                                  "A3: 297 x 420 mm",
-                                  "A5: 148 x 210 mm",
-                                  "B4: 250 x 353 mm",
-                                  "B5: 176 x 250 mm",
-                                  "Letter: 216 x 279 mm",
-                                  "Legal: 216 x 356 mm",
-                                  "Tabloid: 279 x 432 mm",
-                                  "Executive: 184 x 267 mm",
-                                  "Custom"])
+        self.size_combo.addItems([
+            "A0: 841 x 1189 mm",
+            "A1: 594 x 841 mm",
+            "A2: 420 x 594 mm",
+            "A3: 297 x 420 mm",
+            "A4: 210 x 297 mm",
+            "A5: 148 x 210 mm",
+            "A6: 105 x 148 mm",
+            "A7: 74 x 105 mm",
+            "A8: 52 x 74 mm",
+            "A9: 37 x 52 mm",
+            "A10: 26 x 37 mm",
+            "B0: 1000 x 1414 mm",
+            "B1: 707 x 1000 mm",
+            "B2: 500 x 707 mm",
+            "B3: 353 x 500 mm",
+            "B4: 250 x 353 mm",
+            "B5: 176 x 250 mm",
+            "B6: 125 x 176 mm",
+            "B7: 88 x 125 mm",
+            "B8: 62 x 88 mm",
+            "B9: 44 x 62 mm",
+            "B10: 31 x 44 mm",
+            "C0: 917 x 1297 mm",
+            "C1: 648 x 917 mm",
+            "C2: 458 x 648 mm",
+            "C3: 324 x 458 mm",
+            "C4: 229 x 324 mm",
+            "C5: 162 x 229 mm",
+            "C6: 114 x 162 mm",
+            "C7: 81 x 114 mm",
+            "C8: 57 x 81 mm",
+            "C9: 40 x 57 mm",
+            "C10: 28 x 40 mm",
+            "Letter: 216 x 279 mm",
+            "Legal: 216 x 356 mm",
+            "Tabloid: 279 x 432 mm",
+            "Ledger: 432 x 279 mm",
+            "Executive: 184 x 267 mm",
+            "Statement: 140 x 216 mm",
+            "Folio: 210 x 330 mm",
+            "Quarto: 215 x 275 mm",
+            "Government Letter: 203 x 267 mm",
+            "Government Legal: 216 x 330 mm",
+            "Postcard: 100 x 148 mm",
+            "Double Postcard: 148 x 200 mm",
+            "DL (Envelope): 110 x 220 mm",
+            "Custom"
+        ])
 
         custom_layout = QHBoxLayout()
         self.width_spinbox = QSpinBox(self)
@@ -62,6 +101,8 @@ class NewPageLayoutDialog(QDialog):
         button_box.rejected.connect(self.reject)
 
         layout.addWidget(button_box)
+
+
 
     def onSizeComboChanged(self, index):
         if self.size_combo.currentText() == "Custom":
