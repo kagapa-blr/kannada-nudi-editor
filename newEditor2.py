@@ -1,5 +1,4 @@
 import os
-import subprocess
 import time
 
 import mammoth
@@ -39,17 +38,24 @@ filename = os.path.splitext(os.path.basename(__file__))[0]
 logger = setup_logger(filename)
 
 
+import subprocess
+import os
+
 def start_background_exe():
-    exe_path = r"resources\keyboardDriver\kannadaKeyboard.exe"  # Path to your executable relative to the current directory
-    # exe_path = r"resources\keyboardDriver\testing.exe"
+    if sys.platform.startswith("linux"):
+        print("Linux system detected. The executable will not be started.")
+        return
+
+    exe_path = os.path.join("resources", "keyboardDriver", "kannadaKeyboard.exe")  # OS-independent path handling
+
     try:
-        # Use subprocess.Popen to start the executable in the background
-        print("kannada Nudi Keyboard loaded and running in background")
+        print("Kannada Nudi Keyboard loaded and running in background")
         subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          start_new_session=True)
-
     except Exception as e:
         print(f"Error starting background exe: {e}")
+
+
 
 class NewTextEditor(QMainWindow):
     def __init__(self):
@@ -75,7 +81,7 @@ class NewTextEditor(QMainWindow):
         self.zoom_slider.initZoomSlider(self)
 
     def initUI(self):
-        # start_background_exe()
+        start_background_exe()
         self.actions.createActions()
         self.actions.createMenus()
         self.actions.createToolbars()
