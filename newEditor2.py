@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from docx import Document
 
 from editor.actions.editor_actions import EditorActions
+from editor.actions.file_operations import FileOperation
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customize_image import ImageEditDialog
@@ -75,6 +76,7 @@ class NewTextEditor(QMainWindow):
         self.error_dialog = CommonDialogs()
         self.current_zoom_factor = 1.0  # Default zoom factor
         self.initUI()
+        self.file_ops = FileOperation(self)
 
         # Initialize and add ZoomSlider
         self.zoom_slider = ZoomSlider()
@@ -205,58 +207,7 @@ class NewTextEditor(QMainWindow):
         self.addNewPage()
 
     def openFile(self):
-        options = QFileDialog.Options()
-        self.filename, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open File",
-            "",
-            "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
-            options=options
-        )
-        if self.filename:
-            content = ""
-            file_extension = self.filename.split('.')[-1].lower()
-
-            try:
-                if file_extension == 'txt':
-                    with open(self.filename, 'r', encoding="utf-8") as file:
-                        content = file.read()
-                elif file_extension == 'docx':
-                    with open(self.filename, "rb") as docx_file:
-                        result = mammoth.convert_to_html(docx_file)
-                        content = result.value  # The converted HTML
-                elif file_extension == 'rtf':
-                    content = pypandoc.convert_file(self.filename, 'plain', format='rtf')
-                else:
-                    raise ValueError("Unsupported file format")
-
-                # Split content into chunks of approximately 490 words
-                words = content.split()
-                word_limit = 490
-                current_word_count = 0
-                current_page_content = []
-                for word in words:
-                    current_page_content.append(word)
-                    current_word_count += 1
-                    if current_word_count >= word_limit:
-                        self.addPageWithContent(' '.join(current_page_content))
-                        current_page_content = []
-                        current_word_count = 0
-
-                # Add any remaining content to a new page if not empty
-                if current_page_content:
-                    self.addPageWithContent(' '.join(current_page_content))
-
-            except Exception as e:
-                self.error_dialog.show_error_popup(str(e))
-
-            # Update window title and remove blank pages
-            self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
-            self.removeBlankPages()
-            self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
-
-            # Set the current file path
-            self.current_file_path = self.filename
+        self.file_ops.handle_open_file()
 
     def saveFile(self):
         if not self.current_file_path:
