@@ -210,70 +210,11 @@ class NewTextEditor(QMainWindow):
         self.file_ops.handle_open_file()
 
     def saveFile(self):
-        if not self.current_file_path:
-            options = QFileDialog.Options()
-            self.current_file_path, _ = QFileDialog.getSaveFileName(
-                self, "Save File", "",
-                "Text Files (*.txt);;Word Files (*.docx);;Rich Text Format (*.rtf);;PDF Files (*.pdf);;All Files (*)",
-                options=options
-            )
-
-        if self.current_file_path:
-            content = self.pages[0].editor.toPlainText()
-            try:
-                if self.current_file_path.endswith('.txt'):
-                    with open(self.current_file_path, 'w', encoding='utf-8') as file:
-                        file.write(content)
-                elif self.current_file_path.endswith('.docx'):
-                    doc = Document()
-                    doc.add_paragraph(content)
-                    doc.save(self.current_file_path)
-                elif self.current_file_path.endswith('.rtf'):
-                    pypandoc.convert_text(content, 'rtf', format='md', outputfile=self.current_file_path,
-                                          encoding='utf-8')
-                elif self.current_file_path.endswith('.pdf'):
-                    printer = QPrinter(QPrinter.HighResolution)
-                    printer.setOutputFormat(QPrinter.PdfFormat)
-                    printer.setOutputFileName(self.current_file_path)
-                    doc = QTextDocument()
-                    doc.setPlainText(content)
-                    doc.print_(printer)
-                else:
-                    self.error_dialog.showError("Unsupported file format")
-            except Exception as e:
-                self.error_dialog.show_error_popup(str(e))
+        content = "\n\n".join([page.editor.toPlainText() for page in self.pages])  # Get text from all pages
+        self.file_ops.handle_save_file(content=content)
 
     def saveAsFile(self):
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save File", "",
-            "Text Files (*.txt);;Word Files (*.docx);;Rich Text Format (*.rtf);;PDF Files (*.pdf);;All Files (*)",
-            options=options
-        )
-
-        if file_path:
-            content = self.pages[0].editor.toPlainText()
-            try:
-                if file_path.endswith('.txt'):
-                    with open(file_path, 'w', encoding='utf-8') as file:
-                        file.write(content)
-                elif file_path.endswith('.docx'):
-                    doc = Document()
-                    doc.add_paragraph(content)
-                    doc.save(file_path)
-                elif file_path.endswith('.rtf'):
-                    pypandoc.convert_text(content, 'rtf', format='md', outputfile=file_path, encoding='utf-8')
-                elif file_path.endswith('.pdf'):
-                    printer = QPrinter(QPrinter.HighResolution)
-                    printer.setOutputFormat(QPrinter.PdfFormat)
-                    printer.setOutputFileName(file_path)
-                    doc = QTextDocument()
-                    doc.setPlainText(content)
-                    doc.print_(printer)
-                else:
-                    self.error_dialog.showError("Unsupported file format")
-            except Exception as e:
-                self.error_dialog.show_error_popup(str(e))
+        self.file_ops.handle_save_as_file()
 
     def openAsciiFile(self):
         options = QFileDialog.Options()
@@ -824,6 +765,7 @@ class NewTextEditor(QMainWindow):
         wc.getText()
 
         wc.show()
+
 
 
 if __name__ == "__main__":
