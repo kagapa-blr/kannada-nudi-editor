@@ -321,11 +321,7 @@ class NewTextEditor(QMainWindow):
         self.editor_windows.append(new_editor)  # Keep a reference to the new editor window
 
     def page_layout_size(self):
-        dialog = NewPageLayoutDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            width, height = dialog.getPageSize()
-            for page in self.pages:
-                page.setPageSize(width, height)
+        self.toolbar_handler.handle_page_layout_size()
 
     def undo(self):
         if self.current_page:
@@ -336,22 +332,14 @@ class NewTextEditor(QMainWindow):
             self.current_page.editor.redo()
 
     def insertTable(self):
-        if self.current_page:
-            table_dialog = Table(self.current_page.editor)  # Pass the QTextEdit widget to Table
-            table_dialog.exec_()
-
+        self.toolbar_handler.handle_insert_table()
     def find_replace(self):
-        if self.current_page:
-            find = Find(self.current_page.editor)  # Pass the QTextEdit widget to Table
-            find.exec_()
+        self.toolbar_handler.handle_find_replace()
 
     def choose_image(self):
         self.toolbar_handler.handle_choose_image()
     def insertEditedImage(self, edited_image):
-        if self.current_page:
-            cursor = self.current_page.editor.textCursor()
-            cursor.insertImage(edited_image)
-
+        self.toolbar_handler.handle_insert_edited_image(edited_image)
     def sortByAction(self):
         self.toolbar_handler.handle_sort_by_action()
     def toggle_speech_to_text(self):

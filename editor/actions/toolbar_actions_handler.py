@@ -7,10 +7,13 @@ from PyQt5.QtWidgets import QColorDialog, QDialog, QMessageBox, QApplication, QF
 
 from editor.components.customize_image import ImageEditDialog
 from editor.components.format_content import SpacingDialog
+from editor.components.new_editor_components import NewPageLayoutDialog
 from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
 from spellcheck.bloom_filter import start_bloom
 from utils.corpus_clean import get_clean_words_for_dictionary
+from utils.find import Find
 from utils.sort_by import SortDialog
+from utils.table import Table
 
 
 class ToolbarHandler:
@@ -334,6 +337,32 @@ class ToolbarHandler:
             if self.editor.speech_thread:
                 self.editor.speech_thread.stop()
                 self.editor.speech_thread = None
+
+    def handle_page_layout_size(self):
+        dialog = NewPageLayoutDialog(self.editor)
+        if dialog.exec_() == QDialog.Accepted:
+            width, height = dialog.getPageSize()
+            for page in self.editor.pages:
+                page.setPageSize(width, height)
+
+    def handle_insert_table(self):
+        if self.editor.current_page:
+            table_dialog = Table(self.editor.current_page.editor)  # Pass the QTextEdit widget to Table
+            table_dialog.exec_()
+
+    def handle_insert_edited_image(self, edited_image):
+        if self.editor.current_page:
+            cursor = self.editor.current_page.editor.textCursor()
+            cursor.insertImage(edited_image)
+
+    def handle_find_replace(self):
+        if self.editor.current_page:
+            find = Find(self.editor.current_page.editor)  # Pass the QTextEdit widget to Table
+            find.exec_()
+
+
+
+
 
 
 
