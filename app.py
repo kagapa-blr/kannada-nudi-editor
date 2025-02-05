@@ -4,6 +4,7 @@ import psutil
 from PyQt5.QtWidgets import QApplication
 #from editor.nudi_editor import TextEditor
 from newEditor2 import NewTextEditor
+from utils.util import remove_spaces_in_filenames
 
 
 #from editor.nudi_editor_backup import TextEditorBackup
@@ -19,6 +20,7 @@ def stop_background_exe():
         print(f"Error stopping background exe: {e}")
 
 def editor():
+    remove_spaces_in_filenames(folder_path='./resources/static/Nudi_fonts')
     app = QApplication(sys.argv)
     editor = NewTextEditor()
     #editor = TextEditorBackup()
