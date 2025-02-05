@@ -283,116 +283,23 @@ class NewTextEditor(QMainWindow):
         self.toolbar_handler.handle_dedent()
 
     def bulletList(self):
-
-        cursor = self.current_page.editor.textCursor()
-
-        # Insert bulleted list
-        cursor.insertList(QTextListFormat.ListDisc)
+        self.toolbar_handler.handle_bullet_list()
 
     def numberList(self):
-
-        cursor = self.current_page.editor.textCursor()
-
-        # Insert list with numbers
-        cursor.insertList(QTextListFormat.ListDecimal)
+        self.toolbar_handler.handle_number_list()
 
     def highlight(self):
-
-        color = QColorDialog.getColor()
-
-        self.current_page.editor.setTextBackgroundColor(color)
+        self.toolbar_handler.handle_highlight()
 
     def setSpacing(self):
-        if not self.current_page or not self.current_page.editor:
-            print("Error: current_page or editor is not valid.")
-            return
-
-        dialog = SpacingDialog(self)
-        dialog.setWindowTitle('Line & Paragraph Spacing')
-
-        # Retrieve current font pixel size if available
-        current_font = self.current_page.editor.currentFont()
-        if current_font:
-            dialog.customLineSpacingSpinBox.setValue(current_font.pixelSize())
-
-        dialog.beforeParagraphSpinBox.setValue(0)
-        dialog.afterParagraphSpinBox.setValue(0)
-
-        if dialog.exec_() == QDialog.Accepted:
-            dialog.applySettings()
+        self.toolbar_handler.handle_set_spacing()
 
     def setLineSpacing(self, value):
-        cursor = self.current_page.editor.textCursor()
-        fmt = cursor.blockFormat()
-        fmt.setLineHeight(value, QTextBlockFormat.LineDistanceHeight)
-        cursor.setBlockFormat(fmt)
-
+        self.toolbar_handler.handle_set_line_spacing(value)
     # ----------------------------------------------------------------FORMAT functions ----------------------------------------------------------------
 
     def refresh_recheck(self):
-        self.total_pages = 0
-        total_words = 0
-        total_incorrect_words = 0
-        start_time = time.time()
-
-        for page in self.pages:
-            self.total_pages += 1
-            if not page or not page.editor:
-                print("Page or editor is not valid.")
-                continue
-
-            # Retrieve plain text from current page's editor
-            plain_text = page.editor.toPlainText()
-
-            # Count total words
-            words = plain_text.split()
-            total_words += len(words)
-
-            # Process text content for spell checking
-            content_for_bloom = [get_clean_words_for_dictionary(word) for word in words if len(word) > 1]
-            wrong_words = start_bloom(content_for_bloom)
-
-            # Count total incorrect words
-            total_incorrect_words += len(wrong_words)
-
-            # Get the existing HTML content to preserve formatting and alignment
-            highlighted_content = page.editor.toHtml()
-
-            # Wrap the incorrect words with an inline style for red underline
-            for word in wrong_words:
-                # Use inline styling for red underline
-                highlighted_content = highlighted_content.replace(word,
-                                                                  f'<span style="text-decoration: underline; text-decoration-color: red;">{word}</span>')
-
-            # Update the editor with the highlighted content
-            page.editor.setHtml(highlighted_content)
-
-        end_time = time.time()
-        spellcheck_time = end_time - start_time
-
-        # Show info dialog with the requested information and parent window's logo
-        info_msg = QMessageBox()
-        info_msg.setWindowTitle("ವರದಿ ಪರಿಶೀಲನೆ ಮಾಹಿತಿ")
-        info_msg.setText(f"ಒಟ್ಟು ಪದಗಳ ಸಂಖ್ಯೆ : {total_words}\n"
-                         f"ತಪ್ಪು ಪದಗಳ ಸಂಖ್ಯೆ : {total_incorrect_words}\n"
-                         f"ಕಾಗುಣಿತ ಪರಿಶೀಲನೆಗಾಗಿ ತೆಗೆದುಕೊಂಡ ಒಟ್ಟು ಸಮಯ : {spellcheck_time:.2f} ಸೆಕೆಂಡುಗಳು")
-        info_msg.setIcon(QMessageBox.Information)
-
-        # Set the parent window's icon for the message box
-        parent_icon = self.windowIcon()
-        if parent_icon:
-            info_msg.setWindowIcon(parent_icon)
-
-        info_msg.exec_()
-
-        self.removeBlankPages()
-        self.statusBar().showMessage("ಒಟ್ಟು ಪುಟಗಳು: " + str(self.total_pages))
-
-        # Automatically close the message box after 5 seconds
-        QTimer.singleShot(5000, info_msg.close)
-
-        # Ensure the application processes the event loop to display the message box
-        QApplication.processEvents()
+        self.toolbar_handler.handle_refresh_recheck()
 
     def zoomIn(self):
         if self.current_page:

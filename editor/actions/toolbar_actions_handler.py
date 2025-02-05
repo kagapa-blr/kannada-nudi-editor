@@ -1,5 +1,12 @@
-from PyQt5.QtGui import QFont, QTextCharFormat, QTextCursor
-from PyQt5.QtWidgets import QColorDialog
+import time
+
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QFont, QTextCharFormat, QTextCursor, QTextListFormat, QTextBlockFormat
+from PyQt5.QtWidgets import QColorDialog, QDialog, QMessageBox, QApplication
+
+from editor.components.format_content import SpacingDialog
+from spellcheck.bloom_filter import start_bloom
+from utils.corpus_clean import get_clean_words_for_dictionary
 
 
 class ToolbarHandler:
@@ -128,3 +135,105 @@ class ToolbarHandler:
                     if char != " ":
                         break
                     cursor.deleteChar()
+
+    def handle_bullet_list(self):
+        cursor = self.editor.current_page.editor.textCursor()
+        # Insert bulleted list
+        cursor.insertList(QTextListFormat.ListDisc)
+
+    def handle_number_list(self):
+        cursor = self.editor.current_page.editor.textCursor()
+        # Insert list with numbers
+        cursor.insertList(QTextListFormat.ListDecimal)
+
+    def handle_highlight(self):
+        color = QColorDialog.getColor()
+        self.editor.current_page.editor.setTextBackgroundColor(color)
+
+    def handle_set_spacing(self):
+        if not self.editor.current_page or not self.editor.current_page.editor:
+            print("Error: current_page or editor is not valid.")
+            return
+
+        dialog = SpacingDialog(self.editor)
+        dialog.setWindowTitle('Line & Paragraph Spacing')
+
+        # Retrieve current font pixel size if available
+        current_font = self.editor.current_page.editor.currentFont()
+        if current_font:
+            dialog.customLineSpacingSpinBox.setValue(current_font.pixelSize())
+
+        dialog.beforeParagraphSpinBox.setValue(0)
+        dialog.afterParagraphSpinBox.setValue(0)
+
+        if dialog.exec_() == QDialog.Accepted:
+            dialog.applySettings()
+
+    def handle_set_line_spacing(self, value):
+        cursor = self.editor.current_page.editor.textCursor()
+        fmt = cursor.blockFormat()
+        fmt.setLineHeight(value, QTextBlockFormat.LineDistanceHeight)
+        cursor.setBlockFormat(fmt)
+
+    def handle_refresh_recheck(self):
+        self.editor.total_pages = 0
+        total_words = 0
+        total_incorrect_words = 0
+        start_time = time.time()
+
+        for page in self.editor.pages:
+            self.editor.total_pages += 1
+            if not page or not page.editor:
+                print("Page or editor is not valid.")
+                continue
+
+            # Retrieve plain text from current page's editor
+            plain_text = page.editor.toPlainText()
+
+            # Count total words
+            words = plain_text.split()
+            total_words += len(words)
+
+            # Process text content for spell checking
+            content_for_bloom = [get_clean_words_for_dictionary(word) for word in words if len(word) > 1]
+            wrong_words = start_bloom(content_for_bloom)
+
+            # Count total incorrect words
+            total_incorrect_words += len(wrong_words)
+
+            # Get the existing HTML content to preserve formatting and alignment
+            highlighted_content = page.editor.toHtml()
+
+            # Wrap the incorrect words with an inline style for red underline
+            for word in wrong_words:
+                # Use inline styling for red underline
+                highlighted_content = highlighted_content.replace(word,
+                                                                  f'<span style="text-decoration: underline; text-decoration-color: red;">{word}</span>')
+
+            # Update the editor with the highlighted content
+            page.editor.setHtml(highlighted_content)
+
+        end_time = time.time()
+        spellcheck_time = end_time - start_time
+
+        # Show info dialog with the requested information and parent window's logo
+        info_msg = QMessageBox()
+        info_msg.setWindowTitle("ವರದಿ ಪರಿಶೀಲನೆ ಮಾಹಿತಿ")
+        info_msg.setText(f"ಒಟ್ಟು ಪದಗಳ ಸಂಖ್ಯೆ : {total_words}\n"
+                         f"ತಪ್ಪು ಪದಗಳ ಸಂಖ್ಯೆ : {total_incorrect_words}\n"
+                         f"ಕಾಗುಣಿತ ಪರಿಶೀಲನೆಗಾಗಿ ತೆಗೆದುಕೊಂಡ ಒಟ್ಟು ಸಮಯ : {spellcheck_time:.2f} ಸೆಕೆಂಡುಗಳು")
+        info_msg.setIcon(QMessageBox.Information)
+
+        # Set the parent window's icon for the message box
+        parent_icon = self.editor.windowIcon()
+        if parent_icon:
+            info_msg.setWindowIcon(parent_icon)
+        info_msg.exec_()
+        self.editor.removeBlankPages()
+        self.editor.statusBar().showMessage("ಒಟ್ಟು ಪುಟಗಳು: " + str(self.editor.total_pages))
+        # Automatically close the message box after 5 seconds
+        QTimer.singleShot(5000, info_msg.close)
+        # Ensure the application processes the event loop to display the message box
+        QApplication.processEvents()
+
+
