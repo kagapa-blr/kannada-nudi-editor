@@ -79,8 +79,6 @@ class FileOperation:
             )
 
         if self.editor.current_file_path:
-            #content = self.editor.get_editor_content()  # Assuming this gets the text from the editor
-            print('content', content)
             try:
                 if self.editor.current_file_path.endswith('.txt'):
                     with open(self.editor.current_file_path, 'w', encoding='utf-8') as file:
@@ -104,7 +102,7 @@ class FileOperation:
             except Exception as e:
                 self.editor.error_dialog.show_error_popup(str(e))
 
-    def handle_save_as_file(self):
+    def handle_save_as_file(self, content):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(
             self.editor, "Save File", "",
@@ -113,7 +111,7 @@ class FileOperation:
         )
 
         if file_path:
-            content = self.editor.get_current_text()  # Get text from editor
+
             try:
                 if file_path.endswith('.txt'):
                     with open(file_path, 'w', encoding='utf-8') as file:

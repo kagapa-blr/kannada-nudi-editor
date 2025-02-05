@@ -214,7 +214,9 @@ class NewTextEditor(QMainWindow):
         self.file_ops.handle_save_file(content=content)
 
     def saveAsFile(self):
-        self.file_ops.handle_save_as_file()
+        content = "\n\n".join([page.editor.toPlainText() for page in self.pages])  # Get text from all pages
+        self.file_ops.handle_save_file(content=content)
+        self.file_ops.handle_save_as_file(content=content)
 
     def openAsciiFile(self):
         options = QFileDialog.Options()
