@@ -242,7 +242,7 @@ class NewTextEditor(QMainWindow):
                     unicode_lines = [process_line(line) for line in plain_text.splitlines()]
                     content = '\n'.join(unicode_lines)
                 else:
-                    self.error_dialog("Unsupported file format")
+                    self.error_dialog.show_error_popup("Unsupported file format")
                     # raise ValueError("Unsupported file format")
 
                 # Split content into chunks of approximately 490 words
@@ -263,7 +263,7 @@ class NewTextEditor(QMainWindow):
                     self.addPageWithContent(' '.join(current_page_content))
 
             except Exception as e:
-                self.error_dialog.showError(str(e))
+                self.error_dialog.show_error_popup(str(e))
 
             # Update window title and remove blank pages
             self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())

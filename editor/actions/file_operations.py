@@ -4,6 +4,8 @@ from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QFileDialog
 from docx import Document
 
+from utils.asciitounicode import process_line
+
 
 class FileOperation:
     def __init__(self, editor):
@@ -137,3 +139,53 @@ class FileOperation:
         # Update editor's current file path
         self.editor.current_file_path = file_path
 
+    def handle_open_ascii_file(self):
+        options = QFileDialog.Options()
+        self.editor.filename, _ = QFileDialog.getOpenFileName(
+            self.editor, "Open File", "",
+            "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
+            options=options)
+        if self.editor.filename:
+            content = ""
+            file_extension = self.editor.filename.split('.')[-1].lower()
+
+            try:
+                if file_extension == 'txt':
+                    with open(self.editor.filename, 'r', encoding="utf-8") as file:
+                        unicode_lines = [process_line(line) for line in file]
+                        content = ''.join(unicode_lines)
+                elif file_extension == 'docx':
+                    doc = Document(self.editor.filename)
+                    paragraphs = [process_line(para.text) for para in doc.paragraphs]
+                    content = "\n".join(paragraphs)
+                elif file_extension == 'rtf':
+                    plain_text = pypandoc.convert_file(self.editor.filename, 'plain', format='rtf')
+                    unicode_lines = [process_line(line) for line in plain_text.splitlines()]
+                    content = '\n'.join(unicode_lines)
+                else:
+                    self.editor.error_dialog("Unsupported file format")
+                    # raise ValueError("Unsupported file format")
+
+                # Split content into chunks of approximately 490 words
+                words = content.split()
+                word_limit = 490
+                current_word_count = 0
+                current_page_content = []
+                for word in words:
+                    current_page_content.append(word)
+                    current_word_count += 1
+                    if current_word_count >= word_limit:
+                        self.editor.addPageWithContent(' '.join(current_page_content))
+                        current_page_content = []
+                        current_word_count = 0
+
+                # Add any remaining content to a new page if not empty
+                if current_page_content:
+                    self.editor.addPageWithContent(' '.join(current_page_content))
+
+            except Exception as e:
+                self.editor.error_dialog.showError(str(e))
+
+            # Update window title and remove blank pages
+            self.editor.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.editor.access_filename())
+            self.editor.removeBlankPages()
