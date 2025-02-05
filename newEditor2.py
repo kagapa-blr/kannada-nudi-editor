@@ -1,21 +1,16 @@
 import os
-import time
 import sys
-import mammoth
-import pypandoc
+import time
 from PyQt5 import QtPrintSupport, QtGui
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont, QTextListFormat, QTextCharFormat, QTextCursor, QTextDocument, \
-    QTextBlockFormat
+from PyQt5.QtGui import QFont, QTextListFormat, QTextCharFormat, QTextCursor, QTextBlockFormat
 from PyQt5.QtGui import QIcon
-from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import (QApplication, QDialog, QMainWindow, QScrollArea,
                              QFileDialog, QSizePolicy, QMessageBox, QColorDialog)
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
-from docx import Document
 
 from editor.actions.editor_actions import EditorActions
-from editor.actions.file_operations import FileOperation
+from editor.fileHandling.file_operations import FileOperation
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
 from editor.components.customize_image import ImageEditDialog
@@ -26,7 +21,6 @@ from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTex
 from editor.widgets.zoom_slider import ZoomSlider
 from logger import setup_logger
 from spellcheck.bloom_filter import start_bloom
-from utils.asciitounicode import process_line
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.find import Find
 from utils.sort_by import SortDialog
@@ -219,56 +213,7 @@ class NewTextEditor(QMainWindow):
         self.file_ops.handle_save_as_file(content=content)
 
     def openAsciiFile(self):
-        options = QFileDialog.Options()
-        self.filename, _ = QFileDialog.getOpenFileName(
-            self, "Open File", "",
-            "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
-            options=options)
-        if self.filename:
-            content = ""
-            file_extension = self.filename.split('.')[-1].lower()
-
-            try:
-                if file_extension == 'txt':
-                    with open(self.filename, 'r', encoding="utf-8") as file:
-                        unicode_lines = [process_line(line) for line in file]
-                        content = ''.join(unicode_lines)
-                elif file_extension == 'docx':
-                    doc = Document(self.filename)
-                    paragraphs = [process_line(para.text) for para in doc.paragraphs]
-                    content = "\n".join(paragraphs)
-                elif file_extension == 'rtf':
-                    plain_text = pypandoc.convert_file(self.filename, 'plain', format='rtf')
-                    unicode_lines = [process_line(line) for line in plain_text.splitlines()]
-                    content = '\n'.join(unicode_lines)
-                else:
-                    self.error_dialog.show_error_popup("Unsupported file format")
-                    # raise ValueError("Unsupported file format")
-
-                # Split content into chunks of approximately 490 words
-                words = content.split()
-                word_limit = 490
-                current_word_count = 0
-                current_page_content = []
-                for word in words:
-                    current_page_content.append(word)
-                    current_word_count += 1
-                    if current_word_count >= word_limit:
-                        self.addPageWithContent(' '.join(current_page_content))
-                        current_page_content = []
-                        current_word_count = 0
-
-                # Add any remaining content to a new page if not empty
-                if current_page_content:
-                    self.addPageWithContent(' '.join(current_page_content))
-
-            except Exception as e:
-                self.error_dialog.show_error_popup(str(e))
-
-            # Update window title and remove blank pages
-            self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
-            self.removeBlankPages()
-
+        self.file_ops.handle_open_ascii_file()
     def removeBlankPages(self):
         for i in reversed(range(len(self.pages))):
             page = self.pages[i]
