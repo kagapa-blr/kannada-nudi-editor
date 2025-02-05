@@ -1,12 +1,16 @@
 import time
 
+from PyQt5 import QtPrintSupport
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QFont, QTextCharFormat, QTextCursor, QTextListFormat, QTextBlockFormat
-from PyQt5.QtWidgets import QColorDialog, QDialog, QMessageBox, QApplication
+from PyQt5.QtWidgets import QColorDialog, QDialog, QMessageBox, QApplication, QFileDialog
 
+from editor.components.customize_image import ImageEditDialog
 from editor.components.format_content import SpacingDialog
+from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
 from spellcheck.bloom_filter import start_bloom
 from utils.corpus_clean import get_clean_words_for_dictionary
+from utils.sort_by import SortDialog
 
 
 class ToolbarHandler:
@@ -235,5 +239,101 @@ class ToolbarHandler:
         QTimer.singleShot(5000, info_msg.close)
         # Ensure the application processes the event loop to display the message box
         QApplication.processEvents()
+
+    def handle_print(self):
+        # Open printing dialog
+        dialog = QtPrintSupport.QPrintDialog()
+        if dialog.exec_() == QDialog.Accepted:
+            self.editor.current_page.editor.document().print_(dialog.printer())
+
+    def handle_choose_image(self):
+        file_dialog = QFileDialog(self.editor)
+        file_dialog.setNameFilter("Images (*.png *.jpg *.bmp)")
+        if file_dialog.exec_():
+            file_path = file_dialog.selectedFiles()[0]
+            image_dialog = ImageEditDialog(file_path, self.editor)
+            if image_dialog.exec_() == QDialog.Accepted:
+                modified_image = image_dialog.getModifiedImage()
+                if not modified_image.isNull():
+                    self.editor.insertEditedImage(modified_image)
+
+
+    def handle_sort_by_action(self):
+        if not self.editor.current_page or not self.editor.current_page.editor:
+            print("Error: current_page or editor is not valid.")
+            return
+
+        # Create and execute the SortDialog
+        sort_dialog = SortDialog(self.editor)
+        if sort_dialog.exec_():
+            sort_by = sort_dialog.combo_sort_by.currentText()
+            type_ = sort_dialog.combo_type.currentText()
+            using = sort_dialog.combo_using.currentText()
+            ascending = sort_dialog.radio_asc.isChecked()
+            has_header = sort_dialog.check_has_header.isChecked()
+            separator = sort_dialog.line_separator.text()
+            sort_options = sort_dialog.combo_sort_options.currentText()
+
+            # Retrieve text from QTextEdit
+            text = self.editor.current_page.editor.toPlainText()
+            lines = text.split('\n')
+
+            # Implement sorting based on user input
+            if sort_by == "Paragraph":
+                # Implement sorting logic for Paragraph sorting
+                pass
+            elif sort_by == "Headings":
+                # Implement sorting logic for Headings sorting
+                pass
+            elif sort_by == "Fields":
+                # Implement sorting logic for Fields sorting
+                pass
+            elif sort_by == "Header Name":
+                # Implement sorting logic for Header Name sorting
+                pass
+            elif sort_by == "Column Number":
+                # Implement sorting logic for Column Number sorting
+                pass
+            else:
+                print("Unknown sort_by option:", sort_by)
+                return
+
+            # Example sorting for different types
+            if type_ == "Text":
+                lines.sort(key=str.lower if not sort_options == "Case sensitive" else str, reverse=not ascending)
+            elif type_ == "Number":
+                lines.sort(key=lambda x: float(x) if x.replace('.', '', 1).isdigit() else float('inf'),
+                           reverse=not ascending)
+            elif type_ == "Date":
+                from datetime import datetime
+                lines.sort(key=lambda x: datetime.strptime(x, '%Y-%m-%d'), reverse=not ascending)
+
+            sorted_text = '\n'.join(lines)
+
+            # Update QTextEdit with sorted text
+            self.editor.current_page.editor.setPlainText(sorted_text)
+
+    def handle_toggle_speech_to_text(self):
+        sender = self.editor.sender()
+        if sender.isChecked():
+            popup = LanguageSelectionPopup()
+            if popup.exec_() == QDialog.Accepted:
+                selected_language = popup.selectedLanguage
+                if selected_language is None:
+                    QMessageBox.critical(None, 'Error', 'No language selected')
+                    sender.setChecked(False)
+                    return
+
+                sender.setText("Stop Speech to Text")
+                self.editor.speech_thread = SpeechToTextThread(self.editor.current_page.editor, selected_language)
+                self.editor.speech_thread.start()
+            else:
+                sender.setChecked(False)
+        else:
+            sender.setText("Speech to Text")
+            if self.editor.speech_thread:
+                self.editor.speech_thread.stop()
+                self.editor.speech_thread = None
+
 
 
