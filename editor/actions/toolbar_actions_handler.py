@@ -1,4 +1,5 @@
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QTextCharFormat, QTextCursor
+from PyQt5.QtWidgets import QColorDialog
 
 
 class ToolbarHandler:
@@ -41,3 +42,89 @@ class ToolbarHandler:
             fmt = self.editor.current_page.editor.currentCharFormat()
             fmt.setFontStrikeOut(not fmt.fontStrikeOut())
             self.editor.current_page.editor.setCurrentCharFormat(fmt)
+
+    def handle_font_color(self):
+        # Get a color from the text dialog
+        color = QColorDialog.getColor()
+        # Set it as the new text color
+        self.editor.current_page.editor.setTextColor(color)
+
+    def handle_super_script(self):
+        # Grab the current format
+        fmt = self.editor.current_page.editor.currentCharFormat()
+        # And get the vertical alignment property
+        align = fmt.verticalAlignment()
+        # Toggle the state
+        if align == QTextCharFormat.AlignNormal:
+            fmt.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
+        else:
+            fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
+        # Set the new format
+        self.editor.current_page.editor.setCurrentCharFormat(fmt)
+
+    def handle_sub_script(self):
+        # Grab the current format
+        fmt = self.editor.current_page.editor.currentCharFormat()
+        # And get the vertical alignment property
+        align = fmt.verticalAlignment()
+        # Toggle the state
+        if align == QTextCharFormat.AlignNormal:
+            fmt.setVerticalAlignment(QTextCharFormat.AlignSubScript)
+        else:
+
+            fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
+        # Set the new format
+        self.editor.current_page.editor.setCurrentCharFormat(fmt)
+
+    def handle_indent(self):
+        # Grab the cursor
+        cursor = self.editor.current_page.editor.textCursor()
+        if cursor.hasSelection():
+            # Store the current line/block number
+            temp = cursor.blockNumber()
+            # Move to the selection's end
+            cursor.setPosition(cursor.anchor())
+            # Calculate range of selection
+            diff = cursor.blockNumber() - temp
+            direction = QTextCursor.Up if diff > 0 else QTextCursor.Down
+            # Iterate over lines (diff absolute value)
+            for n in range(abs(diff) + 1):
+                # Move to start of each line
+                cursor.movePosition(QTextCursor.StartOfLine)
+                # Insert tabbing
+                cursor.insertText("\t")
+                # And move back up
+                cursor.movePosition(direction)
+        # If there is no selection, just insert a tab
+        else:
+            cursor.insertText("\t")
+
+    def handle_dedent(self):
+        cursor = self.editor.current_page.editor.textCursor()
+        cursor.movePosition(QTextCursor.StartOfLine)
+
+        if cursor.hasSelection():
+            temp = cursor.blockNumber()
+            cursor.setPosition(cursor.anchor())
+            diff = cursor.blockNumber() - temp
+            direction = QTextCursor.Up if diff > 0 else QTextCursor.Down
+
+            for _ in range(abs(diff) + 1):
+                line = cursor.block().text()
+                if line.startswith("\t"):
+                    cursor.deleteChar()
+                else:
+                    for char in line[:8]:
+                        if char != " ":
+                            break
+                        cursor.deleteChar()
+                cursor.movePosition(direction)
+        else:
+            line = cursor.block().text()
+            if line.startswith("\t"):
+                cursor.deleteChar()
+            else:
+                for char in line[:8]:
+                    if char != " ":
+                        break
+                    cursor.deleteChar()

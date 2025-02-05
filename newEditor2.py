@@ -255,52 +255,13 @@ class NewTextEditor(QMainWindow):
         self.toolbar_handler.handle_toggle_strikethrough()
 
     def fontColorChanged(self):
-
-        # Get a color from the text dialog
-        color = QColorDialog.getColor()
-
-        # Set it as the new text color
-        self.current_page.editor.setTextColor(color)
+        self.toolbar_handler.handle_font_color()
 
     def superScript(self):
-
-        # Grab the current format
-        fmt = self.current_page.editor.currentCharFormat()
-
-        # And get the vertical alignment property
-        align = fmt.verticalAlignment()
-
-        # Toggle the state
-        if align == QTextCharFormat.AlignNormal:
-
-            fmt.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
-
-        else:
-
-            fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
-
-        # Set the new format
-        self.current_page.editor.setCurrentCharFormat(fmt)
+        self.toolbar_handler.handle_super_script()
 
     def subScript(self):
-
-        # Grab the current format
-        fmt = self.current_page.editor.currentCharFormat()
-
-        # And get the vertical alignment property
-        align = fmt.verticalAlignment()
-
-        # Toggle the state
-        if align == QTextCharFormat.AlignNormal:
-
-            fmt.setVerticalAlignment(QTextCharFormat.AlignSubScript)
-
-        else:
-
-            fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
-
-        # Set the new format
-        self.current_page.editor.setCurrentCharFormat(fmt)
+        self.toolbar_handler.handle_sub_script()
 
     def alignLeft(self):
         self.current_page.editor.setAlignment(Qt.AlignLeft)
@@ -315,87 +276,11 @@ class NewTextEditor(QMainWindow):
         self.current_page.editor.setAlignment(Qt.AlignJustify)
 
     def indent(self):
+        self.toolbar_handler.handle_indent()
 
-        # Grab the cursor
-        cursor = self.current_page.editor.textCursor()
-
-        if cursor.hasSelection():
-
-            # Store the current line/block number
-            temp = cursor.blockNumber()
-
-            # Move to the selection's end
-            cursor.setPosition(cursor.anchor())
-
-            # Calculate range of selection
-            diff = cursor.blockNumber() - temp
-
-            direction = QTextCursor.Up if diff > 0 else QTextCursor.Down
-
-            # Iterate over lines (diff absolute value)
-            for n in range(abs(diff) + 1):
-                # Move to start of each line
-                cursor.movePosition(QTextCursor.StartOfLine)
-
-                # Insert tabbing
-                cursor.insertText("\t")
-
-                # And move back up
-                cursor.movePosition(direction)
-
-        # If there is no selection, just insert a tab
-        else:
-
-            cursor.insertText("\t")
-
-    def handleDedent(self, cursor):
-
-        cursor.movePosition(QTextCursor.StartOfLine)
-
-        # Grab the current line
-        line = cursor.block().text()
-
-        # If the line starts with a tab character, delete it
-        if line.startswith("\t"):
-
-            # Delete next character
-            cursor.deleteChar()
-
-        # Otherwise, delete all spaces until a non-space character is met
-        else:
-            for char in line[:8]:
-
-                if char != " ":
-                    break
-
-                cursor.deleteChar()
 
     def dedent(self):
-
-        cursor = self.current_page.editor.textCursor()
-
-        if cursor.hasSelection():
-
-            # Store the current line/block number
-            temp = cursor.blockNumber()
-
-            # Move to the selection's last line
-            cursor.setPosition(cursor.anchor())
-
-            # Calculate range of selection
-            diff = cursor.blockNumber() - temp
-
-            direction = QTextCursor.Up if diff > 0 else QTextCursor.Down
-
-            # Iterate over lines
-            for n in range(abs(diff) + 1):
-                self.handleDedent(cursor)
-
-                # Move up
-                cursor.movePosition(direction)
-
-        else:
-            self.handleDedent(cursor)
+        self.toolbar_handler.handle_dedent()
 
     def bulletList(self):
 
