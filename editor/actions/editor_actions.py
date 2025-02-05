@@ -217,7 +217,6 @@ class EditorActions:
         self.editor.addToolBarBreak()  # Add this line to create a break between toolbars
         #self.createFormatbar()  # Add this line to create the format bar below the main toolbar
 
-
     def createFormatbar(self):
         self.formatbar = self.editor.addToolBar('Format Toolbar')
 
@@ -234,10 +233,12 @@ class EditorActions:
                     font_id = QFontDatabase.addApplicationFont(font_path)
                     if font_id != -1:
                         font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-                        self.fontComboBox.addItem(font_family)
+                        # Try to add the font to the combo box
+                        if font_family:
+                            self.fontComboBox.addItem(font_family)
 
         # Set the default font to NudiParijatha (if available)
-        default_font = "Nudi 01 k"
+        default_font = "NudiParijatha"
         if default_font in [self.fontComboBox.itemText(i) for i in range(self.fontComboBox.count())]:
             self.fontComboBox.setCurrentFont(QFont(default_font))
 
