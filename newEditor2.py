@@ -244,41 +244,15 @@ class NewTextEditor(QMainWindow):
 
 
     def toggleBold(self):
-        if self.current_page:
-            editor = self.current_page.editor
-            cursor = editor.textCursor()
-
-            # Print the current selected text
-            selected_text = cursor.selectedText()
-            # print(f"Selected Text: '{selected_text}'")
-
-            # Check the current font weight
-            current_weight = editor.fontWeight()
-
-            # Toggle the font weight
-            new_weight = QFont.Normal if current_weight == QFont.Bold else QFont.Bold
-            editor.setFontWeight(new_weight)
+        self.toolbar_handler.handle_toggle_bold()
 
     def toggleItalic(self):
-        if self.current_page:
-            state = self.current_page.editor.fontItalic()
-            self.current_page.editor.setFontItalic(not state)
-
+        self.toolbar_handler.handle_toggle_italic()
     def toggleUnderline(self):
-        if self.current_page:
-            state = self.current_page.editor.fontUnderline()
-            self.current_page.editor.setFontUnderline(not state)
+        self.toolbar_handler.handle_toggle_underline()
 
     def strike(self):
-
-        # Grab the text's format
-        fmt = self.current_page.editor.currentCharFormat()
-
-        # Set the fontStrikeOut property to its opposite
-        fmt.setFontStrikeOut(not fmt.fontStrikeOut())
-
-        # And set the next char format
-        self.current_page.editor.setCurrentCharFormat(fmt)
+        self.toolbar_handler.handle_toggle_strikethrough()
 
     def fontColorChanged(self):
 
