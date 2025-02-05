@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QMainWindow, QScrollArea,
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 
 from editor.actions.editor_actions import EditorActions
+from editor.actions.toolbar_actions_handler import ToolbarHandler
 from editor.fileHandling.file_operations import FileOperation
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
@@ -69,8 +70,10 @@ class NewTextEditor(QMainWindow):
         self.editor_windows = []  # Keep references to new editor windows
         self.error_dialog = CommonDialogs()
         self.current_zoom_factor = 1.0  # Default zoom factor
+        self.toolbar_handler = ToolbarHandler(self)
         self.initUI()
         self.file_ops = FileOperation(self)
+
 
         # Initialize and add ZoomSlider
         self.zoom_slider = ZoomSlider()
@@ -112,6 +115,7 @@ class NewTextEditor(QMainWindow):
         self.showMaximized()
         self.setFocusToEditor()
         self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
+
 
     def setFocusToEditor(self):
         # Ensure focus is set to the editor of the current page
@@ -236,17 +240,8 @@ class NewTextEditor(QMainWindow):
             self.current_page.editor.setCurrentFont(font)
 
     def setFontSize(self, index):
-        size = int(self.actions.fontSizeComboBox.currentText())
-        if self.current_page and hasattr(self.current_page, 'editor'):
-            try:
-                self.current_page.editor.setFontPointSize(size)
-            except RuntimeError as e:
-                print(f"Error setting font size: {str(e)}")
-                # Handle the error as needed (e.g., log it, notify the user)
-        else:
-            self.setActivePage(self.current_page)
-            print("Error: No current page or editor not available")
-            # Handle the error as needed (e.g., log it, notify the user)
+        self.toolbar_handler.handle_font_size()
+
 
     def toggleBold(self):
         if self.current_page:
