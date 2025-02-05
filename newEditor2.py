@@ -236,8 +236,10 @@ class NewTextEditor(QMainWindow):
         self.handleTextOverflow()
 
     def setFontFamily(self, font):
-        if self.current_page:
+        if self.current_page and hasattr(self.current_page, 'editor') and self.current_page.editor:
             self.current_page.editor.setCurrentFont(font)
+        else:
+            print("Error: current_page or its editor is not valid.")
 
     def setFontSize(self, index):
         self.toolbar_handler.handle_font_size()

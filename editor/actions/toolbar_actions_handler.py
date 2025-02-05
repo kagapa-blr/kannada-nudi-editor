@@ -210,12 +210,11 @@ class ToolbarHandler:
 
             # Get the existing HTML content to preserve formatting and alignment
             highlighted_content = page.editor.toHtml()
-
-            # Wrap the incorrect words with an inline style for red underline
             for word in wrong_words:
-                # Use inline styling for red underline
-                highlighted_content = highlighted_content.replace(word,
-                                                                  f'<span style="text-decoration: underline; text-decoration-color: red;">{word}</span>')
+                highlighted_content = highlighted_content.replace(
+                    word,
+                    f'<font color="red"><u>{word}</u></font>'
+                )
 
             # Update the editor with the highlighted content
             page.editor.setHtml(highlighted_content)
