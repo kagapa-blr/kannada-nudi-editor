@@ -231,8 +231,12 @@ class NewTextEditor(QMainWindow):
     def addPageWithContent(self, content):
         if not content:
             return self.addNewPage()
+
         self.addNewPage()
-        self.current_page.editor.setHtml(content)
+
+        # Ensure content is displayed correctly
+        self.current_page.editor.setPlainText(content)  # Use setPlainText to retain formatting
+
         self.handleTextOverflow()
 
     def setFontFamily(self, font):

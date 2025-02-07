@@ -12,7 +12,6 @@ class FileOperation:
         self.editor = editor
 
     def handle_open_file(self):
-
         options = QFileDialog.Options()
         self.editor.filename, _ = QFileDialog.getOpenFileName(
             self.editor,
@@ -21,6 +20,7 @@ class FileOperation:
             "All Files (*);;Text Files (*.txt);;Word Documents (*.docx);;Rich Text Format (*.rtf)",
             options=options
         )
+
         if self.editor.filename:
             self.editor.content = ""
             file_extension = self.editor.filename.split('.')[-1].lower()
@@ -32,7 +32,7 @@ class FileOperation:
 
                 elif file_extension == 'docx':
                     doc = Document(self.editor.filename)
-                    content = '\n'.join([para.text for para in doc.paragraphs])
+                    content = "\n".join([para.text for para in doc.paragraphs])  # Maintain line breaks
 
                 elif file_extension == 'rtf':
                     content = pypandoc.convert_file(self.editor.filename, 'plain', format='rtf')
@@ -40,24 +40,23 @@ class FileOperation:
                 else:
                     raise ValueError("Unsupported file format")
 
-                # Split content into chunks of approximately 490 words
-                words = content.split()
-                word_limit = 490
-                current_word_count = 0
+
+                # **Split content by lines instead of words**
+                lines = content.split("\n")
+
                 current_page_content = []
+                line_limit = 40  # Adjust as per your page capacity
 
-                for word in words:
-                    current_page_content.append(word)
-                    current_word_count += 1
+                for line in lines:
+                    current_page_content.append(line)
 
-                    if current_word_count >= word_limit:
-                        self.editor.addPageWithContent(' '.join(current_page_content))
+                    if len(current_page_content) >= line_limit:
+                        self.editor.addPageWithContent("\n".join(current_page_content))
                         current_page_content = []
-                        current_word_count = 0
 
-                # Add any remaining content to a new page if not empty
+                # Add any remaining lines to a new page
                 if current_page_content:
-                    self.editor.addPageWithContent(' '.join(current_page_content))
+                    self.editor.addPageWithContent("\n".join(current_page_content))
 
             except Exception as e:
                 self.editor.error_dialog.show_error_popup(f"Error opening file: {str(e)}")
@@ -69,7 +68,6 @@ class FileOperation:
 
             # Set the current file path
             self.editor.current_file_path = self.editor.filename
-
 
     def handle_save_file(self,content):
         if not self.editor.current_file_path:
