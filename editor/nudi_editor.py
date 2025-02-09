@@ -1,9 +1,7 @@
 import os
-import sys
-import weakref
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QMainWindow, QScrollArea,
                              QSizePolicy, QMessageBox)
@@ -26,28 +24,10 @@ filename = os.path.splitext(os.path.basename(__file__))[0]
 logger = setup_logger(filename)
 
 
-import subprocess
-import os
-
-def start_background_exe():
-    if sys.platform.startswith("linux"):
-        print("Linux system detected. The executable will not be started.")
-        return
-
-    exe_path = os.path.join("resources", "keyboardDriver", "kannadaKeyboard.exe")  # OS-independent path handling
-
-    try:
-        print("Kannada Nudi Keyboard loaded and running in background")
-        subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         start_new_session=True)
-    except Exception as e:
-        print(f"Error starting background exe: {e}")
-
-
-
 class NewTextEditor(QMainWindow):
-    def __init__(self):
+    def __init__(self,nudi_logo_icon):
         super().__init__()
+        self.nudi_logo_icon = nudi_logo_icon
         self.statusbar = None
         self.scroll_layout = None
         self.scroll_content = None
@@ -72,7 +52,6 @@ class NewTextEditor(QMainWindow):
         self.zoom_slider.initZoomSlider(self)
 
     def initUI(self):
-        start_background_exe()
         self.actions.createActions()
         self.actions.createMenus()
         self.actions.createToolbars()
@@ -103,7 +82,7 @@ class NewTextEditor(QMainWindow):
         self.current_page.editor.installEventFilter(self)
         self.setGeometry(100, 100, 1030, 800)
         self.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.access_filename())
-        self.setWindowIcon(QIcon('resources/images/logo.jpg'))  # Set the application icon
+        self.setWindowIcon(QIcon(self.nudi_logo_icon))  # Set the application icon
         self.showMaximized()
         self.setFocusToEditor()
         self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
@@ -314,7 +293,7 @@ class NewTextEditor(QMainWindow):
         self.toolbar_handler.handle_print()
 
     def new(self):
-        new_editor = NewTextEditor()
+        new_editor = NewTextEditor(self.nudi_logo_icon)
         new_editor.show()
         self.editor_windows.append(new_editor)  # Keep a reference to the new editor window
 
