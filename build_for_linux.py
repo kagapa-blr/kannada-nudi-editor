@@ -33,7 +33,6 @@ options = [
     "pyinstaller",
     "--onefile",
     "--name={}".format(os.path.splitext(app_script)[0]),
-    "--noconsole",
     os.path.join(project_dir, app_script),
     "--distpath={}".format(os.path.join(project_dir, output_dir))
 ]

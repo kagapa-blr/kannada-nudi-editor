@@ -157,7 +157,7 @@ class NewPage(QWidget):
         self.editor.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.editor.setStyleSheet("""
             QTextEdit {
-                border: 1px solid #C3BFBE;
+                border: 2px solid #AAA;
                 padding: 20px;
                 background-color: white;
             }
@@ -369,4 +369,3 @@ class NewPage(QWidget):
                 cursor.removeSelectedText()
         except Exception as e:
             print("Error replacing word:", str(e))
-

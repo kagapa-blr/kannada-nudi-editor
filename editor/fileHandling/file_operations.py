@@ -1,8 +1,11 @@
+import os
+
 import pypandoc
-from PyQt5.QtGui import QTextDocument
+from PyQt5.QtGui import QTextDocument, QTextCursor, QTextImageFormat, QTextBlockFormat
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QFileDialog
 from docx import Document
+from docx.shared import Inches
 
 from utils.asciitounicode import process_line
 
@@ -111,26 +114,82 @@ class FileOperation:
         )
 
         if file_path:
-
             try:
+                # Capture alignment before saving
+                cursor = self.editor.textCursor()
+                alignment = cursor.blockFormat().alignment()
+
+                # Detect images in the document
+                doc_content = self.editor.document()
+                images = []
+                block = doc_content.begin()
+                while block.isValid():
+                    fragment = block.begin()
+                    while fragment != block.end():
+                        if fragment.fragment().charFormat().isImageFormat():
+                            image_format = fragment.fragment().charFormat().toImageFormat()
+                            images.append(image_format.name())
+                        fragment += 1
+                    block = block.next()
+
+                # Save Text File
                 if file_path.endswith('.txt'):
                     with open(file_path, 'w', encoding='utf-8') as file:
                         file.write(content)
+
+                # Save Word Document (.docx) with images
                 elif file_path.endswith('.docx'):
                     doc = Document()
-                    doc.add_paragraph(content)
+                    paragraph = doc.add_paragraph(content)
+                    paragraph.alignment = 1  # Align left (0=left, 1=center, 2=right, 3=justify)
+
+                    for image in images:
+                        if os.path.exists(image):
+                            doc.add_picture(image, width=Inches(2))
+
                     doc.save(file_path)
+
+                # Save RTF with images
                 elif file_path.endswith('.rtf'):
                     pypandoc.convert_text(content, 'rtf', format='md', outputfile=file_path, encoding='utf-8')
+
+                    # Append images manually
+                    with open(file_path, 'a', encoding='utf-8') as file:
+                        for image in images:
+                            if os.path.exists(image):
+                                file.write(f"{{\\pict\\jpegblip {image}}}")
+
+                # **FIXED: Save as PDF with Images**
                 elif file_path.endswith('.pdf'):
                     printer = QPrinter(QPrinter.HighResolution)
                     printer.setOutputFormat(QPrinter.PdfFormat)
                     printer.setOutputFileName(file_path)
+
                     doc = QTextDocument()
-                    doc.setPlainText(content)
+                    cursor = QTextCursor(doc)
+
+                    # Insert text
+                    cursor.insertText(content)
+
+                    # Insert images
+                    for image in images:
+                        if os.path.exists(image):
+                            cursor.insertBlock()
+                            image_format = QTextImageFormat()
+                            image_format.setName(image)
+                            cursor.insertImage(image_format)
+
                     doc.print_(printer)
+
                 else:
                     self.editor.error_dialog.show_error_popup("Unsupported file format")
+
+                # Restore alignment after saving
+                block_format = QTextBlockFormat()
+                block_format.setAlignment(alignment)
+                cursor.mergeBlockFormat(block_format)
+                self.editor.setTextCursor(cursor)
+
             except Exception as e:
                 self.editor.error_dialog.show_error_popup(str(e))
 
