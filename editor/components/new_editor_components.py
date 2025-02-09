@@ -1,9 +1,11 @@
+from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent
 from PyQt5.QtGui import QFont, QFontDatabase, QTextCursor, QTextCharFormat, QContextMenuEvent
 from PyQt5.QtWidgets import (QDialog, QLabel, QComboBox, QSpinBox, QDialogButtonBox,
                              QHBoxLayout, QInputDialog,
-                             QLineEdit, QScrollArea)
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QSizePolicy, QAction, QMenu
+                             QLineEdit)
+from PyQt5.QtWidgets import QTextEdit, QScrollArea, QWidget
+from PyQt5.QtWidgets import QVBoxLayout, QSizePolicy, QAction, QMenu
 
 from config import file_path as fp
 from editor.components.table_functionality import TableFunctionality
@@ -11,12 +13,6 @@ from spellcheck.bloom_filter import bloom_lookup
 from spellcheck.symspell_suggestions import suggestionReturner
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.util import has_letters_or_digits
-
-
-from PyQt5.QtWidgets import QTextEdit
-
-from PyQt5.QtWidgets import QTextEdit, QScrollArea
-from PyQt5.QtCore import QTimer
 
 
 class CustomTextEdit(QTextEdit):
@@ -31,12 +27,16 @@ class CustomTextEdit(QTextEdit):
 
         if scroll_area:
             scroll_bar = scroll_area.verticalScrollBar()
-            target_scroll = rect.center().y() - (scroll_area.height() // 2)
 
-            # Use QTimer to prevent laggy scrolling
+            # Calculate cursor's absolute position within the scroll area
+            editor_global_pos = self.mapTo(scroll_area.widget(), rect.center())
+            target_scroll = editor_global_pos.y() - (scroll_area.height() // 2)
+
+            # Smooth scrolling with a slight delay
             QTimer.singleShot(10, lambda: scroll_bar.setValue(target_scroll))
 
     def getScrollArea(self):
+        """Find the QScrollArea that contains this editor."""
         parent = self.parent()
         while parent:
             if isinstance(parent, QScrollArea):
