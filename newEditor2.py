@@ -154,23 +154,22 @@ class NewTextEditor(QMainWindow):
 
     def handleTextOverflow(self):
         if self.current_page:
-            # Step 1: Create the new page and get a reference to it
             new_page = self.addNewPage()
 
-            # Step 2: Move the overflowed content to the new page
+            # Move overflowed content to the new page
             remaining_text = self.current_page.editor.toPlainText()
 
-            # Clear the current page's editor
             self.current_page.editor.clear()
-
-            # Set the text in the new page's editor
             new_page.editor.insertPlainText(remaining_text)
 
-            # Step 3: Move the cursor to the new page and set focus there
-            new_page.editor.setFocus()  # Focus the editor of the new page
+            # Move cursor to the new page
+            new_page.editor.setFocus()
             cursor = new_page.editor.textCursor()
-            cursor.movePosition(QtGui.QTextCursor.Start)  # Move cursor to the start of the new page
+            cursor.movePosition(QtGui.QTextCursor.Start)
             new_page.editor.setTextCursor(cursor)
+
+            # Scroll to the new page
+            QTimer.singleShot(50, lambda: self.scroll_area.ensureWidgetVisible(new_page))
 
     # Override the closeEvent method
     def closeEvent(self, event):
