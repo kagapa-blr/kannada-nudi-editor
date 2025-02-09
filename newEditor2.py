@@ -1,31 +1,23 @@
 import os
 import sys
-import time
-from PyQt5 import QtPrintSupport, QtGui
+import weakref
+
+from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont, QTextListFormat, QTextCharFormat, QTextCursor, QTextBlockFormat
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QApplication, QDialog, QMainWindow, QScrollArea,
-                             QFileDialog, QSizePolicy, QMessageBox, QColorDialog)
+from PyQt5.QtWidgets import (QMainWindow, QScrollArea,
+                             QSizePolicy, QMessageBox)
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 
 from editor.actions.editor_actions import EditorActions
 from editor.actions.toolbar_actions_handler import ToolbarHandler
-from editor.fileHandling.file_operations import FileOperation
 from editor.common_Dialogs import CommonDialogs
 from editor.components.ascii_unicode_ConversionDialog import ConversionDialog
-from editor.components.customize_image import ImageEditDialog
 from editor.components.excel_csv_file_handling import ExcelCsvViewer
-from editor.components.format_content import SpacingDialog
-from editor.components.new_editor_components import NewPageLayoutDialog, NewPage
-from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
+from editor.components.new_editor_components import NewPage
+from editor.fileHandling.file_operations import FileOperation
 from editor.widgets.zoom_slider import ZoomSlider
 from logger import setup_logger
-from spellcheck.bloom_filter import start_bloom
-from utils.corpus_clean import get_clean_words_for_dictionary
-from utils.find import Find
-from utils.sort_by import SortDialog
-from utils.table import Table
 from utils.wordcount import WordCount
 
 filename = os.path.splitext(os.path.basename(__file__))[0]
@@ -154,22 +146,23 @@ class NewTextEditor(QMainWindow):
 
     def handleTextOverflow(self):
         if self.current_page:
+            # Step 1: Create the new page and get a reference to it
             new_page = self.addNewPage()
 
-            # Move overflowed content to the new page
+            # Step 2: Move the overflowed content to the new page
             remaining_text = self.current_page.editor.toPlainText()
 
+            # Clear the current page's editor
             self.current_page.editor.clear()
+
+            # Set the text in the new page's editor
             new_page.editor.insertPlainText(remaining_text)
 
-            # Move cursor to the new page
-            new_page.editor.setFocus()
+            # Step 3: Move the cursor to the new page and set focus there
+            new_page.editor.setFocus()  # Focus the editor of the new page
             cursor = new_page.editor.textCursor()
-            cursor.movePosition(QtGui.QTextCursor.Start)
+            cursor.movePosition(QtGui.QTextCursor.Start)  # Move cursor to the start of the new page
             new_page.editor.setTextCursor(cursor)
-
-            # Scroll to the new page
-            QTimer.singleShot(50, lambda: self.scroll_area.ensureWidgetVisible(new_page))
 
     # Override the closeEvent method
     def closeEvent(self, event):
