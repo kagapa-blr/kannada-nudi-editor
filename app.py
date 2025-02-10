@@ -1,10 +1,14 @@
 import os
 import subprocess
 import sys
+
 import psutil
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QDialog
+
 from editor.nudi_editor import NewTextEditor
+from editor.widgets.banner import SplashScreen
 from utils.util import remove_spaces_in_filenames
+
 
 def stop_background_exe():
     """Stop the Kannada Nudi Keyboard process if running."""
@@ -17,6 +21,7 @@ def stop_background_exe():
         print("Kannada Nudi Keyboard is not running.")
     except Exception as e:
         print(f"Error stopping background exe: {e}")
+
 
 def start_background_exe():
     """Start the Kannada Nudi Keyboard process."""
@@ -36,18 +41,29 @@ def start_background_exe():
     except Exception as e:
         print(f"Error starting background exe: {e}")
 
+
+
+
 def editor():
-    """Initialize and start the text editor."""
-    nudi_logo_icon = './resources/images/logo.jpg'
-    start_background_exe()
-    remove_spaces_in_filenames(folder_path='./resources/static/Nudi_fonts')
-
+    """Initialize and start the text editor with a splash screen."""
     app = QApplication(sys.argv)
-    editor_window = NewTextEditor(nudi_logo_icon)
-    editor_window.show()
 
-    app.aboutToQuit.connect(stop_background_exe)
-    sys.exit(app.exec_())
+    # Show splash screen
+    splash = SplashScreen()
+    if splash.exec_() == QDialog.Accepted:  # Wait until user accepts
+        # Start background processes
+        start_background_exe()
+        remove_spaces_in_filenames(folder_path='./resources/static/Nudi_fonts')
+
+        # Load main editor window
+        editor_window = NewTextEditor('./resources/images/logo.jpg')
+        editor_window.show()
+
+        # Stop background process when app quits
+        app.aboutToQuit.connect(stop_background_exe)
+
+        sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     editor()
