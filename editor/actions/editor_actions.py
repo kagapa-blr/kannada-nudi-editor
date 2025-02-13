@@ -1,4 +1,5 @@
 import os
+import sys
 
 from PyQt5.QtGui import QIcon, QFont, QFontDatabase
 from PyQt5.QtWidgets import QAction, QFontComboBox, QComboBox
@@ -218,14 +219,20 @@ class EditorActions:
         #self.createFormatbar()  # Add this line to create the format bar below the main toolbar
 
     def createFormatbar(self):
+        """Creates a formatting toolbar with font selection and styling options."""
         self.formatbar = self.editor.addToolBar('Format Toolbar')
-
         self.formatbar.addSeparator()
+
+        # Font ComboBox
         self.fontComboBox = QFontComboBox(self.editor)
         self.formatbar.addWidget(self.fontComboBox)
 
-        # Load all TTF fonts from the specified directory
-        font_dir = "resources/static/Nudi_fonts"
+        # OS-Specific Default Font Selection
+        default_font = "NudiParijatha" if sys.platform.startswith("win") else "Noto Sans Kannada"
+
+        # Load all TTF fonts from the directory
+        font_dir = "./resources/static/Nudi_fonts"
+
         if os.path.exists(font_dir):
             for file in os.listdir(font_dir):
                 if file.lower().endswith(".ttf"):
@@ -233,25 +240,27 @@ class EditorActions:
                     font_id = QFontDatabase.addApplicationFont(font_path)
                     if font_id != -1:
                         font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
-                        # Try to add the font to the combo box
                         if font_family:
                             self.fontComboBox.addItem(font_family)
 
-        # Set the default font to NudiParijatha (if available)
-        default_font = "NudiParijatha"
-        if default_font in [self.fontComboBox.itemText(i) for i in range(self.fontComboBox.count())]:
+        # Set the default font if available
+        available_fonts = [self.fontComboBox.itemText(i) for i in range(self.fontComboBox.count())]
+        if default_font in available_fonts:
             self.fontComboBox.setCurrentFont(QFont(default_font))
+            print(f"Default font set to: {default_font}")
+        else:
+            print("Default font not found, using system default.")
 
         self.fontComboBox.currentFontChanged.connect(self.editor.setFontFamily)
 
-        # Font size selection
+        # Font Size Selection
         self.fontSizeComboBox = QComboBox(self.editor)
         self.fontSizeComboBox.addItems([str(size) for size in range(8, 49, 2)])
         self.fontSizeComboBox.setCurrentText("12")  # Default font size
         self.fontSizeComboBox.currentIndexChanged.connect(self.editor.setFontSize)
         self.formatbar.addWidget(self.fontSizeComboBox)
 
-        # Add formatting actions
+        # Formatting Actions
         actions = [
             self.fontColor, self.boldAction, self.italicAction, self.underlineAction,
             self.fontbackColor, self.strikeAction, self.superAction, self.subAction,
