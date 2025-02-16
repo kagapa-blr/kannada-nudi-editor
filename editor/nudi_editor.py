@@ -85,7 +85,7 @@ class NewTextEditor(QMainWindow):
         self.setWindowIcon(QIcon(self.nudi_logo_icon))  # Set the application icon
         self.showMaximized()
         self.setFocusToEditor()
-        self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
+        #self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
 
 
     def setFocusToEditor(self):
@@ -105,7 +105,7 @@ class NewTextEditor(QMainWindow):
         if self.pages and self.pages[-1].editor.toPlainText().strip() == "":
             return self.pages[-1]  # Return the existing blank page if it exists
 
-        page = NewPage(self)
+        page = NewPage(self, len(self.pages) + 1)  # Set page number correctly
         page.textOverflow.connect(self.handleTextOverflow)  # Connect the textOverflow signal
         page.clicked.connect(self.setActivePage)
 
@@ -117,8 +117,15 @@ class NewTextEditor(QMainWindow):
         self.setActivePage(page)
         self.total_pages += 1
 
+        # Update all page numbers
+        self.updatePageNumbers()
+
         # Return the page so we can further customize it if needed
         return page
+
+    def updatePageNumbers(self):
+        for index, page in enumerate(self.pages, start=1):
+            page.setPageNumber(index)  # Ensure each page number is updated correctly
 
     def setActivePage(self, page):
         self.current_page = page

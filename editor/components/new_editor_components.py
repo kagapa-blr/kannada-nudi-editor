@@ -158,11 +158,13 @@ class NewPage(QWidget):
     textOverflow = pyqtSignal()
     clicked = pyqtSignal(QWidget)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, page_number=1):
         super().__init__(parent)
+        self.page_number = page_number
         self.is_changed = False  # Add this line
         #self.editor = QTextEdit(self)
         self.editor = CustomTextEdit(self)
+
         self.currentZoomFactor = 1.0
         self.initUI()
         self.editor.installEventFilter(self)
@@ -199,9 +201,19 @@ class NewPage(QWidget):
         self.editor.setTextInteractionFlags(Qt.TextEditorInteraction)
         self.editor.setFocusPolicy(Qt.StrongFocus)
 
+        self.page_label = QLabel(f"Page {self.page_number}", self)
+        self.page_label.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.page_label.setStyleSheet("""
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            font-family: Arial, sans-serif;
+        """)
+
         layout.addWidget(self.editor)
         self.setLayout(layout)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        layout.addWidget(self.page_label)
 
         # Load and set the default font
         font_id = QFontDatabase.addApplicationFont("resources/static/Nudi_fonts/NudiParijatha.ttf")
@@ -402,3 +414,7 @@ class NewPage(QWidget):
                 cursor.removeSelectedText()
         except Exception as e:
             print("Error replacing word:", str(e))
+
+    def setPageNumber(self, number):
+        self.page_number = number
+        self.page_label.setText(f"Page {self.page_number}")
