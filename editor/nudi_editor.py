@@ -2,9 +2,9 @@ import os
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QKeySequence, QTextCursor
 from PyQt5.QtWidgets import (QMainWindow, QScrollArea,
-                             QSizePolicy, QMessageBox)
+                             QSizePolicy, QMessageBox, QShortcut)
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 
 from editor.actions.editor_actions import EditorActions
@@ -51,6 +51,10 @@ class NewTextEditor(QMainWindow):
         self.zoom_slider = ZoomSlider()
         self.zoom_slider.initZoomSlider(self)
 
+        shortcut = QShortcut(QKeySequence("Ctrl+A"), self)
+        shortcut.activated.connect(self.selectAllPagesContent)
+
+    # Initialize WordCount
     def initUI(self):
         self.actions.createActions()
         self.actions.createMenus()
@@ -217,6 +221,13 @@ class NewTextEditor(QMainWindow):
         self.current_page.editor.setPlainText(content)  # Use setPlainText to retain formatting
 
         self.handleTextOverflow()
+
+    def selectAllPagesContent(self):
+        """Selects and highlights all text across all pages."""
+        for page in self.pages:
+            cursor = page.editor.textCursor()
+            cursor.select(QTextCursor.Document)  # Select the entire content of the page
+            page.editor.setTextCursor(cursor)  # Apply the selection
 
     def setFontFamily(self, font):
         if self.current_page and hasattr(self.current_page, 'editor') and self.current_page.editor:
