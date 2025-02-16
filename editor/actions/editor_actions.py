@@ -57,9 +57,17 @@ class EditorActions:
         self.zoomOutAction.setStatusTip('Zoom out')
         self.zoomOutAction.triggered.connect(self.editor.zoomOut)
 
-        self.pageLayoutAction = QAction(QIcon('resources/images/page-layout.png'), 'Page Layout', self.editor)
+
+        self.page_margin_action = QAction(QIcon('resources/images/page-margin.png'), 'Page Margin', self.editor)
+        self.page_margin_action.setStatusTip('Set Page Margin ')
+        #self.page_margin_action.triggered.connect(self.editor.page_margin)
+        self.page_margin_action.triggered.connect(self.editor.page_margin_size)
+
+
+        self.pageLayoutAction = QAction(QIcon('resources/images/page-size.png'), 'Page Size', self.editor)
         self.pageLayoutAction.setStatusTip('Set page layout and size')
         self.pageLayoutAction.triggered.connect(self.editor.page_layout_size)
+
 
         self.insertTableAction = QAction(QIcon('resources/images/insert-table.png'), 'Insert Table', self.editor)
         self.insertTableAction.setStatusTip('Insert a table into the document')
@@ -198,6 +206,7 @@ class EditorActions:
         self.toolbar.addAction(self.openAsciiAction)
         self.toolbar.addAction(self.saveAction)
         self.toolbar.addAction(self.printAction)
+        self.toolbar.addAction(self.page_margin_action)
         self.toolbar.addAction(self.pageLayoutAction)
         self.toolbar.addAction(self.undoAction)
         self.toolbar.addAction(self.redoAction)

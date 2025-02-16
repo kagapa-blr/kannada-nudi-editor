@@ -111,6 +111,7 @@ class NewTextEditor(QMainWindow):
 
         # Set the zoom factor for the new page
         page.setZoomFactor(self.current_zoom_factor)
+        page.setPageMargins(96, 96, 96, 96)  # Apply default 1-inch margins
 
         self.pages.append(page)
         self.scroll_layout.addWidget(page)
@@ -306,6 +307,9 @@ class NewTextEditor(QMainWindow):
 
     def page_layout_size(self):
         self.toolbar_handler.handle_page_layout_size()
+
+    def page_margin_size(self):
+        self.toolbar_handler.handle_page_margin_size()
 
     def undo(self):
         if self.current_page:

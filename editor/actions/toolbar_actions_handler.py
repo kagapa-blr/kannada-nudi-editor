@@ -9,6 +9,7 @@ from editor.components.customize_image import ImageEditDialog
 from editor.components.format_content import SpacingDialog
 from editor.components.new_editor_components import NewPageLayoutDialog
 from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
+from editor.widgets.PageMarginDialog import PageMarginDialog
 from spellcheck.bloom_filter import start_bloom
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.find import Find
@@ -343,6 +344,15 @@ class ToolbarHandler:
             width, height = dialog.getPageSize()
             for page in self.editor.pages:
                 page.setPageSize(width, height)
+
+
+
+    def handle_page_margin_size(self):
+        dialog = PageMarginDialog(self.editor)
+        if dialog.exec_() == QDialog.Accepted:
+            left, right, top, bottom = dialog.getPageMargins()
+            for page in self.editor.pages:
+                page.setPageMargins(left, right, top, bottom)
 
     def handle_insert_table(self):
         if self.editor.current_page:

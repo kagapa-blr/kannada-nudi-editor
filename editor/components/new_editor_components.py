@@ -418,3 +418,8 @@ class NewPage(QWidget):
     def setPageNumber(self, number):
         self.page_number = number
         self.page_label.setText(f"Page {self.page_number}")
+
+    def setPageMargins(self, left=96, right=96, top=96, bottom=96):
+        """Apply page margins dynamically."""
+        self.layout().setContentsMargins(left, top, right, bottom)
+
