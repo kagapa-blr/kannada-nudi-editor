@@ -106,6 +106,9 @@ class NewTextEditor(QMainWindow):
 
     def addNewPage(self):
         # Check if the last page is blank and avoid adding another blank page
+
+        # Save current cursor position
+        current_cursor = self.getCursorPosition()
         if self.pages and self.pages[-1].editor.toPlainText().strip() == "":
             return self.pages[-1]  # Return the existing blank page if it exists
 
@@ -126,7 +129,24 @@ class NewTextEditor(QMainWindow):
         self.updatePageNumbers()
 
         # Return the page so we can further customize it if needed
+        # Restore the cursor position
+        self.setCursorPosition(current_cursor)
         return page
+
+    def getCursorPosition(self):
+        """Gets the global cursor position across all pages."""
+        cursor_data = []
+        for page in self.pages:
+            cursor = page.editor.textCursor()
+            cursor_data.append((page, cursor.position()))
+        return cursor_data
+
+    def setCursorPosition(self, cursor_data):
+        """Restores the cursor position on the correct page."""
+        for page, position in cursor_data:
+            cursor = page.editor.textCursor()
+            cursor.setPosition(position)
+            page.editor.setTextCursor(cursor)
 
     def updatePageNumbers(self):
         for index, page in enumerate(self.pages, start=1):
