@@ -420,6 +420,18 @@ class NewPage(QWidget):
         self.page_label.setText(f"Page {self.page_number}")
 
     def setPageMargins(self, left=96, right=96, top=96, bottom=96):
-        """Apply page margins dynamically."""
+        """Apply page margins dynamically to both layout and editor."""
+
+        # Apply to main layout
         self.layout().setContentsMargins(left, top, right, bottom)
+
+        # Apply padding inside QTextEdit
+        self.editor.setStyleSheet(f"""
+            QTextEdit {{
+                border: 2px solid #AAA;
+                padding: {top}px {right}px {bottom}px {left}px;
+                background-color: white;
+            }}
+        """)
+
 

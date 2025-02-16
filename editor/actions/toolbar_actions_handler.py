@@ -346,13 +346,13 @@ class ToolbarHandler:
                 page.setPageSize(width, height)
 
 
-
     def handle_page_margin_size(self):
+        """Show margin dialog and apply selected margins to all pages."""
         dialog = PageMarginDialog(self.editor)
         if dialog.exec_() == QDialog.Accepted:
             left, right, top, bottom = dialog.getPageMargins()
             for page in self.editor.pages:
-                page.setPageMargins(left, right, top, bottom)
+                page.setPageMargins(left, right, top, bottom)  # Apply margins to each page
 
     def handle_insert_table(self):
         if self.editor.current_page:
