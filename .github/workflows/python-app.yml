@@ -44,7 +44,7 @@ jobs:
       shell: pwsh
 
     - name: Upload Build Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2  # Updated to v2
       with:
         name: kannadaNudi-build
         path: dist/kannadaNudi/kannadaNudi.zip  # Upload the generated zip file
@@ -55,15 +55,26 @@ jobs:
     needs: build  # Wait for the build job to complete
 
     steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
     - name: Download Build Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v2  # Updated to v2
       with:
         name: kannadaNudi-build
         path: dist/kannadaNudi/
 
+    - name: Create Release Tag
+      run: |
+        # Creating a version tag based on the current date-time or commit hash
+        VERSION_TAG="v$(date +'%Y%m%d%H%M%S')"
+        git tag $VERSION_TAG
+        git push origin $VERSION_TAG
+
     - name: Create GitHub Release and Upload Artifact
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: ${{ steps.create_release.outputs.version_tag }}  # Use the tag generated earlier
         files: dist/kannadaNudi/kannadaNudi.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
