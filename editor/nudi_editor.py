@@ -90,6 +90,7 @@ class NewTextEditor(QMainWindow):
         self.showMaximized()
         self.setFocusToEditor()
         #self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
+        logger.info("Kannada Nudi Editor Initialization")
 
 
     def setFocusToEditor(self):
