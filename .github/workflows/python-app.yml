@@ -73,7 +73,8 @@ jobs:
       run: |
         git fetch --tags
         LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
-        if [ -z "$LATEST_TAG" ]; then
+    
+        if [[ -z "$LATEST_TAG" || ! "$LATEST_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           NEW_VERSION="v1.0.0"
         else
           VERSION=$(echo $LATEST_TAG | sed 's/v//')
@@ -81,8 +82,10 @@ jobs:
           PATCH=$((VERSION_PARTS[2] + 1))
           NEW_VERSION="v${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$PATCH"
         fi
+    
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
         echo "New version: $NEW_VERSION"
+
 
     - name: Create Release Tag
       run: |
