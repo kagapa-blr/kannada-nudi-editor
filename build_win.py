@@ -4,18 +4,26 @@ import subprocess
 import zipfile
 
 
+import time
+
 def remove(path):
-    try:
-        if os.path.isfile(path) or os.path.islink(path):
-            print("File {} deleted".format(path))
-            os.remove(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
-            print("Directory {} deleted".format(path))
-        else:
-            raise ValueError("File {} is not a file or directory.".format(path))
-    except Exception as e:
-        print("Permission denied! Please close other applications."+str(e))
+    retries = 3
+    for attempt in range(retries):
+        try:
+            if os.path.isfile(path) or os.path.islink(path):
+                os.remove(path)
+                print(f"File {path} deleted")
+            elif os.path.isdir(path):
+                shutil.rmtree(path)
+                print(f"Directory {path} deleted")
+            else:
+                raise ValueError(f"File {path} is not a file or directory.")
+            return
+        except PermissionError:
+            print(f"Permission denied: {path}. Retrying {attempt + 1}/{retries}...")
+            time.sleep(2)
+    print(f"Failed to delete {path} after {retries} retries.")
+
 
 
 # Define your application script and other parameters
