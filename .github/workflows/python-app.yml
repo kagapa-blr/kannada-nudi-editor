@@ -37,7 +37,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       shell: pwsh
 
-    - name: Test with pytest
+    - name: Test step (No tests yet)
       run: |
-        pytest
+        echo "No tests available"
       shell: pwsh
