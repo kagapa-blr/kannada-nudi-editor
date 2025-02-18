@@ -44,7 +44,7 @@ jobs:
       shell: pwsh
 
     - name: Upload Build Artifact
-      uses: actions/upload-artifact@v2  # Updated to v2
+      uses: actions/upload-artifact@v4  # Updated to v4
       with:
         name: kannadaNudi-build
         path: dist/kannadaNudi/kannadaNudi.zip  # Upload the generated zip file
@@ -59,7 +59,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download Build Artifact
-      uses: actions/download-artifact@v2  # Updated to v2
+      uses: actions/download-artifact@v4  # Updated to v4
       with:
         name: kannadaNudi-build
         path: dist/kannadaNudi/
