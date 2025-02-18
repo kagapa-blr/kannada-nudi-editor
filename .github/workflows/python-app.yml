@@ -91,6 +91,11 @@ jobs:
         git tag $NEW_VERSION
         git push origin $NEW_VERSION
 
+    - name: Wait for Tag Push to Complete
+      run: |
+        # Ensure the tag is pushed to GitHub before continuing
+        git fetch --tags
+
     - name: Create GitHub Release and Upload Artifact
       uses: softprops/action-gh-release@v1
       with:
