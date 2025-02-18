@@ -1,4 +1,4 @@
-name: Build Windows Artifact and Release
+name: Build and Release Kannada Nudi Editor
 
 on:
   push:
@@ -7,16 +7,16 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: read
-  id-token: write  # Required for creating a release
+  contents: write  # Required for creating a release
 
 jobs:
-  build:
-
-    runs-on: windows-latest  # Runs on Windows
+  setup:
+    name: Setup Environment
+    runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4  # Checkout the repository
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
@@ -29,15 +29,41 @@ jobs:
         pip install -r requirements.txt
       shell: pwsh
 
-    - name: Build Windows executable
+  build:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    needs: setup  # Wait for setup job to complete
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Build Windows Artifact
       run: |
-        python build_win.py  # Run the build_win.py script to create the artifact
+        python build_win.py  # Run the script to generate the executable
       shell: pwsh
 
-    - name: Create GitHub Release and upload artifact
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: kannadaNudi-build
+        path: dist/kannadaNudi/kannadaNudi.zip  # Upload the generated zip file
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest  # Running this on Ubuntu since it's just uploading
+    needs: build  # Wait for the build job to complete
+
+    steps:
+    - name: Download Build Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: kannadaNudi-build
+        path: dist/kannadaNudi/
+
+    - name: Create GitHub Release and Upload Artifact
       uses: softprops/action-gh-release@v1
       with:
-        files: |
-          dist/kannadaNudi/kannadaNudi.zip  # Path to the zip file created by build_win.py
+        files: dist/kannadaNudi/kannadaNudi.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
