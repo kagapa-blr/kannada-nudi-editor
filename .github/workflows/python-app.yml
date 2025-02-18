@@ -74,36 +74,23 @@ jobs:
       run: |
         git fetch --tags
         # Get the latest tag and increment the patch version
-        LATEST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+        $LATEST_TAG = git tag -l 'v*' --sort=-v:refname | Select-Object -First 1
         
-        if [[ -z "$LATEST_TAG" || ! "$LATEST_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          NEW_VERSION="v1.0.0"
-        else
-          VERSION=$(echo $LATEST_TAG | sed 's/v//')
-          IFS='.' read -r -a VERSION_PARTS <<< "$VERSION"
-          PATCH=$((VERSION_PARTS[2] + 1))  # Increment patch number
-          NEW_VERSION="v${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$PATCH"
-        fi
-        
+        if (-not $LATEST_TAG -or $LATEST_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') {
+          $NEW_VERSION = "v1.0.0"
+        } else {
+          $VERSION = $LATEST_TAG.TrimStart('v')
+          $VERSION_PARTS = $VERSION.Split('.')
+          $PATCH = [int]$VERSION_PARTS[2] + 1
+          $NEW_VERSION = "v$($VERSION_PARTS[0]).$($VERSION_PARTS[1]).$PATCH"
+        }
+    
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
         echo "New version: $NEW_VERSION"
 
-    - name: Check and Increment Tag
+    - name: Create and Push New Tag
       run: |
-        # Check if the tag exists, and increment it if it does
-        TAG_EXISTS=$(git rev-parse $NEW_VERSION 2>/dev/null)
-        if [[ -n "$TAG_EXISTS" ]]; then
-          echo "Tag $NEW_VERSION already exists. Incrementing the version."
-          
-          # Increment patch version if the tag exists
-          VERSION=$(echo $NEW_VERSION | sed 's/v//')
-          IFS='.' read -r -a VERSION_PARTS <<< "$VERSION"
-          PATCH=$((VERSION_PARTS[2] + 1))  # Increment patch number
-          NEW_VERSION="v${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$PATCH"
-          echo "New version: $NEW_VERSION"
-        fi
-        
-        # Create and push the tag
+        # Create a new version tag
         git tag $NEW_VERSION
         git push origin $NEW_VERSION
 
