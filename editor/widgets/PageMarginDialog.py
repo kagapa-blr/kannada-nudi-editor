@@ -65,4 +65,4 @@ class PageMarginDialog(QDialog):
                 spinbox.setEnabled(True)  # Enable editing for "Custom"
 
     def getPageMargins(self):
-        return (self.left_margin.value(), self.right_margin.value(), self.top_margin.value(), self.bottom_margin.value())
+        return self.left_margin.value(), self.right_margin.value(), self.top_margin.value(), self.bottom_margin.value()

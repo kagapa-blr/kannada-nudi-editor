@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import pyqtSignal, Qt, QEvent
-from PyQt5.QtGui import QFont, QFontDatabase, QTextCursor, QTextCharFormat, QContextMenuEvent
+from PyQt5.QtGui import QFont, QFontDatabase, QTextCursor, QTextCharFormat, QContextMenuEvent, QFontMetrics
 from PyQt5.QtWidgets import (QDialog, QLabel, QComboBox, QSpinBox, QDialogButtonBox,
                              QHBoxLayout, QInputDialog,
                              QLineEdit)
@@ -265,7 +265,19 @@ class NewPage(QWidget):
             self.editor.setTextCursor(new_cursor)
 
     def checkOverflow(self):
-        if self.editor.document().size().height() > self.editor.height():
+        """Detect if text overflows and emit a signal for a new page."""
+        font_metrics = QFontMetrics(self.editor.font())
+        line_height = font_metrics.lineSpacing()  # Height of one line
+        # Calculate usable height
+        document_margin = self.editor.contentsMargins()
+        padding = 20  # Padding from setStyleSheet
+
+        usable_height = self.editor.height() - document_margin.top() - document_margin.bottom() - (2 * padding)
+        max_lines = usable_height // line_height  # Number of lines that fit
+        current_lines = self.editor.document().blockCount()  # Current text block count
+
+        if current_lines >= max_lines:  # Check for overflow
+            #print("Triggering new page creation due to overflow")
             self.textOverflow.emit()
 
     def onFocusInEvent(self, event):
