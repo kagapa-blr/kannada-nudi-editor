@@ -23,17 +23,18 @@ jobs:
       with:
         python-version: "3.12"
 
-    - name: Set up virtual environment
+    - name: Create and Activate Virtual Environment
       run: |
         python -m venv venv
-        .\venv\Scripts\activate
+        Get-ChildItem -Path .\venv\Scripts
+        .\venv\Scripts\Activate.ps1
         python -m pip install --upgrade pip
         pip install -r requirements.txt
       shell: pwsh
 
     - name: Debug Installed Packages
       run: |
-        .\venv\Scripts\activate
+        .\venv\Scripts\Activate.ps1
         pip list
       shell: pwsh
 
@@ -51,15 +52,15 @@ jobs:
         .\venv\Scripts\activate
       shell: pwsh
 
-    - name: Install PyInstaller
+    - name: Activate Virtual Environment and Install PyInstaller
       run: |
-        .\venv\Scripts\activate
+        .\venv\Scripts\Activate.ps1
         pip install pyinstaller
       shell: pwsh
 
     - name: Build Windows Artifact
       run: |
-        .\venv\Scripts\activate
+        .\venv\Scripts\Activate.ps1
         python build_win.py  # Run the script to generate the executable
       shell: pwsh
 
