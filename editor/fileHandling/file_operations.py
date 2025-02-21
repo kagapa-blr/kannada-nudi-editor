@@ -1,11 +1,9 @@
 import os
 
 import pypandoc
-from PyQt5.QtGui import QTextDocument, QTextCursor, QTextImageFormat, QTextBlockFormat
-from PyQt5.QtPrintSupport import QPrinter
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtGui import QFontMetrics
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from docx import Document
-from docx.shared import Inches
 
 from utils.asciitounicode import process_line
 
@@ -13,6 +11,49 @@ from utils.asciitounicode import process_line
 class FileOperation:
     def __init__(self, editor):
         self.editor = editor
+#----------------------------------------------------------------FILE OPEN----------------------------------------------------------------
+    def checkOverflow(self):
+        """Detect if text overflows and emit a signal for a new page."""
+        if self.isOverflowing():
+            self.textOverflow.emit()
+
+    def isOverflowing(self):
+        """Helper function to check if text overflows the available space."""
+        font_metrics = QFontMetrics(self.editor.font())
+        line_height = font_metrics.lineSpacing()
+        document_margin = self.editor.contentsMargins()
+        padding = 20  # Padding from setStyleSheet
+
+        usable_height = self.editor.height() - document_margin.top() - document_margin.bottom() - (2 * padding)
+        max_lines = usable_height // line_height
+        current_lines = self.editor.document().blockCount()
+
+        return current_lines >= max_lines
+
+    def getMaxLinesPerPage(self):
+        """Calculate the maximum number of lines that can fit in a page dynamically."""
+        font_metrics = QFontMetrics(self.editor.font())
+        line_height = font_metrics.lineSpacing()
+        document_margin = self.editor.contentsMargins()
+        padding = 20  # Padding from setStyleSheet
+
+        usable_height = self.editor.height() - document_margin.top() - document_margin.bottom() - (2 * padding)
+        return usable_height // line_height
+
+    def addContentToPages(self, content):
+        """Splits content into pages dynamically based on overflow detection."""
+        lines = content.split("\n")
+        current_page_content = []
+        line_limit = self.getMaxLinesPerPage()
+
+        for line in lines:
+            current_page_content.append(line)
+            if len(current_page_content) >= line_limit:
+                self.editor.addPageWithContent("\n".join(current_page_content))
+                current_page_content = []
+
+        if current_page_content:
+            self.editor.addPageWithContent("\n".join(current_page_content))
 
     def handle_open_file(self):
         options = QFileDialog.Options()
@@ -32,170 +73,22 @@ class FileOperation:
                 if file_extension == 'txt':
                     with open(self.editor.filename, 'r', encoding="utf-8") as file:
                         content = file.read()
-
                 elif file_extension == 'docx':
                     doc = Document(self.editor.filename)
-                    content = "\n".join([para.text for para in doc.paragraphs])  # Maintain line breaks
-
+                    content = "\n".join([para.text for para in doc.paragraphs])
                 elif file_extension == 'rtf':
                     content = pypandoc.convert_file(self.editor.filename, 'plain', format='rtf')
-
                 else:
                     raise ValueError("Unsupported file format")
 
-
-                # **Split content by lines instead of words**
-                lines = content.split("\n")
-
-                current_page_content = []
-                line_limit = 40  # Adjust as per your page capacity
-
-                for line in lines:
-                    current_page_content.append(line)
-
-                    if len(current_page_content) >= line_limit:
-                        self.editor.addPageWithContent("\n".join(current_page_content))
-                        current_page_content = []
-
-                # Add any remaining lines to a new page
-                if current_page_content:
-                    self.editor.addPageWithContent("\n".join(current_page_content))
-
+                self.addContentToPages(content)
             except Exception as e:
                 self.editor.error_dialog.show_error_popup(f"Error opening file: {str(e)}")
 
-            # Update window title and remove blank pages
-            self.editor.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.editor.access_filename())
+            self.editor.setWindowTitle("\u0c95\u0ca8\u0ccd\u0ca8\u0ca1 \u0ca8\u0cc1\u0ca1\u0cbf - " + self.editor.access_filename())
             self.editor.removeBlankPages()
             self.editor.statusbar.setStatusTip(f"Total pages: {self.editor.total_pages}")
-
-            # Set the current file path
             self.editor.current_file_path = self.editor.filename
-
-    def handle_save_file(self,content):
-        if not self.editor.current_file_path:
-            options = QFileDialog.Options()
-            self.editor.current_file_path, _ = QFileDialog.getSaveFileName(
-                self.editor, "Save File", "",
-                "Text Files (*.txt);;Word Files (*.docx);;Rich Text Format (*.rtf);;PDF Files (*.pdf);;All Files (*)",
-                options=options
-            )
-
-        if self.editor.current_file_path:
-            try:
-                if self.editor.current_file_path.endswith('.txt'):
-                    with open(self.editor.current_file_path, 'w', encoding='utf-8') as file:
-                        file.write(content)
-                elif self.editor.current_file_path.endswith('.docx'):
-                    doc = Document()
-                    doc.add_paragraph(content)
-                    doc.save(self.editor.current_file_path)
-                elif self.editor.current_file_path.endswith('.rtf'):
-                    pypandoc.convert_text(content, 'rtf', format='md', outputfile=self.editor.current_file_path,
-                                          encoding='utf-8')
-                elif self.editor.current_file_path.endswith('.pdf'):
-                    printer = QPrinter(QPrinter.HighResolution)
-                    printer.setOutputFormat(QPrinter.PdfFormat)
-                    printer.setOutputFileName(self.editor.current_file_path)
-                    doc = QTextDocument()
-                    doc.setPlainText(content)
-                    doc.print_(printer)
-                else:
-                    self.editor.error_dialog.show_error_popup("Unsupported file format")
-            except Exception as e:
-                self.editor.error_dialog.show_error_popup(str(e))
-
-    def handle_save_as_file(self, content):
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(
-            self.editor, "Save File", "",
-            "Text Files (*.txt);;Word Files (*.docx);;Rich Text Format (*.rtf);;PDF Files (*.pdf);;All Files (*)",
-            options=options
-        )
-
-        if file_path:
-            try:
-                # Capture alignment before saving
-                cursor = self.editor.textCursor()
-                alignment = cursor.blockFormat().alignment()
-
-                # Detect images in the document
-                doc_content = self.editor.document()
-                images = []
-                block = doc_content.begin()
-                while block.isValid():
-                    fragment = block.begin()
-                    while fragment != block.end():
-                        if fragment.fragment().charFormat().isImageFormat():
-                            image_format = fragment.fragment().charFormat().toImageFormat()
-                            images.append(image_format.name())
-                        fragment += 1
-                    block = block.next()
-
-                # Save Text File
-                if file_path.endswith('.txt'):
-                    with open(file_path, 'w', encoding='utf-8') as file:
-                        file.write(content)
-
-                # Save Word Document (.docx) with images
-                elif file_path.endswith('.docx'):
-                    doc = Document()
-                    paragraph = doc.add_paragraph(content)
-                    paragraph.alignment = 1  # Align left (0=left, 1=center, 2=right, 3=justify)
-
-                    for image in images:
-                        if os.path.exists(image):
-                            doc.add_picture(image, width=Inches(2))
-
-                    doc.save(file_path)
-
-                # Save RTF with images
-                elif file_path.endswith('.rtf'):
-                    pypandoc.convert_text(content, 'rtf', format='md', outputfile=file_path, encoding='utf-8')
-
-                    # Append images manually
-                    with open(file_path, 'a', encoding='utf-8') as file:
-                        for image in images:
-                            if os.path.exists(image):
-                                file.write(f"{{\\pict\\jpegblip {image}}}")
-
-                # **FIXED: Save as PDF with Images**
-                elif file_path.endswith('.pdf'):
-                    printer = QPrinter(QPrinter.HighResolution)
-                    printer.setOutputFormat(QPrinter.PdfFormat)
-                    printer.setOutputFileName(file_path)
-
-                    doc = QTextDocument()
-                    cursor = QTextCursor(doc)
-
-                    # Insert text
-                    cursor.insertText(content)
-
-                    # Insert images
-                    for image in images:
-                        if os.path.exists(image):
-                            cursor.insertBlock()
-                            image_format = QTextImageFormat()
-                            image_format.setName(image)
-                            cursor.insertImage(image_format)
-
-                    doc.print_(printer)
-
-                else:
-                    self.editor.error_dialog.show_error_popup("Unsupported file format")
-
-                # Restore alignment after saving
-                block_format = QTextBlockFormat()
-                block_format.setAlignment(alignment)
-                cursor.mergeBlockFormat(block_format)
-                self.editor.setTextCursor(cursor)
-
-            except Exception as e:
-                self.editor.error_dialog.show_error_popup(str(e))
-
-        # Update editor's current file path
-        self.editor.current_file_path = file_path
-
     def handle_open_ascii_file(self):
         options = QFileDialog.Options()
         self.editor.filename, _ = QFileDialog.getOpenFileName(
@@ -246,3 +139,94 @@ class FileOperation:
             # Update window title and remove blank pages
             self.editor.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.editor.access_filename())
             self.editor.removeBlankPages()
+
+    # ----------------------------------------------------------------FILE OPEN----------------------------------------------------------------
+
+    #----------------------------------------------------------------FILE SAVE----------------------------------------------------------------
+
+    def handle_save_file(self):
+        """Save the file while preserving formatting."""
+        if self.editor.current_file_path:
+            self.save_to_file(self.editor.current_file_path)
+        else:
+            self.handle_save_as_file()
+
+    def handle_save_as_file(self):
+        """Prompt user to select a file path and save the content with formatting."""
+        options = QFileDialog.Options()
+        file_path, selected_filter = QFileDialog.getSaveFileName(
+            self.editor,
+            "Save File As",
+            "",
+            "Word Documents (*.docx);;Rich Text Files (*.rtf *.html);;Plain Text Files (*.txt);;All Files (*)",
+            options=options
+        )
+
+        if file_path:
+            # Ensure correct file extension based on filter selection
+            if "Word Documents" in selected_filter and not file_path.endswith(".docx"):
+                file_path += ".docx"
+            elif "Rich Text Files" in selected_filter and not (
+                    file_path.endswith(".rtf") or file_path.endswith(".html")):
+                file_path += ".rtf"
+            elif "Plain Text Files" in selected_filter and not file_path.endswith(".txt"):
+                file_path += ".txt"
+
+            self.editor.current_file_path = file_path
+            self.save_to_file(file_path)
+            self.editor.setWindowTitle(f"ಕನ್ನಡ ನುಡಿ - {os.path.basename(file_path)}")
+
+    def save_to_file(self, file_path):
+        """Write content to file, preserving formatting."""
+        try:
+            if file_path.endswith(".docx"):
+                self.write_docx(file_path)
+            elif file_path.endswith((".rtf", ".html")):
+                content = "\n\n".join([page.editor.toHtml() for page in self.editor.pages])
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(content)
+            else:
+                content = "\n\n".join([page.editor.toPlainText() for page in self.editor.pages])
+                with open(file_path, "w", encoding="utf-8") as file:
+                    file.write(content)
+
+            QMessageBox.information(self.editor, "File Saved", "File saved successfully.")
+
+        except Exception as e:
+            QMessageBox.critical(self.editor, "Error", f"Failed to save file: {str(e)}")
+
+    def read_docx(self, file_path):
+        """Read a .docx file and convert it to HTML for display in the editor."""
+        doc = Document(file_path)
+        html_content = ""
+
+        for para in doc.paragraphs:
+            style = ""
+            if para.runs:
+                run = para.runs[0]
+                if run.bold:
+                    style += "font-weight:bold;"
+                if run.italic:
+                    style += "font-style:italic;"
+                if run.underline:
+                    style += "text-decoration:underline;"
+
+            html_content += f"<p style='{style}'>{para.text}</p>"
+
+        return html_content
+
+    def write_docx(self, file_path):
+        """Save editor content as a .docx file."""
+        doc = Document()
+
+        for page in self.editor.pages:
+            text = page.editor.toPlainText()  # Extract plain text from the editor page
+            paragraphs = text.splitlines()  # Use splitlines() to avoid extra blank lines
+
+            for para in paragraphs:
+                if para.strip():  # Avoid adding empty paragraphs
+                    doc.add_paragraph(para)
+
+        doc.save(file_path)  # Save the .docx file
+
+#----------------------------------------------------------------FILE SAVE----------------------------------------------------------------
