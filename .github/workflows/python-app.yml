@@ -23,25 +23,10 @@ jobs:
       with:
         python-version: "3.12"
 
-    - name: Create and Verify Virtual Environment
+    - name: Install dependencies
       run: |
-        python -m venv venv
-        Get-ChildItem -Path .\venv\Scripts
-        if (!(Test-Path .\venv\Scripts\Activate.ps1)) {
-          echo "Virtual environment not created properly!"
-          exit 1
-        }
-      shell: pwsh
-
-    - name: Install Dependencies
-      run: |
-        & .\venv\Scripts\python.exe -m pip install --upgrade pip
-        & .\venv\Scripts\python.exe -m pip install -r requirements.txt
-      shell: pwsh
-
-    - name: Debug Installed Packages
-      run: |
-        & .\venv\Scripts\python.exe -m pip list
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
       shell: pwsh
 
   build:
@@ -54,13 +39,12 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install PyInstaller
-      run: |
-        & .\venv\Scripts\python.exe -m pip install pyinstaller
+      run: pip install pyinstaller
       shell: pwsh
 
     - name: Build Windows Artifact
       run: |
-        & .\venv\Scripts\python.exe build_win.py  # Run the script to generate the executable
+        python build_win.py  # Run the script to generate the executable
       shell: pwsh
 
     - name: Upload Build Artifact
@@ -91,6 +75,7 @@ jobs:
       shell: pwsh
       run: |
         git fetch --tags
+        # Get all version tags that match semantic versioning (ignores timestamp-based tags)
         $LATEST_TAG = git tag -l 'v*' --sort=-v:refname | Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } | Select-Object -First 1
         if (-not $LATEST_TAG) {
           $NEW_VERSION = "v1.0.0"
@@ -105,6 +90,7 @@ jobs:
 
     - name: Create and Push New Tag
       run: |
+        # Create a new version tag and push it
         git tag ${{ env.NEW_VERSION }}
         git push origin ${{ env.NEW_VERSION }}
 
