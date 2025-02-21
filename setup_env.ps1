@@ -1,10 +1,13 @@
 # setup_env.ps1
 $venvPath = ".venv"
 
-# Create virtual environment if it does not exist
-if (!(Test-Path $venvPath)) {
-    python -m venv $venvPath
+# Remove existing virtual environment if it is corrupted
+if (Test-Path $venvPath) {
+    Remove-Item -Recurse -Force $venvPath
 }
+
+# Create virtual environment
+python -m venv $venvPath
 
 # Activate virtual environment
 $venvActivate = "$venvPath\Scripts\Activate.ps1"
@@ -16,6 +19,9 @@ if (Test-Path $venvActivate) {
     exit 1
 }
 
-# Upgrade pip and install dependencies
-pip install --upgrade pip
+# Upgrade pip safely
+python -m ensurepip --default-pip
+python -m pip install --upgrade --user pip
+
+# Install dependencies
 pip install -r requirements.txt
