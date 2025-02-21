@@ -23,10 +23,18 @@ jobs:
       with:
         python-version: "3.12"
 
-    - name: Install dependencies
+    - name: Set up virtual environment
       run: |
+        python -m venv venv
+        .\venv\Scripts\activate
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+      shell: pwsh
+
+    - name: Debug Installed Packages
+      run: |
+        .\venv\Scripts\activate
+        pip list
       shell: pwsh
 
   build:
@@ -38,12 +46,20 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Activate Virtual Environment
+      run: |
+        .\venv\Scripts\activate
+      shell: pwsh
+
     - name: Install PyInstaller
-      run: pip install pyinstaller
+      run: |
+        .\venv\Scripts\activate
+        pip install pyinstaller
       shell: pwsh
 
     - name: Build Windows Artifact
       run: |
+        .\venv\Scripts\activate
         python build_win.py  # Run the script to generate the executable
       shell: pwsh
 
