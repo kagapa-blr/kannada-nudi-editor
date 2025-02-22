@@ -7,8 +7,9 @@ from PyQt5.QtWidgets import QApplication, QDialog
 
 from editor.nudi_editor import NewTextEditor
 from editor.widgets.banner import SplashScreen
+from logger import setup_logger
 from utils.util import remove_spaces_in_filenames
-
+logger = setup_logger(logger_name='main_app')
 
 def stop_background_exe():
     """Stop the Kannada Nudi Keyboard process if running."""
@@ -16,32 +17,30 @@ def stop_background_exe():
         for proc in psutil.process_iter():
             if "kannadakeyboard.exe" in proc.name().lower():  # Case-insensitive check
                 proc.terminate()
-                print("Kannada Nudi Keyboard stopped successfully.")
+                logger.info("Kannada Nudi Keyboard stopped successfully.")
                 return
-        print("Kannada Nudi Keyboard is not running.")
+        logger.info("Kannada Nudi Keyboard is not running.")
     except Exception as e:
-        print(f"Error stopping background exe: {e}")
+        logger.info(f"Error stopping background exe: {e}")
 
 
 def start_background_exe():
     """Start the Kannada Nudi Keyboard process."""
     if sys.platform.startswith("linux"):
-        print("Linux system detected. The executable will not be started.")
+        logger.info("Linux system detected. The executable will not be started.")
         return
 
     exe_path = os.path.abspath(os.path.join("resources", "keyboardDriver", "kannadaKeyboard.exe"))
 
     if not os.path.exists(exe_path):
-        print(f"Error: Kannada Keyboard executable not found at {exe_path}")
+        logger.info(f"Error: Kannada Keyboard executable not found at {exe_path}")
         return
 
     try:
         subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
-        print("Kannada Nudi Keyboard loaded and running in background.")
+        logger.info("Kannada Nudi Keyboard loaded and running in background.")
     except Exception as e:
-        print(f"Error starting background exe: {e}")
-
-
+        logger.info(f"Error starting background exe: {e}")
 
 
 def editor():
