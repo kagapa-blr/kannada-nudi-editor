@@ -18,14 +18,23 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.12"
-
-    - name: Install dependencies in Virtual Environment
+    - name: Check Required Files
       run: |
-        pwsh setup_env.ps1  # Run the PowerShell script to set up venv and install dependencies
+        $files = @("setup_env.ps1", "build_win.py", "requirements.txt")
+        $missing = @()
+
+        foreach ($file in $files) {
+          if (-Not (Test-Path $file)) {
+            $missing += $file
+          }
+        }
+
+        if ($missing.Count -gt 0) {
+          Write-Host "❌ Missing files: $($missing -join ', ')"
+          exit 1  # Fail the job if any file is missing
+        } else {
+          Write-Host "✅ All required files are present."
+        }
       shell: pwsh
 
   build:
@@ -37,9 +46,9 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up Virtual Environment
+    - name: Set up Virtual Environment and Install Dependencies
       run: |
-        pwsh setup_env.ps1  # Ensure virtual environment is active
+        pwsh setup_env.ps1  # Run setup script to create venv and install dependencies
       shell: pwsh
 
     - name: Install PyInstaller
@@ -82,7 +91,7 @@ jobs:
       shell: pwsh
       run: |
         git fetch --tags
-        # Get all version tags that match semantic versioning (ignores timestamp-based tags)
+        # Get all version tags that match semantic versioning
         $LATEST_TAG = git tag -l 'v*' --sort=-v:refname | Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } | Select-Object -First 1
         if (-not $LATEST_TAG) {
           $NEW_VERSION = "v1.0.0"
@@ -97,7 +106,6 @@ jobs:
 
     - name: Create and Push New Tag
       run: |
-        # Create a new version tag and push it
         git tag ${{ env.NEW_VERSION }}
         git push origin ${{ env.NEW_VERSION }}
 
