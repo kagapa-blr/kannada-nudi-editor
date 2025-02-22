@@ -10,17 +10,19 @@ from editor.components.format_content import SpacingDialog
 from editor.components.new_editor_components import NewPageLayoutDialog
 from editor.components.speech_to_text import LanguageSelectionPopup, SpeechToTextThread
 from editor.widgets.PageMarginDialog import PageMarginDialog
+from logger import setup_logger
 from spellcheck.bloom_filter import start_bloom
 from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.find import Find
 from utils.sort_by import SortDialog
 from utils.table import Table
-
+logger = setup_logger(logger_name="toolbar_actions_handlers")
 
 class ToolbarHandler:
     def __init__(self, editor):
         self.editor = editor
-
+        self.speech_thread = None
+        self.selected_language = None  # Store selected language
     def handle_font_size(self):
         size = int(self.editor.actions.fontSizeComboBox.currentText())
         if self.editor.current_page and hasattr(self.editor.current_page, 'editor'):
@@ -31,7 +33,7 @@ class ToolbarHandler:
                 print(f"Error setting font size: {str(e)}")
         else:
             self.editor.setActivePage(self.editor.current_page)
-            print("Error: No current page or editor not available")
+            logger.info("Error: No current page or editor not available")
 
     def handle_toggle_bold(self):
         if self.editor.current_page:
@@ -160,7 +162,7 @@ class ToolbarHandler:
 
     def handle_set_spacing(self):
         if not self.editor.current_page or not self.editor.current_page.editor:
-            print("Error: current_page or editor is not valid.")
+            logger.info("Error: current_page or editor is not valid.")
             return
 
         dialog = SpacingDialog(self.editor)
@@ -192,7 +194,7 @@ class ToolbarHandler:
         for page in self.editor.pages:
             self.editor.total_pages += 1
             if not page or not page.editor:
-                print("Page or editor is not valid.")
+                logger.info("Page or editor is not valid.")
                 continue
 
             # Retrieve plain text from current page's editor
@@ -263,7 +265,7 @@ class ToolbarHandler:
 
     def handle_sort_by_action(self):
         if not self.editor.current_page or not self.editor.current_page.editor:
-            print("Error: current_page or editor is not valid.")
+            logger.info("Error: current_page or editor is not valid.")
             return
 
         # Create and execute the SortDialog
@@ -298,7 +300,7 @@ class ToolbarHandler:
                 # Implement sorting logic for Column Number sorting
                 pass
             else:
-                print("Unknown sort_by option:", sort_by)
+                logger.info("Unknown sort_by option:", sort_by)
                 return
 
             # Example sorting for different types
@@ -316,27 +318,35 @@ class ToolbarHandler:
             # Update QTextEdit with sorted text
             self.editor.current_page.editor.setPlainText(sorted_text)
 
+
     def handle_toggle_speech_to_text(self):
         sender = self.editor.sender()
-        if sender.isChecked():
+        if self.speech_thread and self.speech_thread.isRunning():
+            # Stop existing speech-to-text
+            sender.setText("Speech to Text")
+            self.speech_thread.stop()
+            self.speech_thread = None
+        else:
+            # Start speech-to-text
             popup = LanguageSelectionPopup()
             if popup.exec_() == QDialog.Accepted:
-                selected_language = popup.selectedLanguage
-                if selected_language is None:
+                self.selected_language = popup.selectedLanguage
+                if not self.selected_language:
                     QMessageBox.critical(None, 'Error', 'No language selected')
                     sender.setChecked(False)
                     return
 
                 sender.setText("Stop Speech to Text")
-                self.editor.speech_thread = SpeechToTextThread(self.editor.current_page.editor, selected_language)
-                self.editor.speech_thread.start()
+                self.speech_thread = SpeechToTextThread(self.selected_language)
+                self.speech_thread.text_ready.connect(self.update_editor)  # Connect signal to slot
+                self.speech_thread.start()
             else:
                 sender.setChecked(False)
-        else:
-            sender.setText("Speech to Text")
-            if self.editor.speech_thread:
-                self.editor.speech_thread.stop()
-                self.editor.speech_thread = None
+
+    def update_editor(self, text):
+        """ Update the editor from the main thread. """
+        self.editor.current_page.editor.insertPlainText(text)
+
 
     def handle_page_layout_size(self):
         dialog = NewPageLayoutDialog(self.editor)
