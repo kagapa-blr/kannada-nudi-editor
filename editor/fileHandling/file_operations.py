@@ -11,7 +11,8 @@ from utils.asciitounicode import process_line
 class FileOperation:
     def __init__(self, editor):
         self.editor = editor
-#----------------------------------------------------------------FILE OPEN----------------------------------------------------------------
+
+    # ----------------------------------------------------------------FILE OPEN----------------------------------------------------------------
     def checkOverflow(self):
         """Detect if text overflows and emit a signal for a new page."""
         if self.isOverflowing():
@@ -85,10 +86,11 @@ class FileOperation:
             except Exception as e:
                 self.editor.error_dialog.show_error_popup(f"Error opening file: {str(e)}")
 
-            self.editor.setWindowTitle("\u0c95\u0ca8\u0ccd\u0ca8\u0ca1 \u0ca8\u0cc1\u0ca1\u0cbf - " + self.editor.access_filename())
+            self.editor.setWindowTitle("ಕನ್ನಡ ನುಡಿ - " + self.editor.access_filename())
             self.editor.removeBlankPages()
             self.editor.statusbar.setStatusTip(f"Total pages: {self.editor.total_pages}")
             self.editor.current_file_path = self.editor.filename
+
     def handle_open_ascii_file(self):
         options = QFileDialog.Options()
         self.editor.filename, _ = QFileDialog.getOpenFileName(
@@ -142,7 +144,7 @@ class FileOperation:
 
     # ----------------------------------------------------------------FILE OPEN----------------------------------------------------------------
 
-    #----------------------------------------------------------------FILE SAVE----------------------------------------------------------------
+    # ----------------------------------------------------------------FILE SAVE----------------------------------------------------------------
 
     def handle_save_file(self):
         """Save the file while preserving formatting."""
@@ -229,4 +231,4 @@ class FileOperation:
 
         doc.save(file_path)  # Save the .docx file
 
-#----------------------------------------------------------------FILE SAVE----------------------------------------------------------------
+# ----------------------------------------------------------------FILE SAVE----------------------------------------------------------------
