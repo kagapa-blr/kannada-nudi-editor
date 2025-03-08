@@ -15,36 +15,6 @@ from utils.corpus_clean import get_clean_words_for_dictionary
 from utils.util import has_letters_or_digits
 
 
-class CustomTextEdit(QTextEdit):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.cursorPositionChanged.connect(self.centerCursor)
-
-    def centerCursor(self):
-        cursor = self.textCursor()
-        rect = self.cursorRect(cursor)
-        scroll_area = self.getScrollArea()
-
-        if scroll_area:
-            scroll_bar = scroll_area.verticalScrollBar()
-
-            # Calculate cursor's absolute position within the scroll area
-            editor_global_pos = self.mapTo(scroll_area.widget(), rect.center())
-            target_scroll = editor_global_pos.y() - (scroll_area.height() // 2)
-
-            # Smooth scrolling with a slight delay
-            QTimer.singleShot(10, lambda: scroll_bar.setValue(target_scroll))
-
-    def getScrollArea(self):
-        """Find the QScrollArea that contains this editor."""
-        parent = self.parent()
-        while parent:
-            if isinstance(parent, QScrollArea):
-                return parent
-            parent = parent.parent()
-        return None
-
-
 class NewPageLayoutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -134,8 +104,6 @@ class NewPageLayoutDialog(QDialog):
 
         layout.addWidget(button_box)
 
-
-
     def onSizeComboChanged(self, index):
         if self.size_combo.currentText() == "Custom":
             self.width_spinbox.setEnabled(True)
@@ -154,6 +122,36 @@ class NewPageLayoutDialog(QDialog):
             return width, height
 
 
+class CustomTextEdit(QTextEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.cursorPositionChanged.connect(self.centerCursor)
+
+    def centerCursor(self):
+        cursor = self.textCursor()
+        rect = self.cursorRect(cursor)
+        scroll_area = self.getScrollArea()
+
+        if scroll_area:
+            scroll_bar = scroll_area.verticalScrollBar()
+
+            # Calculate cursor's absolute position within the scroll area
+            editor_global_pos = self.mapTo(scroll_area.widget(), rect.center())
+            target_scroll = editor_global_pos.y() - (scroll_area.height() // 2)
+
+            # Smooth scrolling with a slight delay
+            QTimer.singleShot(10, lambda: scroll_bar.setValue(target_scroll))
+
+    def getScrollArea(self):
+        """Find the QScrollArea that contains this editor."""
+        parent = self.parent()
+        while parent:
+            if isinstance(parent, QScrollArea):
+                return parent
+            parent = parent.parent()
+        return None
+
+
 class NewPage(QWidget):
     textOverflow = pyqtSignal()
     clicked = pyqtSignal(QWidget)
@@ -162,7 +160,7 @@ class NewPage(QWidget):
         super().__init__(parent)
         self.page_number = page_number
         self.is_changed = False  # Add this line
-        #self.editor = QTextEdit(self)
+        # self.editor = QTextEdit(self)
         self.editor = CustomTextEdit(self)
 
         self.currentZoomFactor = 1.0
@@ -277,7 +275,7 @@ class NewPage(QWidget):
         current_lines = self.editor.document().blockCount()  # Current text block count
 
         if current_lines >= max_lines:  # Check for overflow
-            #print("Triggering new page creation due to overflow")
+            # print("Triggering new page creation due to overflow")
             self.textOverflow.emit()
 
     def onFocusInEvent(self, event):
@@ -445,5 +443,3 @@ class NewPage(QWidget):
                 background-color: white;
             }}
         """)
-
-
