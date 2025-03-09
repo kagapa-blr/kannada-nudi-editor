@@ -23,7 +23,39 @@ filename = os.path.splitext(os.path.basename(__file__))[0]
 logger = setup_logger(filename)
 
 
-class NewTextEditor(QMainWindow):
+class FileManager():
+    def __init__(self):
+        self.file_ops = FileOperation(self)
+        self.scroll_layout = None
+        self.scroll_content = None
+        self.scroll_area = None
+        self.pages = []
+
+    def newFile(self):
+        self.pages.clear()
+        for i in reversed(range(self.scroll_layout.count())):
+            widget = self.scroll_layout.itemAt(i).widget()
+            if widget is not None:
+                widget.deleteLater()
+        self.addNewPage()
+
+    def openFile(self):
+        self.file_ops.handle_open_file()
+
+    def saveFile(self):
+        content = "\n\n".join([page.editor.toPlainText() for page in self.pages])  # Get text from all pages
+        self.file_ops.handle_save_file()
+
+    def saveAsFile(self):
+        content = "\n\n".join([page.editor.toPlainText() for page in self.pages])  # Get text from all pages
+        # self.file_ops.handle_save_file(content=content)
+        self.file_ops.handle_save_as_file()
+
+    def openAsciiFile(self):
+        self.file_ops.handle_open_ascii_file()
+
+
+class NewTextEditor(QMainWindow, FileManager):
     def __init__(self, nudi_logo_icon):
         super().__init__()
         self.nudi_logo_icon = nudi_logo_icon
@@ -71,7 +103,8 @@ class NewTextEditor(QMainWindow):
         self.scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
-        self.scroll_layout.setContentsMargins(20, 20, 20, 20)  # Adjust margins as needed
+        self.scroll_layout.setContentsMargins(0, 0, 0, 0)  # Remove outer margins
+
         self.scroll_layout.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
         self.scroll_area.setWidget(self.scroll_content)
 
@@ -218,29 +251,6 @@ class NewTextEditor(QMainWindow):
                 event.ignore()
         else:
             event.accept()
-
-    def newFile(self):
-        self.pages.clear()
-        for i in reversed(range(self.scroll_layout.count())):
-            widget = self.scroll_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.deleteLater()
-        self.addNewPage()
-
-    def openFile(self):
-        self.file_ops.handle_open_file()
-
-    def saveFile(self):
-        content = "\n\n".join([page.editor.toPlainText() for page in self.pages])  # Get text from all pages
-        self.file_ops.handle_save_file()
-
-    def saveAsFile(self):
-        content = "\n\n".join([page.editor.toPlainText() for page in self.pages])  # Get text from all pages
-        # self.file_ops.handle_save_file(content=content)
-        self.file_ops.handle_save_as_file()
-
-    def openAsciiFile(self):
-        self.file_ops.handle_open_ascii_file()
 
     def removeBlankPages(self):
         for i in reversed(range(len(self.pages))):

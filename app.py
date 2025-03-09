@@ -9,7 +9,9 @@ from editor.nudi_editor import NewTextEditor
 from editor.widgets.banner import SplashScreen
 from logger import setup_logger
 from utils.util import remove_spaces_in_filenames
+
 logger = setup_logger(logger_name='main_app')
+
 
 def stop_background_exe():
     """Stop the Kannada Nudi Keyboard process if running."""
@@ -37,10 +39,12 @@ def start_background_exe():
         return
 
     try:
-        subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        subprocess.Popen([exe_path], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         start_new_session=True)
         logger.info("Kannada Nudi Keyboard loaded and running in background.")
     except Exception as e:
         logger.info(f"Error starting background exe: {e}")
+        stop_background_exe()  # Stop background exe if an error occurs
 
 
 def editor():
@@ -50,19 +54,28 @@ def editor():
     # Show splash screen
     splash = SplashScreen()
     if splash.exec_() == QDialog.Accepted:  # Wait until user accepts
-        # Start background processes
-        start_background_exe()
-        remove_spaces_in_filenames(folder_path='./resources/static/Nudi_fonts')
+        try:
+            # Start background processes
+            start_background_exe()
+            remove_spaces_in_filenames(folder_path='./resources/static/Nudi_fonts')
 
-        # Load main editor window
-        editor_window = NewTextEditor('./resources/images/logo.jpg')
-        editor_window.show()
+            # Load main editor window
+            editor_window = NewTextEditor('./resources/images/logo.jpg')
+            editor_window.show()
 
-        # Stop background process when app quits
-        app.aboutToQuit.connect(stop_background_exe)
+            # Stop background process when app quits
+            app.aboutToQuit.connect(stop_background_exe)
 
-        sys.exit(app.exec_())
+            sys.exit(app.exec_())
+
+        except Exception as e:
+            logger.info(f"An error occurred: {e}")
+            stop_background_exe()  # Stop background exe if an error occurs
 
 
 if __name__ == '__main__':
-    editor()
+    try:
+        editor()
+    except Exception as e:
+        logger.info(f"Critical error: {e}")
+        stop_background_exe()  # Stop background exe if a critical error occurs
