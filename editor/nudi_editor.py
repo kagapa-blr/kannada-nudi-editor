@@ -1,7 +1,7 @@
 import os
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QKeySequence, QTextCursor
+from PyQt5.QtGui import QIcon, QKeySequence, QTextCursor, QFontMetrics
 from PyQt5.QtWidgets import (QMainWindow, QScrollArea,
                              QSizePolicy, QMessageBox, QShortcut)
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
@@ -24,7 +24,7 @@ logger = setup_logger(filename)
 
 
 class NewTextEditor(QMainWindow):
-    def __init__(self,nudi_logo_icon):
+    def __init__(self, nudi_logo_icon):
         super().__init__()
         self.nudi_logo_icon = nudi_logo_icon
         self.statusbar = None
@@ -44,7 +44,6 @@ class NewTextEditor(QMainWindow):
         self.toolbar_handler = ToolbarHandler(self)
         self.initUI()
         self.file_ops = FileOperation(self)
-
 
         # Initialize and add ZoomSlider
         self.zoom_slider = ZoomSlider()
@@ -88,9 +87,8 @@ class NewTextEditor(QMainWindow):
         self.setWindowIcon(QIcon(self.nudi_logo_icon))  # Set the application icon
         self.showMaximized()
         self.setFocusToEditor()
-        #self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
+        # self.statusbar.setStatusTip("total pages: " + str(self.total_pages))
         logger.info("Kannada Nudi Editor Initialization")
-
 
     def setFocusToEditor(self):
         # Ensure focus is set to the editor of the current page
@@ -159,26 +157,43 @@ class NewTextEditor(QMainWindow):
         if not self.current_page:
             return
 
-        # Step 1: Get the cursor and selection
+        # Step 1: Get the cursor and calculate overflow text
         cursor = self.current_page.editor.textCursor()
-        cursor.movePosition(QTextCursor.Start, QTextCursor.KeepAnchor)
-        overflow_text = cursor.selectedText().strip()
+        cursor.movePosition(QTextCursor.Start)
 
-        if not overflow_text:
-            return  # No overflow, exit
+        # Calculate the maximum allowed lines based on page height
+        font_metrics = QFontMetrics(self.current_page.editor.font())
+        line_height = font_metrics.lineSpacing()
+        document_margin = self.current_page.editor.contentsMargins()
+        padding = 20  # Assuming 20px padding from stylesheet
+        usable_height = self.current_page.editor.height() - document_margin.top() - document_margin.bottom() - (
+                2 * padding)
+        max_lines = usable_height // line_height
+        current_lines = self.current_page.editor.document().blockCount()
 
-        # Step 2: Create a new page
-        new_page = self.addNewPage()
+        # Check if there is an overflow
+        if current_lines > max_lines:
+            # Move cursor to the line where overflow starts
+            for _ in range(max_lines):
+                cursor.movePosition(QTextCursor.Down)
 
-        # Step 3: Transfer text to the new page
-        self.current_page.editor.textCursor().removeSelectedText()  # Clear from current page
-        new_page.editor.insertPlainText(overflow_text)  # Move text to new page
+            # Select and extract overflow text
+            cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+            overflow_text = cursor.selection().toPlainText().strip()
 
-        # Step 4: Move cursor to the start of the new page
-        new_page.editor.setFocus()
-        new_cursor = new_page.editor.textCursor()
-        new_cursor.movePosition(QTextCursor.Start)
-        new_page.editor.setTextCursor(new_cursor)
+            if overflow_text:
+                # Step 2: Remove overflow text from the current page
+                cursor.removeSelectedText()
+
+                # Step 3: Create a new page and insert overflow text
+                new_page = self.addNewPage()
+                new_page.editor.insertPlainText(overflow_text)
+
+                # Step 4: Move cursor to the start of the new page
+                new_page.editor.setFocus()
+                new_cursor = new_page.editor.textCursor()
+                new_cursor.movePosition(QTextCursor.Start)
+                new_page.editor.setTextCursor(new_cursor)
 
     # Override the closeEvent method
     def closeEvent(self, event):
@@ -221,11 +236,12 @@ class NewTextEditor(QMainWindow):
 
     def saveAsFile(self):
         content = "\n\n".join([page.editor.toPlainText() for page in self.pages])  # Get text from all pages
-        #self.file_ops.handle_save_file(content=content)
+        # self.file_ops.handle_save_file(content=content)
         self.file_ops.handle_save_as_file()
 
     def openAsciiFile(self):
         self.file_ops.handle_open_ascii_file()
+
     def removeBlankPages(self):
         for i in reversed(range(len(self.pages))):
             page = self.pages[i]
@@ -263,12 +279,12 @@ class NewTextEditor(QMainWindow):
     def setFontSize(self, index):
         self.toolbar_handler.handle_font_size()
 
-
     def toggleBold(self):
         self.toolbar_handler.handle_toggle_bold()
 
     def toggleItalic(self):
         self.toolbar_handler.handle_toggle_italic()
+
     def toggleUnderline(self):
         self.toolbar_handler.handle_toggle_underline()
 
@@ -299,7 +315,6 @@ class NewTextEditor(QMainWindow):
     def indent(self):
         self.toolbar_handler.handle_indent()
 
-
     def dedent(self):
         self.toolbar_handler.handle_dedent()
 
@@ -317,6 +332,7 @@ class NewTextEditor(QMainWindow):
 
     def setLineSpacing(self, value):
         self.toolbar_handler.handle_set_line_spacing(value)
+
     # ----------------------------------------------------------------FORMAT functions ----------------------------------------------------------------
 
     def refresh_recheck(self):
@@ -357,15 +373,19 @@ class NewTextEditor(QMainWindow):
 
     def insertTable(self):
         self.toolbar_handler.handle_insert_table()
+
     def find_replace(self):
         self.toolbar_handler.handle_find_replace()
 
     def choose_image(self):
         self.toolbar_handler.handle_choose_image()
+
     def insertEditedImage(self, edited_image):
         self.toolbar_handler.handle_insert_edited_image(edited_image)
+
     def sortByAction(self):
         self.toolbar_handler.handle_sort_by_action()
+
     def toggle_speech_to_text(self):
         self.toolbar_handler.handle_toggle_speech_to_text()
 

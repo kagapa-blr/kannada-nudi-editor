@@ -126,6 +126,8 @@ class CustomTextEdit(QTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.cursorPositionChanged.connect(self.centerCursor)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def centerCursor(self):
         cursor = self.textCursor()
@@ -265,18 +267,36 @@ class NewPage(QWidget):
     def checkOverflow(self):
         """Detect if text overflows and emit a signal for a new page."""
         font_metrics = QFontMetrics(self.editor.font())
-        line_height = font_metrics.lineSpacing()  # Height of one line
+        line_height = font_metrics.lineSpacing()
+
         # Calculate usable height
         document_margin = self.editor.contentsMargins()
         padding = 20  # Padding from setStyleSheet
-
         usable_height = self.editor.height() - document_margin.top() - document_margin.bottom() - (2 * padding)
-        max_lines = usable_height // line_height  # Number of lines that fit
-        current_lines = self.editor.document().blockCount()  # Current text block count
+        max_lines = usable_height // line_height
+        current_lines = self.editor.document().blockCount()
 
-        if current_lines >= max_lines:  # Check for overflow
-            # print("Triggering new page creation due to overflow")
+        # Check for overflow
+        if current_lines > max_lines:
+            # Extract overflowing text
+            cursor = self.editor.textCursor()
+            cursor.movePosition(QTextCursor.Start)
+
+            for _ in range(max_lines):
+                cursor.movePosition(QTextCursor.Down)
+
+            cursor.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+            overflow_text = cursor.selection().toPlainText()
+
+            # Remove overflow text from current page
+            cursor.removeSelectedText()
+
+            # Emit signal to create a new page with overflow text
             self.textOverflow.emit()
+
+            # Return overflow text for the new page
+            return overflow_text
+        return None
 
     def onFocusInEvent(self, event):
         self.clicked.emit(self)
